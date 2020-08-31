@@ -10,6 +10,7 @@ void initChunk(Chunk *chunk) {
     chunk->capacity = 0;
     chunk->count = 0;
     chunk->code = NULL;
+    initValueArray(&chunk->constants);
 }
 
 void writeChunk(Chunk *chunk, Opcode byte) {
@@ -20,11 +21,10 @@ void writeChunk(Chunk *chunk, Opcode byte) {
     }
     chunk->code[chunk->count] = byte;
     chunk->count++;
-    initValueArray(&chunk->constants);
 }
 
 void freeChunk(Chunk *chunk) {
-    FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
+    FREE_ARRAY(Opcode, chunk->code, chunk->capacity);
     initChunk(chunk);
 }
 
