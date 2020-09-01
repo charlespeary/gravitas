@@ -12,21 +12,26 @@
 typedef enum {
     RETURN,
     CONSTANT,
+    CONSTANT_LONG
 } Opcode;
+
+// TODO: Challenge 1:1
+typedef int Line;
 
 typedef struct {
     int count;
     int capacity;
-    Opcode *code;
+    uint8_t *code;
+    Line *lines;
     ValueArray constants;
 } Chunk;
 
 void initChunk(Chunk *chunk);
 
-void writeChunk(Chunk *chunk, Opcode byte);
+void writeChunk(Chunk *chunk, Opcode byte, Line line);
 
 void freeChunk(Chunk *chunk);
 
-int addConstant(Chunk *chunk, Value value);
+void writeConstant(Chunk *chunk, Value value, Line line);
 
 #endif //CLOX_CHUNK_H

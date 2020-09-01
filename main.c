@@ -14,10 +14,10 @@
 int main() {
     Chunk chunk;
     initChunk(&chunk);
-    writeChunk(&chunk, RETURN);
-    int constant = addConstant(&chunk, 1.2);
-    writeChunk(&chunk, CONSTANT);
-    writeChunk(&chunk, constant);
+    writeChunk(&chunk, RETURN, 0);
+    writeConstant(&chunk, 1.2, 1);
+//    writeConstant(&chunk, 4.2, 2);
+//    writeConstant(&chunk, 3.2, 3);
     disassembleChunk(&chunk, "test chunk");
     freeChunk(&chunk);
     return 0;
