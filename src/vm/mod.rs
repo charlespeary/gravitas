@@ -1,14 +1,12 @@
-mod settings;
-
-pub use settings::VMSettings;
 use crate::chunk::{Chunk, Opcode, Value};
 use anyhow::{Result, Context};
 use std::slice::Iter;
+use crate::settings::Settings;
 
 
 #[derive(Debug)]
 pub struct VM {
-    settings: VMSettings,
+    settings: Settings,
     stack: Vec<Value>,
 }
 
@@ -24,7 +22,7 @@ pub struct VM {
 impl VM {
     pub fn new() -> Self {
         Self {
-            settings: VMSettings::default(),
+            settings: Settings::default(),
             stack: Vec::new(),
         }
     }
@@ -76,8 +74,8 @@ impl VM {
 }
 
 
-impl From<VMSettings> for VM {
-    fn from(settings: VMSettings) -> Self {
+impl From<Settings> for VM {
+    fn from(settings: Settings) -> Self {
         VM {
             settings,
             stack: Vec::new(),
