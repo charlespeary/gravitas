@@ -1,12 +1,12 @@
 mod opcode;
 
-pub use crate::chunk::opcode::Opcode;
+pub use crate::chunk::opcode::{Opcode, Value};
 use std::slice::Iter;
 
 #[derive(Debug)]
 pub struct Chunk {
     code: Vec<Opcode>,
-    constants: Vec<f64>,
+    constants: Vec<Value>,
 }
 
 impl Chunk {
@@ -22,7 +22,7 @@ impl Chunk {
         return self.code.len() - 1;
     }
 
-    pub fn add_constant(&mut self, constant: f64) -> u8 {
+    pub fn add_constant(&mut self, constant: Value) -> u8 {
         self.constants.push(constant);
         let constant_index = (self.constants.len() - 1) as u8;
         self.grow(Opcode::Constant(constant_index));
@@ -30,7 +30,7 @@ impl Chunk {
     }
 
     // TODO: Handle longer constants
-    pub fn read_constant(&self, index: u8) -> f64 {
+    pub fn read_constant(&self, index: u8) -> Value {
         *self.constants.get(index as usize).expect("Chunk in wrong state!")
     }
 }

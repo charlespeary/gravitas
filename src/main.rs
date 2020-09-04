@@ -11,8 +11,10 @@ fn main() {
     let settings = VMSettings::parse();
     let mut vm = VM::from(settings);
     let mut chunk = Chunk::new();
-    chunk.add_constant(10.0);
-    chunk.grow(Opcode::Return);
-    vm.interpret(&chunk);
-    debug_chunk(&chunk, "Test chunk");
+    // chunk.add_constant(10.0);
+    // chunk.add_constant(10.0);
+    // chunk.grow(Opcode::Add);
+    // chunk.grow(Opcode::Negate);
+    chunk.grow(Opcode::Negate);
+    println!("{:#?}", vm.interpret(&chunk));
 }

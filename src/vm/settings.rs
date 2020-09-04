@@ -4,5 +4,5 @@ use clap::Clap;
 pub struct VMSettings {
     /// Show executed opcodes
     #[clap(short)]
-    pub debug: bool
+    pub debug: bool,
 }
