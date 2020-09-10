@@ -3,8 +3,9 @@ use std::iter::Fuse;
 
 // I got inspired by the peek_nth from the iterator in itertools
 pub struct PeekNth<I>
-    where I: Iterator,
-          I::Item: Clone
+where
+    I: Iterator,
+    I::Item: Clone,
 {
     iter: Fuse<I>,
     buf: VecDeque<I::Item>,
@@ -12,8 +13,9 @@ pub struct PeekNth<I>
 }
 
 pub fn peek_nth<I>(iterable: I) -> PeekNth<I::IntoIter>
-    where I: IntoIterator,
-          I::Item: Clone
+where
+    I: IntoIterator,
+    I::Item: Clone,
 {
     PeekNth {
         iter: iterable.into_iter().fuse(),
@@ -23,8 +25,10 @@ pub fn peek_nth<I>(iterable: I) -> PeekNth<I::IntoIter>
 }
 
 impl<I> PeekNth<I>
-    where I: Iterator,
-          I::Item: Clone {
+where
+    I: Iterator,
+    I::Item: Clone,
+{
     pub fn peek_nth(&mut self, n: usize) -> Option<&I::Item> {
         let items_to_buffer = (n + 1).saturating_sub(self.buf.len());
         self.buf.extend(self.iter.by_ref().take(items_to_buffer));
@@ -37,8 +41,9 @@ impl<I> PeekNth<I>
 }
 
 impl<I> Iterator for PeekNth<I>
-    where I: Iterator,
-          I::Item: Clone
+where
+    I: Iterator,
+    I::Item: Clone,
 {
     type Item = I::Item;
 
@@ -52,8 +57,10 @@ impl<I> Iterator for PeekNth<I>
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use crate::parser::Token;
+
     use super::peek_nth as into_peek_nth;
+    use super::*;
 
     /// Returns items sequentially
     #[test]
@@ -83,18 +90,18 @@ mod test {
         assert_eq!(iter.peek_nth(4), None);
     }
 
-    /// Returns current index
+    /// Returns current token
     #[test]
     fn current() {
         let items = vec![1, 2, 3];
-        let mut iter = into_peek_nth(items.clone().into_iter());
+        let mut iter = into_peek_nth(items.into_iter());
         assert_eq!(iter.current, None);
         iter.next();
-        assert_eq!(iter.current(), 1);
+        assert_eq!(iter.current, Some(1));
         iter.next();
-        assert_eq!(iter.current(), 2);
+        assert_eq!(iter.current, Some(2));
         iter.next();
-        assert_eq!(iter.current(), 3);
+        assert_eq!(iter.current, Some(3));
         iter.next();
     }
 }

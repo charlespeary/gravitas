@@ -1,3 +1,4 @@
+extern crate derive_more;
 #[macro_use]
 extern crate lazy_static;
 
@@ -5,9 +6,6 @@ use clap::Clap;
 
 use settings::Settings;
 use utils::initialize;
-
-use crate::chunk::{Chunk, Opcode};
-use crate::vm::VM;
 
 mod chunk;
 mod parser;

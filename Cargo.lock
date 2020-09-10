@@ -60,11 +60,22 @@ version = "3.0.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb51c9e75b94452505acd21d929323f5a5c6c4735a852adbd39ef5fb1b014f30"
 dependencies = [
- "heck",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
+    "heck",
+    "proc-macro-error",
+    "proc-macro2",
+    "quote",
+    "syn",
+]
+
+[[package]]
+name = "derive_more"
+version = "0.99.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "298998b1cf6b5b2c8a7b023dfd45821825ce3ba8a8af55c921a0e734e4653f76"
+dependencies = [
+    "proc-macro2",
+    "quote",
+    "syn",
 ]
 
 [[package]]
@@ -226,6 +237,7 @@ version = "0.1.0"
 dependencies = [
     "anyhow",
     "clap",
+    "derive_more",
     "lazy_static",
     "logos",
     "ordered-float",

@@ -28,3 +28,22 @@ pub fn initialize(settings: &Settings) -> Result<()> {
     }
     Ok(())
 }
+
+#[macro_export]
+macro_rules! hashmap {
+    ($($key:expr => $value:expr), *) => {{
+        let mut hashmap = std::collections::HashMap::new();
+        $(
+          hashmap.insert($key, $value);
+        )*
+        hashmap
+    }};
+}
+
+// transforms number into NotNan struct from ordered_float library
+#[macro_export]
+macro_rules! into_float {
+    ($num: expr) => {
+        ordered_float::NotNan::new($num).unwrap()
+    };
+}

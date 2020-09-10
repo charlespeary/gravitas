@@ -1,11 +1,13 @@
-use std::collections::VecDeque;
-use std::iter::Fuse;
-use std::marker::PhantomData;
+use std::collections::HashMap;
 
+use anyhow::{Context, Result};
+use derive_more::Display;
 use logos::Logos;
 use ordered_float::NotNan;
 
-#[derive(Logos, Debug, Clone, Hash, Eq, PartialEq)]
+use crate::hashmap;
+
+#[derive(Logos, Debug, Display, Clone, Hash, Eq, PartialEq)]
 pub enum Token {
     #[token("|")]
     Bar,
@@ -102,13 +104,63 @@ pub enum Token {
     Error,
 }
 
+#[derive(Display)]
+pub enum AffixKind {
+    Infix,
+    Prefix,
+}
+
+type RulesMap = HashMap<Token, usize>;
+type InfixRules = RulesMap;
+type PrefixRules = RulesMap;
+
+lazy_static! {
+    static ref PREFIX_RULES: PrefixRules = hashmap!(
+         Token::Minus => 7,
+         Token::OpenParenthesis => 0
+    );
+    static ref INFIX_RULES: InfixRules = hashmap!(
+         Token::Plus => 5,
+         Token::Minus => 5,
+         Token::Star => 6,
+         Token::Divide => 6,
+         Token::CloseParenthesis => 0
+    );
+}
+
 impl Token {
-    pub fn bp(&self) -> usize {
-        match self {
-            Token::Plus => 5,
-            Token::Star => 6,
-            Token::Divide => 6,
-            _ => 0,
+    pub fn bp(&self, kind: AffixKind) -> Result<usize> {
+        match kind {
+            AffixKind::Prefix => PREFIX_RULES.get(self),
+            AffixKind::Infix => INFIX_RULES.get(self),
         }
+        .copied()
+        .with_context(|| format!("No rule specified for token {} as an {}", self, kind))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    /// Token is able to find a rule for corresponding kind of affix.
+    #[test]
+    fn finds_rule() {
+        assert_eq!(
+            Token::Minus.bp(AffixKind::Infix).expect("Rule not found"),
+            5
+        );
+
+        assert_eq!(
+            Token::Minus.bp(AffixKind::Prefix).expect("Rule not found"),
+            7
+        );
+    }
+
+    /// It throws an error if it doesn't find a corresponding rule.
+    #[test]
+    #[should_panic(expected = "Rule not found")]
+    fn rule_not_found() {
+        Token::Error.bp(AffixKind::Infix).expect("Rule not found");
     }
 }
