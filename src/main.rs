@@ -1,16 +1,19 @@
-mod chunk;
-mod debugger;
-mod vm;
-mod compiler;
-mod settings;
-mod utils;
+#[macro_use]
+extern crate lazy_static;
 
 use clap::Clap;
-use crate::chunk::{Opcode, Chunk};
-use crate::debugger::debug_chunk;
-use crate::vm::{VM};
+
 use settings::Settings;
 use utils::initialize;
+
+use crate::chunk::{Chunk, Opcode};
+use crate::vm::VM;
+
+mod chunk;
+mod parser;
+mod settings;
+mod utils;
+mod vm;
 
 fn main() {
     let settings = Settings::parse();

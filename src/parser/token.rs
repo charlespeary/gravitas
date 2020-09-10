@@ -1,12 +1,12 @@
-use logos::Logos;
+use std::collections::VecDeque;
+use std::iter::Fuse;
+use std::marker::PhantomData;
 
-#[derive(Logos, Debug)]
+use logos::Logos;
+use ordered_float::NotNan;
+
+#[derive(Logos, Debug, Clone, Hash, Eq, PartialEq)]
 pub enum Token {
-    #[error]
-    // We can also use this variant to define whitespace,
-    // or any other matches we wish to skip.
-    #[regex(r"[ \t\n\f]+", logos::skip)]
-    Error,
     #[token("|")]
     Bar,
     #[token("(")]
@@ -89,4 +89,26 @@ pub enum Token {
     Print,
     #[token("=>")]
     Arrow,
+    #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
+    Number(NotNan<f64>),
+    #[regex("\"[a-zA-Z]+\"", | lex | lex.slice().parse())]
+    Text(String),
+    #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
+    Identifier(String),
+    #[error]
+    // We can also use this variant to define whitespace,
+    // or any other matches we wish to skip.
+    #[regex(r"[ \t\n\f]+", logos::skip)]
+    Error,
+}
+
+impl Token {
+    pub fn bp(&self) -> usize {
+        match self {
+            Token::Plus => 5,
+            Token::Star => 6,
+            Token::Divide => 6,
+            _ => 0,
+        }
+    }
 }

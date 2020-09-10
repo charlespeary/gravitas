@@ -1,9 +1,14 @@
+use std::fs::read_to_string;
+use std::io::stdin;
+
+use anyhow::{Context, Result};
+
+use crate::parser::compile;
 use crate::settings::Settings;
 
-use std::io::stdin;
-use crate::compiler::compile;
-use std::fs::read_to_string;
-use anyhow::{Result, Context};
+pub use self::iter::{peek_nth, PeekNth};
+
+mod iter;
 
 pub fn initialize(settings: &Settings) -> Result<()> {
     if let Some(path) = &settings.file_path {

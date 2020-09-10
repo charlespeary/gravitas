@@ -137,13 +137,31 @@ version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "797b1f8a0571b331c1b47e7db245af3dc634838da7a92b3bef4e30376ae1c347"
 dependencies = [
- "beef",
- "fnv",
- "proc-macro2",
- "quote",
- "regex-syntax",
- "syn",
- "utf8-ranges",
+    "beef",
+    "fnv",
+    "proc-macro2",
+    "quote",
+    "regex-syntax",
+    "syn",
+    "utf8-ranges",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac267bcc07f48ee5f8935ab0d24f316fb722d7a1292e2913f0cc196b29ffd611"
+dependencies = [
+    "autocfg",
+]
+
+[[package]]
+name = "ordered-float"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fe9037165d7023b1228bc4ae9a2fa1a2b0095eca6c2998c624723dfd01314a5"
+dependencies = [
+    "num-traits",
 ]
 
 [[package]]
@@ -206,9 +224,11 @@ checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 name = "rlox"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "clap",
- "logos",
+    "anyhow",
+    "clap",
+    "lazy_static",
+    "logos",
+    "ordered-float",
 ]
 
 [[package]]
