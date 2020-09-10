@@ -105,7 +105,7 @@ pub enum Token {
 }
 
 #[derive(Display)]
-pub enum AffixKind {
+pub enum Affix {
     Infix,
     Prefix,
 }
@@ -129,13 +129,21 @@ lazy_static! {
 }
 
 impl Token {
-    pub fn bp(&self, kind: AffixKind) -> Result<usize> {
-        match kind {
-            AffixKind::Prefix => PREFIX_RULES.get(self),
-            AffixKind::Infix => INFIX_RULES.get(self),
+    /// Get binding power of the token
+    /// e.g infix minus should have smaller binding power
+    /// than infix star, so we can parse the expressions in correct order.
+    /// ```
+    ///         2 + 2 * 8
+    ///     should be parsed into   
+    /// Expr::Binary(2, + , Expr::Binary(2 * 8))
+    /// ```
+    pub fn bp(&self, affix: Affix) -> Result<usize> {
+        match affix {
+            Affix::Prefix => PREFIX_RULES.get(self),
+            Affix::Infix => INFIX_RULES.get(self),
         }
         .copied()
-        .with_context(|| format!("No rule specified for token {} as an {}", self, kind))
+        .with_context(|| format!("No rule specified for token {} as an {}", self, affix))
     }
 }
 
@@ -146,21 +154,15 @@ mod test {
     /// Token is able to find a rule for corresponding kind of affix.
     #[test]
     fn finds_rule() {
-        assert_eq!(
-            Token::Minus.bp(AffixKind::Infix).expect("Rule not found"),
-            5
-        );
+        assert_eq!(Token::Minus.bp(Affix::Infix).expect("Rule not found"), 5);
 
-        assert_eq!(
-            Token::Minus.bp(AffixKind::Prefix).expect("Rule not found"),
-            7
-        );
+        assert_eq!(Token::Minus.bp(Affix::Prefix).expect("Rule not found"), 7);
     }
 
     /// It throws an error if it doesn't find a corresponding rule.
     #[test]
     #[should_panic(expected = "Rule not found")]
     fn rule_not_found() {
-        Token::Error.bp(AffixKind::Infix).expect("Rule not found");
+        Token::Error.bp(Affix::Infix).expect("Rule not found");
     }
 }

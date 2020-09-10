@@ -1,9 +1,8 @@
-mod opcode;
-
-pub use crate::chunk::opcode::{Opcode, Value};
 use std::slice::Iter;
 
-#[derive(Debug)]
+use crate::bytecode::{Opcode, Value};
+
+#[derive(Debug, Default)]
 pub struct Chunk {
     code: Vec<Opcode>,
     constants: Vec<Value>,
@@ -19,7 +18,7 @@ impl Chunk {
 
     pub fn grow(&mut self, opcode: Opcode) -> usize {
         self.code.push(opcode);
-        return self.code.len() - 1;
+        self.code.len() - 1
     }
 
     pub fn add_constant(&mut self, constant: Value) -> u8 {
@@ -31,7 +30,10 @@ impl Chunk {
 
     // TODO: Handle longer constants
     pub fn read_constant(&self, index: u8) -> Value {
-        *self.constants.get(index as usize).expect("Chunk in wrong state!")
+        *self
+            .constants
+            .get(index as usize)
+            .expect("Chunk in wrong state!")
     }
 }
 
@@ -67,9 +69,9 @@ mod tests {
     }
 
     /// When we add a constant, an Opcode::Constant(u8) should be
-    /// added to the chunk.code, where u8 is the index of the constant stored in
-    /// chunk.constants and constant should be added to the chunk.constants. In return
-    /// we get the index of the newly added constant in chunk.constants.
+    /// added to the bytecode.code, where u8 is the index of the constant stored in
+    /// bytecode.constants and constant should be added to the bytecode.constants. In return
+    /// we get the index of the newly added constant in bytecode.constants.
     #[test]
     fn add_constant() {
         let mut chunk = Chunk::new();
@@ -80,7 +82,7 @@ mod tests {
         assert_eq!(chunk.code.len(), 1);
     }
 
-    /// We read constant at given index in the chunk.constants vector.
+    /// We read constant at given index in the bytecode.constants vector.
     #[test]
     fn read_constant() {
         let mut chunk = Chunk::new();

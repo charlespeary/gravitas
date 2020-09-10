@@ -1,8 +1,9 @@
-use crate::chunk::{Chunk, Opcode, Value};
-use anyhow::{Result, Context};
 use std::slice::Iter;
-use crate::settings::Settings;
 
+use anyhow::{Context, Result};
+
+use crate::bytecode::{Chunk, Opcode, Value};
+use crate::settings::Settings;
 
 #[derive(Debug)]
 pub struct VM {
@@ -28,7 +29,9 @@ impl VM {
     }
 
     fn pop_stack(&mut self) -> Result<Value> {
-        self.stack.pop().with_context(|| "Tried to pop value from an empty stack")
+        self.stack
+            .pop()
+            .with_context(|| "Tried to pop value from an empty stack")
     }
 
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<String> {
@@ -42,7 +45,7 @@ impl VM {
         }
 
         // this line isn't necessary, but somehow the Jetbrains plugin
-        // can't infer type for the into_iter on chunk, so I make the plugin
+        // can't infer type for the into_iter on bytecode, so I make the plugin
         // life a little bit easier :)
         let codes: Iter<Opcode> = chunk.into_iter();
         for opcode in codes {
@@ -73,7 +76,6 @@ impl VM {
     }
 }
 
-
 impl From<Settings> for VM {
     fn from(settings: Settings) -> Self {
         VM {
@@ -82,7 +84,6 @@ impl From<Settings> for VM {
         }
     }
 }
-
 
 // tests are empty for now, because I'm not yet sure whether VM will return the result of the interpretation
 #[cfg(test)]

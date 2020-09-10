@@ -17,7 +17,6 @@ pub fn initialize(settings: &Settings) -> Result<()> {
     } else {
         loop {
             println!("> ");
-            use std::io;
 
             let mut input = String::new();
             match stdin().read_line(&mut input) {

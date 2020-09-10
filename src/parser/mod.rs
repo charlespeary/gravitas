@@ -1,12 +1,13 @@
 use std::vec::IntoIter;
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{anyhow, Error, Result};
 use logos::Logos;
 
 pub use token::Token;
 
-use crate::parser::ast::{Atom, Expr};
-use crate::parser::token::AffixKind;
+use crate::bytecode::BytecodeGenerator;
+pub use crate::parser::ast::{Atom, Expr, Visitable, Visitor};
+use crate::parser::token::Affix;
 use crate::utils::{peek_nth, PeekNth};
 
 mod ast;
@@ -16,6 +17,8 @@ macro_rules! expect {
     ($self: ident, $token: path) => {{
         if !$self.peek_eq($token) {
             return Err(anyhow!("Expected {}!", $token));
+        } else {
+            $self.next_token();
         }
     }};
 }
@@ -26,7 +29,8 @@ pub fn compile(code: &str) {
     let tokens: Vec<Token> = Token::lexer(code).collect();
     // println!("{:#?}", tokens);
     let mut parser = Parser::new(tokens);
-    parser.compile();
+    let expr = parser.compile().unwrap();
+    BytecodeGenerator::default().visit(&expr);
 }
 
 pub struct Parser {
@@ -42,13 +46,20 @@ impl Parser {
         }
     }
 
-    pub fn compile(&mut self) {
-        let expr = self.expr(0);
-        println!("EXPR: {:#?}", expr);
+    pub fn compile(&mut self) -> Result<Expr> {
+        self.expr(0)
     }
 
-    fn peek_bp(&mut self, affix_kind: AffixKind) -> Result<usize> {
-        self.tokens.peek().map_or(Ok(0), |t| t.bp(affix_kind))
+    fn expect(&mut self, expected: Token, message: &'static str) -> Result<Token> {
+        if self.peek_eq(expected) {
+            Err(anyhow!(message))
+        } else {
+            Ok(self.next_token())
+        }
+    }
+
+    fn peek_bp(&mut self, affix: Affix) -> Result<usize> {
+        self.tokens.peek().map_or(Ok(0), |t| t.bp(affix))
     }
 
     fn peek_eq(&mut self, expected: Token) -> bool {
@@ -60,14 +71,14 @@ impl Parser {
     }
 
     fn expr(&mut self, rbp: usize) -> Result<Expr> {
-        let mut expr = self.nud()?;
-        while self.peek_bp(AffixKind::Infix)? > rbp {
-            expr = self.led(expr)?;
+        let mut expr = self.prefix()?;
+        while self.peek_bp(Affix::Infix)? > rbp {
+            expr = self.binary(expr)?;
         }
         Ok(expr)
     }
 
-    fn nud(&mut self) -> Result<Expr> {
+    fn prefix(&mut self) -> Result<Expr> {
         let token = self.next_token();
         match token {
             // handle atoms
@@ -83,7 +94,7 @@ impl Parser {
 
     fn grouping(&mut self) -> Result<Expr> {
         let open_paren = self.current_token();
-        let bp = open_paren.bp(AffixKind::Prefix)?;
+        let bp = open_paren.bp(Affix::Prefix)?;
         let expr = self.expr(bp)?;
 
         expect!(self, Token::CloseParenthesis);
@@ -95,7 +106,7 @@ impl Parser {
 
     fn unary(&mut self) -> Result<Expr> {
         let token = self.current_token();
-        let bp = token.bp(AffixKind::Prefix)?;
+        let bp = token.bp(Affix::Prefix)?;
         let expr = self.expr(bp)?;
 
         Ok(Expr::Unary {
@@ -103,9 +114,9 @@ impl Parser {
         })
     }
 
-    fn led(&mut self, left: Expr) -> Result<Expr> {
+    fn binary(&mut self, left: Expr) -> Result<Expr> {
         let operator = self.next_token();
-        let right = self.expr(operator.bp(AffixKind::Infix)?)?;
+        let right = self.expr(operator.bp(Affix::Infix)?)?;
 
         Ok(Expr::Binary {
             left: Box::new(left),
@@ -124,7 +135,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use anyhow::{Context, Error, Result};
+    use anyhow::{Error, Result};
 
     use crate::into_float;
 
@@ -198,6 +209,40 @@ mod test {
                 left: Box::new(Expr::Atom(Atom::Number(into_float!(10.0)))),
                 operator: Token::Plus,
                 right: Box::new(Expr::Atom(Atom::Number(into_float!(20.0)))),
+            }
+        )
+    }
+
+    #[test]
+    fn handles_complicated_binary() {
+        let mut parser = Parser::new(vec![
+            Token::OpenParenthesis,
+            Token::Number(into_float!(-1.0)),
+            Token::Plus,
+            Token::Number(into_float!(2.0)),
+            Token::CloseParenthesis,
+            Token::Star,
+            Token::Number(into_float!(3.0)),
+            Token::Minus,
+            Token::Number(into_float!(-4.0)),
+        ]);
+
+        assert_eq!(
+            parser.expr(0).unwrap(),
+            Expr::Binary {
+                left: Box::new(Expr::Binary {
+                    left: Box::new(Expr::Grouping {
+                        expr: Box::new(Expr::Binary {
+                            left: Box::new(Expr::Atom(Atom::Number(into_float!(-1.0)))),
+                            operator: Token::Plus,
+                            right: Box::new(Expr::Atom(Atom::Number(into_float!(2.0)))),
+                        })
+                    }),
+                    operator: Token::Star,
+                    right: Box::new(Expr::Atom(Atom::Number(into_float!(3.0)))),
+                },),
+                operator: Token::Minus,
+                right: Box::new(Expr::Atom(Atom::Number(into_float!(-4.0)))),
             }
         )
     }
