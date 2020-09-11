@@ -1,10 +1,14 @@
+use anyhow::Result;
+
 pub use chunk::Chunk;
-pub use opcode::{Opcode, Value};
+pub use opcode::Opcode;
+pub use value::Value;
 
 use crate::parser::{Atom, Expr, Visitable, Visitor};
 
 mod chunk;
 mod opcode;
+mod value;
 
 #[derive(Default)]
 pub struct BytecodeGenerator {
@@ -12,15 +16,19 @@ pub struct BytecodeGenerator {
 }
 
 impl Visitor<Expr> for BytecodeGenerator {
-    type Result = ();
+    type Result = Result<Chunk>;
 
-    fn visit(&mut self, expr: &Expr) {
-        println!("HELLO, {:?}", expr);
-
+    fn visit(&mut self, expr: &Expr) -> Self::Result {
         match expr {
             Expr::Atom(atom) => match atom {
                 Atom::Number(num) => {
-                    self.chunk.add_constant(*num);
+                    self.chunk.add_constant(Value::Number(*num));
+                }
+                Atom::Bool(bool) => {
+                    self.chunk.grow((*bool).into());
+                }
+                Atom::Null => {
+                    self.chunk.grow(Opcode::Null);
                 }
                 _ => unreachable!(),
             },
@@ -30,8 +38,8 @@ impl Visitor<Expr> for BytecodeGenerator {
                 right,
             } => {
                 left.accept(self);
-                self.chunk.grow(operator.clone().into());
                 right.accept(self);
+                self.chunk.grow(operator.clone().into());
             }
             Expr::Grouping { expr } => {
                 expr.accept(self);
@@ -41,6 +49,6 @@ impl Visitor<Expr> for BytecodeGenerator {
                 self.chunk.grow(Opcode::Negate);
             }
         };
-        println!("{:#?}", self.chunk);
+        Ok(self.chunk.clone())
     }
 }

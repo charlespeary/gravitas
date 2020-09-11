@@ -1,15 +1,16 @@
 use derive_more::Display;
-use ordered_float::NotNan;
 
 use crate::parser::Token;
 
-#[derive(Debug, Display, Eq, PartialEq)]
+#[derive(Debug, Display, PartialEq)]
 pub enum Atom {
     Text(String),
-    Number(NotNan<f64>),
+    Number(f64),
+    Bool(bool),
+    Null,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,

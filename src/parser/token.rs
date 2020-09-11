@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Result};
 use derive_more::Display;
 use logos::Logos;
-use ordered_float::NotNan;
 
 use crate::hashmap;
 
-#[derive(Logos, Debug, Display, Clone, Hash, Eq, PartialEq)]
+#[derive(Logos, Debug, Display, Clone, PartialEq)]
 pub enum Token {
     #[token("|")]
     Bar,
@@ -38,17 +37,17 @@ pub enum Token {
     #[token("!")]
     Bang,
     #[token("!=")]
-    BangEquals,
+    BangEqual,
     #[token("<")]
     Less,
     #[token("<=")]
-    LessEquals,
+    LessEqual,
     #[token(">")]
     Greater,
     #[token(">=")]
-    GreaterEquals,
+    GreaterEqual,
     #[token("==")]
-    Compare,
+    Equal,
     #[token("=")]
     Assign,
     #[token("//")]
@@ -92,7 +91,7 @@ pub enum Token {
     #[token("=>")]
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
-    Number(NotNan<f64>),
+    Number(f64),
     #[regex("\"[a-zA-Z]+\"", | lex | lex.slice().parse())]
     Text(String),
     #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
@@ -110,24 +109,6 @@ pub enum Affix {
     Prefix,
 }
 
-type RulesMap = HashMap<Token, usize>;
-type InfixRules = RulesMap;
-type PrefixRules = RulesMap;
-
-lazy_static! {
-    static ref PREFIX_RULES: PrefixRules = hashmap!(
-         Token::Minus => 7,
-         Token::OpenParenthesis => 0
-    );
-    static ref INFIX_RULES: InfixRules = hashmap!(
-         Token::Plus => 5,
-         Token::Minus => 5,
-         Token::Star => 6,
-         Token::Divide => 6,
-         Token::CloseParenthesis => 0
-    );
-}
-
 impl Token {
     /// Get binding power of the token
     /// e.g infix minus should have smaller binding power
@@ -138,14 +119,52 @@ impl Token {
     /// Expr::Binary(2, + , Expr::Binary(2 * 8))
     /// ```
     pub fn bp(&self, affix: Affix) -> Result<usize> {
-        match affix {
-            Affix::Prefix => PREFIX_RULES.get(self),
-            Affix::Infix => INFIX_RULES.get(self),
-        }
-        .copied()
-        .with_context(|| format!("No rule specified for token {} as an {}", self, affix))
+        let error = || {
+            Err(anyhow!(
+                "No rule specified for token {} as an {}",
+                self,
+                affix
+            ))
+        };
+
+        Ok(match affix {
+            Affix::Prefix => match self {
+                Token::Minus => 7,
+                Token::Bang => 7,
+                Token::OpenParenthesis => 0,
+                _ => return error(),
+            },
+            Affix::Infix => match self {
+                Token::BangEqual => 4,
+                Token::Equal => 4,
+                Token::Greater => 4,
+                Token::GreaterEqual => 4,
+                Token::Less => 4,
+                Token::LessEqual => 4,
+                Token::Plus => 5,
+                Token::Minus => 5,
+                Token::Star => 6,
+                Token::Divide => 6,
+                Token::CloseParenthesis => 0,
+                _ => return error(),
+            },
+        })
     }
 }
+
+// typedef enum {
+//     PREC_NONE,
+//     PREC_ASSIGNMENT,  // =
+//     PREC_OR,          // or
+//     PREC_AND,         // and
+//     PREC_EQUALITY,    // == !=
+//     PREC_COMPARISON,  // < > <= >=
+//     PREC_TERM,        // + -
+//     PREC_FACTOR,      // * /
+//     PREC_UNARY,       // ! -
+//     PREC_CALL,        // . ()
+//     PREC_PRIMARY
+// } Precedence;
 
 #[cfg(test)]
 mod test {

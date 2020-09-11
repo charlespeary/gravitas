@@ -1,11 +1,9 @@
 use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
-use logos::Logos;
 
 pub use token::Token;
 
-use crate::bytecode::BytecodeGenerator;
 pub use crate::parser::ast::{Atom, Expr, Visitable, Visitor};
 use crate::parser::token::Affix;
 use crate::utils::{peek_nth, PeekNth};
@@ -21,16 +19,6 @@ macro_rules! expect {
             $self.next_token();
         }
     }};
-}
-
-pub fn compile(code: &str) {
-    println!("Going to lex: {}", code);
-    // println!("{:#?}", Token::lexer("test").into_iter().collect::<Vec<_>>());
-    let tokens: Vec<Token> = Token::lexer(code).collect();
-    // println!("{:#?}", tokens);
-    let mut parser = Parser::new(tokens);
-    let expr = parser.compile().unwrap();
-    BytecodeGenerator::default().visit(&expr);
 }
 
 pub struct Parser {
@@ -84,9 +72,13 @@ impl Parser {
             // handle atoms
             Token::Text(text) => Ok(Expr::Atom(Atom::Text(text))),
             Token::Number(num) => Ok(Expr::Atom(Atom::Number(num))),
+            Token::False => Ok(Expr::Atom(Atom::Bool(false))),
+            Token::True => Ok(Expr::Atom(Atom::Bool(true))),
+            Token::Null => Ok(Expr::Atom(Atom::Null)),
             // handle prefixes
             Token::Minus => self.unary(),
             Token::OpenParenthesis => self.grouping(),
+            Token::Bang => self.unary(),
             // handle unknown stuff
             _ => Err(anyhow!("Tried to turn invalid token into atom!")),
         }
@@ -137,18 +129,13 @@ impl Parser {
 mod test {
     use anyhow::{Error, Result};
 
-    use crate::into_float;
-
     use super::*;
 
     // TODO: add tests for the error detection, error messages, struct helpers
     #[test]
     fn handles_numbers() {
-        let mut parser = Parser::new(vec![Token::Number(into_float!(60.0))]);
-        assert_eq!(
-            parser.expr(0).unwrap(),
-            Expr::Atom(Atom::Number(into_float!(60.0)))
-        );
+        let mut parser = Parser::new(vec![Token::Number(60.0)]);
+        assert_eq!(parser.expr(0).unwrap(), Expr::Atom(Atom::Number(60.0)));
     }
 
     #[test]
@@ -164,14 +151,14 @@ mod test {
     fn handles_grouping() {
         let mut parser = Parser::new(vec![
             Token::OpenParenthesis,
-            Token::Number(into_float!(10.0)),
+            Token::Number(10.0),
             Token::CloseParenthesis,
         ]);
 
         assert_eq!(
             parser.expr(0).unwrap(),
             Expr::Grouping {
-                expr: Box::new(Expr::Atom(Atom::Number(into_float!(10.0))))
+                expr: Box::new(Expr::Atom(Atom::Number(10.0)))
             }
         )
     }
@@ -181,7 +168,7 @@ mod test {
         let mut parser = Parser::new(vec![
             Token::Minus,
             Token::OpenParenthesis,
-            Token::Number(into_float!(10.0)),
+            Token::Number(10.0),
             Token::CloseParenthesis,
         ]);
 
@@ -189,7 +176,7 @@ mod test {
             parser.expr(0).unwrap(),
             Expr::Unary {
                 expr: Box::new(Expr::Grouping {
-                    expr: Box::new(Expr::Atom(Atom::Number(into_float!(10.0))))
+                    expr: Box::new(Expr::Atom(Atom::Number(10.0)))
                 })
             }
         )
@@ -197,18 +184,14 @@ mod test {
 
     #[test]
     fn handles_binary() {
-        let mut parser = Parser::new(vec![
-            Token::Number(into_float!(10.0)),
-            Token::Plus,
-            Token::Number(into_float!(20.0)),
-        ]);
+        let mut parser = Parser::new(vec![Token::Number(10.0), Token::Plus, Token::Number(20.0)]);
 
         assert_eq!(
             parser.expr(0).unwrap(),
             Expr::Binary {
-                left: Box::new(Expr::Atom(Atom::Number(into_float!(10.0)))),
+                left: Box::new(Expr::Atom(Atom::Number(10.0))),
                 operator: Token::Plus,
-                right: Box::new(Expr::Atom(Atom::Number(into_float!(20.0)))),
+                right: Box::new(Expr::Atom(Atom::Number(20.0))),
             }
         )
     }
@@ -217,14 +200,14 @@ mod test {
     fn handles_complicated_binary() {
         let mut parser = Parser::new(vec![
             Token::OpenParenthesis,
-            Token::Number(into_float!(-1.0)),
+            Token::Number(-1.0),
             Token::Plus,
-            Token::Number(into_float!(2.0)),
+            Token::Number(2.0),
             Token::CloseParenthesis,
             Token::Star,
-            Token::Number(into_float!(3.0)),
+            Token::Number(3.0),
             Token::Minus,
-            Token::Number(into_float!(-4.0)),
+            Token::Number(-4.0),
         ]);
 
         assert_eq!(
@@ -233,16 +216,16 @@ mod test {
                 left: Box::new(Expr::Binary {
                     left: Box::new(Expr::Grouping {
                         expr: Box::new(Expr::Binary {
-                            left: Box::new(Expr::Atom(Atom::Number(into_float!(-1.0)))),
+                            left: Box::new(Expr::Atom(Atom::Number(1.0))),
                             operator: Token::Plus,
-                            right: Box::new(Expr::Atom(Atom::Number(into_float!(2.0)))),
+                            right: Box::new(Expr::Atom(Atom::Number(2.0))),
                         })
                     }),
                     operator: Token::Star,
-                    right: Box::new(Expr::Atom(Atom::Number(into_float!(3.0)))),
+                    right: Box::new(Expr::Atom(Atom::Number(3.0))),
                 },),
                 operator: Token::Minus,
-                right: Box::new(Expr::Atom(Atom::Number(into_float!(-4.0)))),
+                right: Box::new(Expr::Atom(Atom::Number(-4.0))),
             }
         )
     }
@@ -253,22 +236,22 @@ mod test {
     #[test]
     fn handle_binding_power() {
         let mut parser = Parser::new(vec![
-            Token::Number(into_float!(2.0)),
+            Token::Number(2.0),
             Token::Plus,
-            Token::Number(into_float!(8.0)),
+            Token::Number(8.0),
             Token::Star,
-            Token::Number(into_float!(10.0)),
+            Token::Number(10.0),
         ]);
 
         assert_eq!(
             parser.expr(0).unwrap(),
             Expr::Binary {
-                left: Box::new(Expr::Atom(Atom::Number(into_float!(2.0)))),
+                left: Box::new(Expr::Atom(Atom::Number(2.0))),
                 operator: Token::Plus,
                 right: Box::new(Expr::Binary {
-                    left: Box::new(Expr::Atom(Atom::Number(into_float!(8.0)))),
+                    left: Box::new(Expr::Atom(Atom::Number(8.0))),
                     operator: Token::Star,
-                    right: Box::new(Expr::Atom(Atom::Number(into_float!(10.0)))),
+                    right: Box::new(Expr::Atom(Atom::Number(10.0))),
                 }),
             }
         )

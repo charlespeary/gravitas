@@ -2,7 +2,7 @@ use std::slice::Iter;
 
 use crate::bytecode::{Opcode, Value};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Chunk {
     code: Vec<Opcode>,
     constants: Vec<Value>,
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn add_constant() {
         let mut chunk = Chunk::new();
-        let constant = 10.0;
+        let constant = Value::Number(10.0);
         let constant_index = chunk.add_constant(constant);
         assert_eq!(chunk.code[0], Opcode::Constant(constant_index));
         assert_eq!(chunk.constants[constant_index as usize], constant);
@@ -86,7 +86,7 @@ mod tests {
     #[test]
     fn read_constant() {
         let mut chunk = Chunk::new();
-        let constant = 10.0;
+        let constant = Value::Number(10.0);
         let constant_index = chunk.add_constant(constant);
         assert_eq!(chunk.read_constant(constant_index), constant);
     }
