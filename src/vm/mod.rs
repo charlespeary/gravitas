@@ -45,14 +45,6 @@ impl VM {
             }};
         }
 
-        // macro_rules! compare {
-        //     ($operator:tt) => {{
-        //         let a = self.pop_stack()?.as_number()?;
-        //         let b = self.pop_stack()?.as_number()?;
-        //         self.stack.push( Value::Bool(a $operator b))
-        //     }}
-        // }
-
         // this line isn't necessary, but somehow the Jetbrains plugin
         // can't infer type for the into_iter on bytecode, so I make the plugin
         // life a little bit easier :)
@@ -65,22 +57,18 @@ impl VM {
             }
 
             match opcode {
-                Opcode::Constant(index) => {
-                    self.stack.push(chunk.read_constant(*index));
-                }
-                Opcode::True => {
-                    println!("That's true");
-                }
-                Opcode::False => {
-                    println!("That's false");
-                }
-                Opcode::Null => {
-                    println!("boo! null...");
-                }
+                Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index)),
+                Opcode::True => self.stack.push(Value::Bool(true)),
+                Opcode::False => self.stack.push(Value::Bool(false)),
+                Opcode::Null => self.stack.push(Value::Null),
                 Opcode::Negate => {
                     let value = self.pop_stack()?;
                     let negated = value.neg()?;
                     self.stack.push(negated);
+                }
+                Opcode::Not => {
+                    let value: bool = self.pop_stack()?.into();
+                    self.stack.push(Value::Bool(value));
                 }
                 Opcode::Add => bin_op!(+, 'm'),
                 Opcode::Subtract => bin_op!(-, 'm'),

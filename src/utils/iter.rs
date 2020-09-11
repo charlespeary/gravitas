@@ -57,8 +57,6 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::parser::Token;
-
     use super::peek_nth as into_peek_nth;
     use super::*;
 

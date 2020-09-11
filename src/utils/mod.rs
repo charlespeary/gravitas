@@ -55,3 +55,28 @@ macro_rules! hashmap {
         hashmap
     }};
 }
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    // macro creates correct HashMap
+    #[test]
+    fn hashmap() {
+        let standard_map: HashMap<&str, i32> = {
+            let mut map = HashMap::new();
+            map.insert("one", 1);
+            map.insert("two", 2);
+            map.insert("three", 3);
+            map
+        };
+
+        let map_from_macro = hashmap!(
+            "one" => 1,
+            "two" => 2,
+            "three" =>3
+        );
+
+        assert_eq!(standard_map, map_from_macro);
+    }
+}

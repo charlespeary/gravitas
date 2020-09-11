@@ -69,23 +69,30 @@ impl Parser {
     fn prefix(&mut self) -> Result<Expr> {
         let token = self.next_token();
         match token {
-            // handle atoms
+            Token::Minus => self.unary(),
+            Token::Bang => self.unary(),
+            Token::OpenParenthesis => self.grouping(),
+            _ => self.atom(),
+        }
+    }
+
+    fn atom(&mut self) -> Result<Expr> {
+        let token = self.next_token();
+        match token {
             Token::Text(text) => Ok(Expr::Atom(Atom::Text(text))),
             Token::Number(num) => Ok(Expr::Atom(Atom::Number(num))),
             Token::False => Ok(Expr::Atom(Atom::Bool(false))),
             Token::True => Ok(Expr::Atom(Atom::Bool(true))),
             Token::Null => Ok(Expr::Atom(Atom::Null)),
-            // handle prefixes
-            Token::Minus => self.unary(),
-            Token::OpenParenthesis => self.grouping(),
-            Token::Bang => self.unary(),
-            // handle unknown stuff
-            _ => Err(anyhow!("Tried to turn invalid token into atom!")),
+            _ => Err(anyhow!(
+                "This token is not supported by the parser: {}",
+                token
+            )),
         }
     }
 
     fn grouping(&mut self) -> Result<Expr> {
-        let open_paren = self.current_token();
+        let open_paren = self.next_token();
         let bp = open_paren.bp(Affix::Prefix)?;
         let expr = self.expr(bp)?;
 
@@ -97,12 +104,13 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expr> {
-        let token = self.current_token();
-        let bp = token.bp(Affix::Prefix)?;
+        let operator = self.next_token();
+        let bp = operator.bp(Affix::Prefix)?;
         let expr = self.expr(bp)?;
 
         Ok(Expr::Unary {
             expr: Box::new(expr),
+            operator,
         })
     }
 
@@ -175,9 +183,10 @@ mod test {
         assert_eq!(
             parser.expr(0).unwrap(),
             Expr::Unary {
+                operator: Token::Minus,
                 expr: Box::new(Expr::Grouping {
                     expr: Box::new(Expr::Atom(Atom::Number(10.0)))
-                })
+                }),
             }
         )
     }

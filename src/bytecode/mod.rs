@@ -4,7 +4,7 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::Value;
 
-use crate::parser::{Atom, Expr, Visitable, Visitor};
+use crate::parser::{Atom, Expr, Token, Visitable, Visitor};
 
 mod chunk;
 mod opcode;
@@ -44,9 +44,14 @@ impl Visitor<Expr> for BytecodeGenerator {
             Expr::Grouping { expr } => {
                 expr.accept(self);
             }
-            Expr::Unary { expr } => {
+            Expr::Unary { expr, operator } => {
                 expr.accept(self);
-                self.chunk.grow(Opcode::Negate);
+                let opcode = match operator {
+                    Token::Bang => Opcode::Not,
+                    Token::Minus => Opcode::Negate,
+                    _ => unreachable!(),
+                };
+                self.chunk.grow(opcode);
             }
         };
         Ok(self.chunk.clone())

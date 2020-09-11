@@ -1,6 +1,11 @@
 extern crate derive_more;
 #[macro_use]
 extern crate lazy_static;
+#[cfg(test)]
+extern crate quickcheck;
+#[cfg(test)]
+#[macro_use(quickcheck)]
+extern crate quickcheck_macros;
 
 use anyhow::Result;
 use clap::Clap;

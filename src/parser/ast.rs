@@ -19,6 +19,7 @@ pub enum Expr {
     },
     Unary {
         expr: Box<Expr>,
+        operator: Token,
     },
     Grouping {
         expr: Box<Expr>,
@@ -38,8 +39,8 @@ impl Expr {
                 print!(" {} ", operator);
                 right.print();
             }
-            Expr::Unary { expr } => {
-                print!("-(");
+            Expr::Unary { expr, operator } => {
+                print!("{}(", operator);
                 expr.print();
                 print!(")");
             }

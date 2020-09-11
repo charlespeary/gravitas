@@ -11,5 +11,8 @@ anyhow = "1.0.32"
 clap = "3.0.0-beta.1"
 logos = "0.11.4"
 lazy_static = "1.4.0"
-ordered-float = "2.0.0"
 derive_more = "0.99.9"
+
+[dev-dependencies]
+quickcheck = "0.9"
+quickcheck_macros = "0.9"
