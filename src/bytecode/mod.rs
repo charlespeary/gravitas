@@ -30,7 +30,9 @@ impl Visitor<Expr> for BytecodeGenerator {
                 Atom::Null => {
                     self.chunk.grow(Opcode::Null);
                 }
-                _ => unreachable!(),
+                Atom::Text(string) => {
+                    self.chunk.add_constant(Value::String(string.clone()));
+                }
             },
             Expr::Binary {
                 left,

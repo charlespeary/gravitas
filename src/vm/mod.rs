@@ -33,9 +33,10 @@ impl VM {
         macro_rules! bin_op {
             // macro for math operations
             ($operator:tt, 'm') => {{
-                let a = self.pop_stack()?.as_number()?;
-                let b = self.pop_stack()?.as_number()?;
-                self.stack.push( Value::Number(a $operator b))
+                let a = self.pop_stack()?;
+                let b = self.pop_stack()?;
+                let result = a $operator b;
+                self.stack.push(result?)
             }};
             // macro for logical operations
              ($operator:tt, 'l') => {{
@@ -57,7 +58,7 @@ impl VM {
             }
 
             match opcode {
-                Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index)),
+                Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index).clone()),
                 Opcode::True => self.stack.push(Value::Bool(true)),
                 Opcode::False => self.stack.push(Value::Bool(false)),
                 Opcode::Null => self.stack.push(Value::Null),

@@ -59,14 +59,14 @@ dependencies = [
     "atty",
     "bitflags",
     "clap_derive",
- "indexmap",
- "lazy_static",
- "os_str_bytes",
- "strsim",
- "termcolor",
- "textwrap",
- "unicode-width",
- "vec_map",
+    "indexmap",
+    "lazy_static",
+    "os_str_bytes",
+    "strsim",
+    "termcolor",
+    "textwrap",
+    "unicode-width",
+    "vec_map",
 ]
 
 [[package]]
@@ -229,8 +229,8 @@ dependencies = [
     "proc-macro-error-attr",
     "proc-macro2",
     "quote",
- "syn",
- "version_check",
+    "syn",
+    "version_check",
 ]
 
 [[package]]

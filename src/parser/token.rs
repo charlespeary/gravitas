@@ -92,7 +92,7 @@ pub enum Token {
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
     Number(f64),
-    #[regex("\"[a-zA-Z]+\"", | lex | lex.slice().parse())]
+    #[regex("\"[a-zA-Z ]+\"", | lex | lex.slice().parse())]
     Text(String),
     #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
     Identifier(String),

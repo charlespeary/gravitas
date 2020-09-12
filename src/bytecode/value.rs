@@ -1,13 +1,14 @@
-use std::ops::Neg;
+use std::ops::{Add, Neg, Sub};
 
 use anyhow::{anyhow, Result};
 
 type Number = f64;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Value {
     Number(f64),
     Bool(bool),
+    String(String),
     Null,
 }
 
@@ -22,10 +23,49 @@ impl Neg for Value {
     }
 }
 
+impl Add for Value {
+    type Output = Result<Value>;
+
+    fn add(self, other: Self) -> Self::Output {
+        Ok(match (self, other) {
+            (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
+            (Value::String(a), Value::String(b)) => Value::String(format!("{}{}", a, b)),
+            _ => {
+                return Err(anyhow!(
+                    "Tried to add values that doesn't implement addition."
+                ))
+            }
+        })
+    }
+}
+
+macro_rules! implement_operation_for_value (
+    ($trait:ty, $operator: tt, $fn_name: ident ) => {
+    impl $trait for Value {
+         type Output = Result<Value>;
+
+        fn $fn_name(self, other: Self) -> Self::Output {
+            Ok(match (self, other) {
+                (Value::Number(a), Value::Number(b)) => Value::Number(a $operator b),
+                _ => {
+                    return Err(anyhow!(
+                        "Tried to add values that doesn't implement addition."
+                    ))
+                }
+            })
+        }
+    }
+    }
+);
+
+implement_operation_for_value!(std::ops::Sub, -, sub);
+implement_operation_for_value!(std::ops::Mul, *, mul);
+implement_operation_for_value!(std::ops::Div, /, div);
+
 impl Value {
-    pub fn as_number(self) -> Result<Number> {
+    pub fn as_number(&self) -> Result<Number> {
         match self {
-            Value::Number(num) => Ok(num),
+            Value::Number(num) => Ok(*num),
             _ => Err(anyhow!("This isn't a number!")),
         }
     }
@@ -34,9 +74,9 @@ impl Value {
 impl Into<bool> for Value {
     fn into(self) -> bool {
         match self {
-            Value::Number(_) => true,
             Value::Null => false,
             Value::Bool(value) => value,
+            _ => true,
         }
     }
 }

@@ -29,9 +29,8 @@ impl Chunk {
     }
 
     // TODO: Handle longer constants
-    pub fn read_constant(&self, index: u8) -> Value {
-        *self
-            .constants
+    pub fn read_constant(&self, index: u8) -> &Value {
+        self.constants
             .get(index as usize)
             .expect("Chunk in wrong state!")
     }
@@ -88,7 +87,7 @@ mod tests {
         let mut chunk = Chunk::new();
         let constant = Value::Number(10.0);
         let constant_index = chunk.add_constant(constant);
-        assert_eq!(chunk.read_constant(constant_index), constant);
+        assert_eq!(chunk.read_constant(constant_index), &constant);
     }
 
     /// For now this function should panic when we access the wrong constant.

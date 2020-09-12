@@ -38,20 +38,16 @@ impl Parser {
         self.expr(0)
     }
 
-    fn expect(&mut self, expected: Token, message: &'static str) -> Result<Token> {
-        if self.peek_eq(expected) {
-            Err(anyhow!(message))
-        } else {
-            Ok(self.next_token())
-        }
-    }
-
     fn peek_bp(&mut self, affix: Affix) -> Result<usize> {
         self.tokens.peek().map_or(Ok(0), |t| t.bp(affix))
     }
 
     fn peek_eq(&mut self, expected: Token) -> bool {
         self.tokens.peek().map_or(false, |t| t == &expected)
+    }
+
+    fn peek_token(&mut self) -> &Token {
+        self.tokens.peek().expect("Tried to peek empty iterator")
     }
 
     fn next_token(&mut self) -> Token {
@@ -67,7 +63,7 @@ impl Parser {
     }
 
     fn prefix(&mut self) -> Result<Expr> {
-        let token = self.next_token();
+        let token = self.peek_token();
         match token {
             Token::Minus => self.unary(),
             Token::Bang => self.unary(),
@@ -123,13 +119,6 @@ impl Parser {
             operator,
             right: Box::new(right),
         })
-    }
-
-    fn current_token(&self) -> &Token {
-        self.tokens
-            .current
-            .as_ref()
-            .expect("Tried to access token too early!")
     }
 }
 
@@ -225,7 +214,7 @@ mod test {
                 left: Box::new(Expr::Binary {
                     left: Box::new(Expr::Grouping {
                         expr: Box::new(Expr::Binary {
-                            left: Box::new(Expr::Atom(Atom::Number(1.0))),
+                            left: Box::new(Expr::Atom(Atom::Number(-1.0))),
                             operator: Token::Plus,
                             right: Box::new(Expr::Atom(Atom::Number(2.0))),
                         })
