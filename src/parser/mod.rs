@@ -1,10 +1,11 @@
+use std::io::repeat;
 use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
 
 pub use token::Token;
 
-pub use crate::parser::ast::{Atom, Expr, Visitable, Visitor};
+pub use crate::parser::ast::{Atom, Expr, Stmt, Visitable, Visitor};
 use crate::parser::token::Affix;
 use crate::utils::{peek_nth, PeekNth};
 
@@ -24,22 +25,44 @@ macro_rules! expect {
 pub struct Parser {
     errors: Vec<Error>,
     tokens: PeekNth<IntoIter<Token>>,
+    stmts: Vec<Stmt>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
             errors: Vec::new(),
+            stmts: Vec::new(),
             tokens: peek_nth(tokens.into_iter()),
         }
     }
 
-    pub fn compile(&mut self) -> Result<Expr> {
-        self.expr(0)
+    // UTILITIES
+
+    pub fn parse(mut self) -> Result<Vec<Stmt>, Vec<Error>> {
+        while self.tokens.peek().is_some() {
+            match self.stmt() {
+                Ok(stmt) => {
+                    self.stmts.push(stmt);
+                }
+                Err(e) => {
+                    self.errors.push(e);
+                    // while !self.peek_token().is_stmt() {
+                    //     self.next_token();
+                    // }
+                }
+            }
+        }
+
+        if self.errors.is_empty() {
+            Ok(self.stmts)
+        } else {
+            Err(self.errors)
+        }
     }
 
-    fn peek_bp(&mut self, affix: Affix) -> Result<usize> {
-        self.tokens.peek().map_or(Ok(0), |t| t.bp(affix))
+    fn peek_bp(&mut self, affix: Affix) -> usize {
+        self.tokens.peek().map_or(0, |t| t.bp(affix))
     }
 
     fn peek_eq(&mut self, expected: Token) -> bool {
@@ -54,10 +77,12 @@ impl Parser {
         self.tokens.next().expect("Tried to iterate empty iterator")
     }
 
+    // EXPRESSIONS
+
     fn expr(&mut self, rbp: usize) -> Result<Expr> {
         let mut expr = self.prefix()?;
-        while self.peek_bp(Affix::Infix)? > rbp {
-            expr = self.binary(expr)?;
+        while self.peek_bp(Affix::Infix) > rbp {
+            expr = self.binary_expr(expr)?;
         }
         Ok(expr)
     }
@@ -65,14 +90,25 @@ impl Parser {
     fn prefix(&mut self) -> Result<Expr> {
         let token = self.peek_token();
         match token {
-            Token::Minus => self.unary(),
-            Token::Bang => self.unary(),
-            Token::OpenParenthesis => self.grouping(),
-            _ => self.atom(),
+            Token::Minus => self.unary_expr(),
+            Token::Bang => self.unary_expr(),
+            Token::Identifier(_) => self.var_expr(),
+            Token::OpenParenthesis => self.grouping_expr(),
+            Token::OpenBrace => self.block_expr(),
+            _ => self.atom_expr(),
         }
     }
 
-    fn atom(&mut self) -> Result<Expr> {
+    fn var_expr(&mut self) -> Result<Expr> {
+        let token = self.next_token();
+        if let Ok(identifier) = token.into_identifier() {
+            Ok(Expr::Var { identifier })
+        } else {
+            Err(anyhow!("Invalid token got into var_expr call!"))
+        }
+    }
+
+    fn atom_expr(&mut self) -> Result<Expr> {
         let token = self.next_token();
         match token {
             Token::Text(text) => Ok(Expr::Atom(Atom::Text(text))),
@@ -87,9 +123,9 @@ impl Parser {
         }
     }
 
-    fn grouping(&mut self) -> Result<Expr> {
+    fn grouping_expr(&mut self) -> Result<Expr> {
         let open_paren = self.next_token();
-        let bp = open_paren.bp(Affix::Prefix)?;
+        let bp = open_paren.bp(Affix::Prefix);
         let expr = self.expr(bp)?;
 
         expect!(self, Token::CloseParenthesis);
@@ -99,9 +135,9 @@ impl Parser {
         })
     }
 
-    fn unary(&mut self) -> Result<Expr> {
+    fn unary_expr(&mut self) -> Result<Expr> {
         let operator = self.next_token();
-        let bp = operator.bp(Affix::Prefix)?;
+        let bp = operator.bp(Affix::Prefix);
         let expr = self.expr(bp)?;
 
         Ok(Expr::Unary {
@@ -110,9 +146,9 @@ impl Parser {
         })
     }
 
-    fn binary(&mut self, left: Expr) -> Result<Expr> {
+    fn binary_expr(&mut self, left: Expr) -> Result<Expr> {
         let operator = self.next_token();
-        let right = self.expr(operator.bp(Affix::Infix)?)?;
+        let right = self.expr(operator.bp(Affix::Infix))?;
 
         Ok(Expr::Binary {
             left: Box::new(left),
@@ -120,23 +156,73 @@ impl Parser {
             right: Box::new(right),
         })
     }
+
+    fn block_expr(&mut self) -> Result<Expr> {
+        expect!(self, Token::OpenBrace);
+
+        let mut body: Vec<Stmt> = Vec::new();
+
+        while !self.peek_eq(Token::CloseBrace) {
+            body.push(self.stmt()?);
+        }
+
+        expect!(self, Token::CloseBrace);
+
+        Ok(Expr::Block { body })
+    }
+
+    // STATEMENTS
+
+    fn stmt(&mut self) -> Result<Stmt> {
+        match self.peek_token() {
+            Token::Print => self.print_stmt(),
+            Token::Var => self.var_stmt(),
+            _ => self.expr_stmt(),
+        }
+    }
+
+    fn print_stmt(&mut self) -> Result<Stmt> {
+        let _token = self.next_token();
+        let expr = self.expr(0)?;
+        expect!(self, Token::Semicolon);
+        Ok(Stmt::Print { expr })
+    }
+
+    fn expr_stmt(&mut self) -> Result<Stmt> {
+        let expr = self.expr(0)?;
+        let terminated = self.peek_eq(Token::Semicolon);
+        if terminated {
+            self.next_token();
+        }
+        Ok(Stmt::Expr { expr, terminated })
+    }
+
+    fn var_stmt(&mut self) -> Result<Stmt> {
+        let _token = self.next_token();
+        if let Ok(identifier) = self.next_token().into_identifier() {
+            expect!(self, Token::Assign);
+            let expr = self.expr(0)?;
+            expect!(self, Token::Semicolon);
+            Ok(Stmt::Var { expr, identifier })
+        } else {
+            Err(anyhow!("Something went wrong"))
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use anyhow::{Error, Result};
-
     use super::*;
 
     // TODO: add tests for the error detection, error messages, struct helpers
     #[test]
-    fn handles_numbers() {
+    fn number_atom() {
         let mut parser = Parser::new(vec![Token::Number(60.0)]);
         assert_eq!(parser.expr(0).unwrap(), Expr::Atom(Atom::Number(60.0)));
     }
 
     #[test]
-    fn handles_strings() {
+    fn string_atom() {
         let mut parser = Parser::new(vec![Token::Text(String::from("hello"))]);
         assert_eq!(
             parser.expr(0).unwrap(),
@@ -145,7 +231,7 @@ mod test {
     }
 
     #[test]
-    fn handles_grouping() {
+    fn grouping_expr() {
         let mut parser = Parser::new(vec![
             Token::OpenParenthesis,
             Token::Number(10.0),
@@ -161,7 +247,7 @@ mod test {
     }
 
     #[test]
-    fn handles_unary() {
+    fn unary_expr() {
         let mut parser = Parser::new(vec![
             Token::Minus,
             Token::OpenParenthesis,
@@ -181,7 +267,7 @@ mod test {
     }
 
     #[test]
-    fn handles_binary() {
+    fn binary_expr() {
         let mut parser = Parser::new(vec![Token::Number(10.0), Token::Plus, Token::Number(20.0)]);
 
         assert_eq!(
@@ -195,7 +281,7 @@ mod test {
     }
 
     #[test]
-    fn handles_complicated_binary() {
+    fn complicated_binary_expr() {
         let mut parser = Parser::new(vec![
             Token::OpenParenthesis,
             Token::Number(-1.0),
@@ -253,5 +339,72 @@ mod test {
                 }),
             }
         )
+    }
+
+    #[test]
+    fn var_expr() {
+        let mut parser = Parser::new(vec![Token::Identifier(String::from("variable"))]);
+
+        assert_eq!(
+            parser.expr(0).unwrap(),
+            Expr::Var {
+                identifier: String::from("variable")
+            }
+        )
+    }
+
+    #[test]
+    fn print_stmt() {
+        assert_eq!(
+            Parser::new(vec![
+                Token::Print,
+                Token::Identifier(String::from("variable")),
+                Token::Semicolon,
+            ])
+            .stmt()
+            .unwrap(),
+            Stmt::Print {
+                expr: Expr::Var {
+                    identifier: String::from("variable")
+                }
+            }
+        );
+        assert_eq!(
+            Parser::new(vec![
+                Token::Print,
+                Token::Number(10.0),
+                Token::Plus,
+                Token::Number(20.0),
+                Token::Semicolon,
+            ])
+            .stmt()
+            .unwrap(),
+            Stmt::Print {
+                expr: Expr::Binary {
+                    left: Box::new(Expr::Atom(Atom::Number(10.0))),
+                    operator: Token::Plus,
+                    right: Box::new(Expr::Atom(Atom::Number(20.0))),
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn var_stmt() {
+        assert_eq!(
+            Parser::new(vec![
+                Token::Var,
+                Token::Identifier(String::from("variable")),
+                Token::Assign,
+                Token::Number(10.0),
+                Token::Semicolon,
+            ])
+            .stmt()
+            .unwrap(),
+            Stmt::Var {
+                identifier: String::from("variable"),
+                expr: Expr::Atom(Atom::Number(10.0)),
+            }
+        );
     }
 }

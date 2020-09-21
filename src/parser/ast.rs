@@ -17,6 +17,9 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Var {
+        identifier: String,
+    },
     Unary {
         expr: Box<Expr>,
         operator: Token,
@@ -24,7 +27,22 @@ pub enum Expr {
     Grouping {
         expr: Box<Expr>,
     },
+    Block {
+        body: Vec<Stmt>,
+    },
     Atom(Atom),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Stmt {
+    // Expressions
+    Expr { expr: Expr, terminated: bool },
+    // Declarations
+    Var { expr: Expr, identifier: String },
+    // Class,
+    // Func,
+    // Side effects
+    Print { expr: Expr },
 }
 
 impl Expr {
@@ -52,6 +70,16 @@ impl Expr {
                 expr.print();
                 print!(")");
             }
+            Expr::Var { identifier } => {
+                print!("var<{}>", identifier);
+            }
+            Expr::Block { body } => {
+                print!("{{");
+                for stmt in body {
+                    print!("stmt ");
+                }
+                print!("}}");
+            }
         }
     }
 }
@@ -71,3 +99,5 @@ pub trait Visitable: Sized {
 }
 
 impl Visitable for Expr {}
+
+impl Visitable for Stmt {}

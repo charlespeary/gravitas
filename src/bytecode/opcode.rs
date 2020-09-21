@@ -22,8 +22,16 @@ pub enum Opcode {
     LessEqual,
     Greater,
     GreaterEqual,
-    //
+    // ?
     Return,
+    // Side effects
+    Print,
+    Pop,
+    PopN(u8),
+    // Variables
+    DefineVar,
+    GetVar,
+    AssignVar,
 }
 
 impl From<Token> for Opcode {
@@ -39,6 +47,7 @@ impl From<Token> for Opcode {
             Token::LessEqual => Opcode::LessEqual,
             Token::Greater => Opcode::Greater,
             Token::GreaterEqual => Opcode::GreaterEqual,
+            Token::Assign => Opcode::AssignVar,
             _ => panic!("Can't transform {} into opcode.", token),
         }
     }

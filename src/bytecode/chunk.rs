@@ -9,13 +9,6 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn new() -> Self {
-        Self {
-            code: vec![],
-            constants: vec![],
-        }
-    }
-
     pub fn grow(&mut self, opcode: Opcode) -> usize {
         self.code.push(opcode);
         self.code.len() - 1
@@ -54,7 +47,7 @@ mod tests {
     fn grow() {
         // It returns the index where opcode is stored and
         // grows its size by 1
-        let mut chunk = Chunk::new();
+        let mut chunk = Chunk::default();
         assert_eq!(chunk.grow(Opcode::Return), 0);
         assert_eq!(chunk.code.len(), 1);
 
@@ -73,9 +66,9 @@ mod tests {
     /// we get the index of the newly added constant in bytecode.constants.
     #[test]
     fn add_constant() {
-        let mut chunk = Chunk::new();
+        let mut chunk = Chunk::default();
         let constant = Value::Number(10.0);
-        let constant_index = chunk.add_constant(constant);
+        let constant_index = chunk.add_constant(constant.clone());
         assert_eq!(chunk.code[0], Opcode::Constant(constant_index));
         assert_eq!(chunk.constants[constant_index as usize], constant);
         assert_eq!(chunk.code.len(), 1);
@@ -84,9 +77,9 @@ mod tests {
     /// We read constant at given index in the bytecode.constants vector.
     #[test]
     fn read_constant() {
-        let mut chunk = Chunk::new();
+        let mut chunk = Chunk::default();
         let constant = Value::Number(10.0);
-        let constant_index = chunk.add_constant(constant);
+        let constant_index = chunk.add_constant(constant.clone());
         assert_eq!(chunk.read_constant(constant_index), &constant);
     }
 
@@ -95,7 +88,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn read_invalid_constant() {
-        let chunk = Chunk::new();
+        let chunk = Chunk::default();
         chunk.read_constant(100);
     }
 }

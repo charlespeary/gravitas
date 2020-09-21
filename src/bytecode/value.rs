@@ -1,14 +1,17 @@
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Neg};
 
 use anyhow::{anyhow, Result};
+use derive_more::Display;
+use enum_as_inner::EnumAsInner;
 
-type Number = f64;
+pub type Number = f64;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Display, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Value {
-    Number(f64),
+    Number(Number),
     Bool(bool),
     String(String),
+    Variable(String),
     Null,
 }
 
@@ -39,37 +42,41 @@ impl Add for Value {
     }
 }
 
-macro_rules! implement_operation_for_value (
-    ($trait:ty, $operator: tt, $fn_name: ident ) => {
-    impl $trait for Value {
-         type Output = Result<Value>;
+macro_rules! implement_operations_for_value (
+    ($($trait:ident $fn_name: ident,) *) => {
+        $(
+            impl std::ops::$trait for Value {
+                 type Output = Result<Value>;
 
-        fn $fn_name(self, other: Self) -> Self::Output {
-            Ok(match (self, other) {
-                (Value::Number(a), Value::Number(b)) => Value::Number(a $operator b),
-                _ => {
-                    return Err(anyhow!(
-                        "Tried to add values that doesn't implement addition."
-                    ))
+                fn $fn_name(self, other: Self) -> Self::Output {
+                    Ok(match (self, other) {
+                        (Value::Number(a), Value::Number(b)) => Value::Number(std::ops::$trait::$fn_name(a,b)),
+                        _ => {
+                            return Err(anyhow!(
+                                "Math operation on unsupported type!"
+                            ))
+                        }
+                    })
                 }
-            })
-        }
-    }
+            }
+        )*
     }
 );
 
-implement_operation_for_value!(std::ops::Sub, -, sub);
-implement_operation_for_value!(std::ops::Mul, *, mul);
-implement_operation_for_value!(std::ops::Div, /, div);
+implement_operations_for_value!(
+    Sub sub,
+    Mul mul,
+    Div div,
+);
 
-impl Value {
-    pub fn as_number(&self) -> Result<Number> {
-        match self {
-            Value::Number(num) => Ok(*num),
-            _ => Err(anyhow!("This isn't a number!")),
-        }
-    }
-}
+// impl Value {
+//     pub fn as_number(&self) -> Result<Number> {
+//         match self {
+//             Value::Number(num) => Ok(*num),
+//             _ => Err(anyhow!("This isn't a number!")),
+//         }
+//     }
+// }
 
 impl Into<bool> for Value {
     fn into(self) -> bool {
@@ -89,17 +96,16 @@ mod test {
 
     // Value should return Ok(num) if it's a Value::Number
     #[quickcheck]
-    fn ok_as_number(number: f64) -> Result<()> {
-        Value::Number(number).as_number()?;
-        Ok(())
+    fn ok_as_number(number: f64) {
+        assert!(Value::Number(number).into_number().is_ok());
     }
 
     // Value should return Err if it's not a Value::Number
     #[test]
     fn fail_as_number() {
-        assert!(Value::Bool(false).as_number().is_err());
-        assert!(Value::Bool(true).as_number().is_err());
-        assert!(Value::Null.as_number().is_err());
+        assert!(Value::Bool(false).into_number().is_err());
+        assert!(Value::Bool(true).into_number().is_err());
+        assert!(Value::Null.into_number().is_err());
     }
 
     // Number values can be negated via unary - operator, but unsupported values should fail

@@ -94,6 +94,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum-as-inner"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
+dependencies = [
+    "heck",
+    "proc-macro2",
+    "quote",
+    "syn",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -353,6 +365,7 @@ dependencies = [
     "anyhow",
     "clap",
     "derive_more",
+    "enum-as-inner",
     "lazy_static",
     "logos",
     "quickcheck",

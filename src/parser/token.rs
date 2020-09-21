@@ -1,12 +1,8 @@
-use std::collections::HashMap;
-
-use anyhow::{anyhow, Result};
 use derive_more::Display;
+use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
-use crate::hashmap;
-
-#[derive(Logos, Debug, Display, Clone, PartialEq)]
+#[derive(Logos, Debug, Display, Clone, PartialEq, EnumAsInner)]
 pub enum Token {
     #[token("|")]
     Bar,
@@ -92,13 +88,11 @@ pub enum Token {
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
     Number(f64),
-    #[regex("\"[a-zA-Z ]+\"", | lex | lex.slice().parse())]
+    #[regex("\"[^\"]*\"", | lex | lex.slice().parse())]
     Text(String),
     #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
     Identifier(String),
     #[error]
-    // We can also use this variant to define whitespace,
-    // or any other matches we wish to skip.
     #[regex(r"[ \t\n\f]+", logos::skip)]
     Error,
 }
@@ -118,23 +112,16 @@ impl Token {
     ///     should be parsed into   
     /// Expr::Binary(2, + , Expr::Binary(2 * 8))
     /// ```
-    pub fn bp(&self, affix: Affix) -> Result<usize> {
-        let error = || {
-            Err(anyhow!(
-                "No rule specified for token {} as an {}",
-                self,
-                affix
-            ))
-        };
-
-        Ok(match affix {
+    pub fn bp(&self, affix: Affix) -> usize {
+        match affix {
             Affix::Prefix => match self {
                 Token::Minus => 7,
                 Token::Bang => 7,
-                Token::OpenParenthesis => 0,
-                _ => return error(),
+                // Token::OpenParenthesis => 0,
+                _ => 0,
             },
             Affix::Infix => match self {
+                Token::Assign => 1,
                 Token::BangEqual => 4,
                 Token::Equal => 4,
                 Token::Greater => 4,
@@ -145,10 +132,20 @@ impl Token {
                 Token::Minus => 5,
                 Token::Star => 6,
                 Token::Divide => 6,
-                Token::CloseParenthesis => 0,
-                _ => return error(),
+                // Token::CloseParenthesis => 0,
+                // Token::Semicolon => 0,
+                // _ => return error(),
+                _ => 0,
             },
-        })
+        }
+    }
+
+    /// Helper to determine whether token is associated with parsing the statements
+    pub fn is_stmt(&self) -> bool {
+        matches!(
+            self,
+            Token::Var | Token::Print | Token::Class | Token::Function
+        )
     }
 }
 
@@ -157,17 +154,11 @@ mod test {
     use super::*;
 
     /// Token is able to find a rule for corresponding kind of affix.
+    /// It defaults to 0
     #[test]
     fn finds_rule() {
-        assert_eq!(Token::Minus.bp(Affix::Infix).expect("Rule not found"), 5);
-
-        assert_eq!(Token::Minus.bp(Affix::Prefix).expect("Rule not found"), 7);
-    }
-
-    /// It throws an error if it doesn't find a corresponding rule.
-    #[test]
-    #[should_panic(expected = "Rule not found")]
-    fn rule_not_found() {
-        Token::Error.bp(Affix::Infix).expect("Rule not found");
+        assert_eq!(Token::Minus.bp(Affix::Infix), 5);
+        assert_eq!(Token::Minus.bp(Affix::Prefix), 7);
+        assert_eq!(Token::Error.bp(Affix::Prefix), 0);
     }
 }

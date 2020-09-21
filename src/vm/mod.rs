@@ -1,31 +1,38 @@
+use std::collections::HashMap;
 use std::ops::Neg;
 use std::slice::Iter;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 
-use crate::bytecode::{Chunk, Opcode, Value};
+use crate::bytecode::{Chunk, Number, Opcode, Value};
 use crate::settings::Settings;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VM {
     settings: Settings,
     stack: Vec<Value>,
+    globals: HashMap<String, Value>,
 }
 
 type InterpretValue = String;
 
 impl VM {
-    pub fn new() -> Self {
-        Self {
-            settings: Settings::default(),
-            stack: Vec::new(),
-        }
-    }
-
     fn pop_stack(&mut self) -> Result<Value> {
         self.stack
             .pop()
             .with_context(|| "Tried to pop value from an empty stack")
+    }
+
+    fn pop_string(&mut self) -> Result<String> {
+        self.pop_stack()?
+            .into_string()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a string."))
+    }
+
+    fn pop_number(&mut self) -> Result<Number> {
+        self.pop_stack()?
+            .into_number()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a number."))
     }
 
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<InterpretValue> {
@@ -81,6 +88,37 @@ impl VM {
                 Opcode::LessEqual => bin_op!(<=, 'l'),
                 Opcode::Greater => bin_op!(>, 'l'),
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
+                Opcode::Print => {
+                    println!("{:?}", self.pop_stack()?);
+                }
+                Opcode::DefineVar => {
+                    let value = self.pop_stack()?;
+                    self.stack.push(value);
+                }
+                Opcode::AssignVar => {
+                    let value = self.pop_stack()?;
+                    let name = self.pop_string()?;
+                    self.globals
+                        .get_mut(&name)
+                        .map(|v| *v = value)
+                        .with_context(|| format!("Variable '{}' doesn't exist", name))?;
+                }
+                Opcode::GetVar => {
+                    let name = self.pop_string()?;
+                    self.globals
+                        .get(&name)
+                        .cloned()
+                        .map(|v| self.stack.push(v))
+                        .with_context(|| format!("Variable '{}' doesn't exist", name))?;
+                }
+                Opcode::Pop => {
+                    self.pop_stack()?;
+                }
+                Opcode::PopN(amount) => {
+                    for _ in 0..*amount {
+                        self.pop_stack()?;
+                    }
+                }
                 Opcode::Return => {
                     println!("Return: {:#?}", self.stack.pop());
                 }
@@ -94,7 +132,7 @@ impl From<Settings> for VM {
     fn from(settings: Settings) -> Self {
         VM {
             settings,
-            stack: Vec::new(),
+            ..Default::default()
         }
     }
 }
