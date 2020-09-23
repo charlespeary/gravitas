@@ -79,6 +79,7 @@ mod test {
         assert_eq!(Opcode::from(Token::LessEqual), Opcode::LessEqual);
         assert_eq!(Opcode::from(Token::Greater), Opcode::Greater);
         assert_eq!(Opcode::from(Token::GreaterEqual), Opcode::GreaterEqual);
+        assert_eq!(Opcode::from(Token::Assign), Opcode::Assign);
     }
 
     // but not all of them, otherwise it panics.

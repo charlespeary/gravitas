@@ -117,7 +117,6 @@ impl Token {
             Affix::Prefix => match self {
                 Token::Minus => 7,
                 Token::Bang => 7,
-                // Token::OpenParenthesis => 0,
                 _ => 0,
             },
             Affix::Infix => match self {
@@ -132,9 +131,6 @@ impl Token {
                 Token::Minus => 5,
                 Token::Star => 6,
                 Token::Divide => 6,
-                // Token::CloseParenthesis => 0,
-                // Token::Semicolon => 0,
-                // _ => return error(),
                 _ => 0,
             },
         }
@@ -160,5 +156,14 @@ mod test {
         assert_eq!(Token::Minus.bp(Affix::Infix), 5);
         assert_eq!(Token::Minus.bp(Affix::Prefix), 7);
         assert_eq!(Token::Error.bp(Affix::Prefix), 0);
+    }
+
+    /// Checks whether Token is of type related to statements. E.g "var" keyword
+    #[test]
+    fn is_stmt() {
+        assert!(Token::Var.is_stmt());
+        assert!(Token::Print.is_stmt());
+        assert!(Token::Function.is_stmt());
+        assert!(Token::Class.is_stmt());
     }
 }

@@ -46,10 +46,10 @@ pub fn initialize(settings: &Settings) -> Result<()> {
 pub fn compile(code: &str) -> Result<(), Either<Error, Vec<Error>>> {
     let tokens: Vec<Token> = Token::lexer(code).collect();
     let parser = Parser::new(tokens);
-    let ast = parser.parse().map_err(|e| Either::Right(e))?;
+    let ast = parser.parse().map_err(Either::Right)?;
     println!("Parsed: {:#?}", ast);
     let mut bg = BytecodeGenerator::new();
-    let chunk = bg.generate(&ast).map_err(|e| Either::Left(e))?;
+    let chunk = bg.generate(&ast).map_err(Either::Left)?;
     println!("GENERATED: {:#?}", chunk);
     let mut vm = VM::default();
     let interpreted = vm.interpret(&chunk);

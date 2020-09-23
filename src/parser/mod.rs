@@ -223,6 +223,7 @@ impl Parser {
 mod test {
     use super::*;
 
+    // EXPRESSIONS
     // TODO: add tests for the error detection, error messages, struct helpers
     #[test]
     fn number_atom() {
@@ -284,6 +285,28 @@ mod test {
             Expr::Binary {
                 left: Box::new(Expr::Atom(Atom::Number(10.0))),
                 operator: Token::Plus,
+                right: Box::new(Expr::Atom(Atom::Number(20.0))),
+            }
+        )
+    }
+
+    /// Assignment is just a simple binary operation
+    #[test]
+    fn binary_assignment_expr() {
+        let mut parser = Parser::new(vec![
+            Token::Identifier(String::from("var")),
+            Token::Assign,
+            Token::Number(20.0),
+        ]);
+
+        assert_eq!(
+            parser.expr(0).expect("Couldn't parse expression"),
+            Expr::Binary {
+                left: Box::new(Expr::Var {
+                    identifier: String::from("var"),
+                    is_ref: true,
+                }),
+                operator: Token::Assign,
                 right: Box::new(Expr::Atom(Atom::Number(20.0))),
             }
         )
@@ -362,6 +385,33 @@ mod test {
             }
         )
     }
+
+    #[test]
+    fn block_expr() {
+        let mut parser = Parser::new(vec![
+            Token::OpenBrace,
+            Token::Var,
+            Token::Identifier(String::from("var")),
+            Token::Assign,
+            Token::Number(10.0),
+            Token::Semicolon,
+            Token::CloseBrace,
+        ]);
+
+        assert_eq!(
+            parser
+                .block_expr()
+                .expect("Failed to parse block expression"),
+            Expr::Block {
+                body: vec![Stmt::Var {
+                    identifier: String::from("var"),
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                }]
+            }
+        )
+    }
+
+    // STATEMENTS
 
     #[test]
     fn print_stmt() {

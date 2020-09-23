@@ -32,7 +32,7 @@ impl BytecodeGenerator {
         }
     }
 
-    pub fn generate<I>(&mut self, ast: &Vec<I>) -> Result<Chunk>
+    pub fn generate<I>(&mut self, ast: &[I]) -> Result<Chunk>
     where
         I: Visitable,
         Self: Visitor<I>,
@@ -159,5 +159,34 @@ impl Visitor<Stmt> for BytecodeGenerator {
         }
         // these clones are temporary, since I'm not sure how I will end up generating the bytecode
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn generate_bytecode<I>(ast: I) -> (Chunk, Vec<Opcode>)
+    where
+        I: Visitable,
+        BytecodeGenerator: Visitor<I>,
+    {
+        let mut bg = BytecodeGenerator::new();
+        let chunk = bg
+            .generate(&[ast])
+            .expect("Couldn't generate chunk from given ast");
+        (
+            chunk.clone(),
+            chunk.into_iter().cloned().collect::<Vec<Opcode>>(),
+        )
+    }
+
+    #[quickcheck]
+    fn handle_atom_numbers(a: f64) {
+        let ast = Expr::Atom(Atom::Number(a));
+        let (chunk, bytecode) = generate_bytecode(ast);
+
+        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(*chunk.read_constant(0), Value::Number(a));
     }
 }

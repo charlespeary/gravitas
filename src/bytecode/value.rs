@@ -114,6 +114,8 @@ mod test {
         assert!(Value::Bool(false).neg().is_err());
         assert!(Value::Bool(true).neg().is_err());
         assert!(Value::Null.neg().is_err());
+        assert!(Value::Variable(String::from("var")).neg().is_err());
+        assert!(Value::Reference(0).neg().is_err());
     }
 
     // Value can be turned into bool. This acts as a helper to determine whether value is falsey or not.
@@ -131,5 +133,42 @@ mod test {
     #[quickcheck]
     fn random_number_values_into_bool(value: f64) {
         assert_eq!(true, Value::Number(value).into())
+    }
+
+    macro_rules! math_op (
+        ($a: expr, $b: expr, $operator: tt ) => {{
+                let first = Value::Number($a);
+                let second = Value::Number($b);
+                (first $operator second).unwrap_or_else(|_| {
+                panic!(
+                    "Unexpectedly failed the math operation between {} and {}",
+                    $a, $b
+                )
+            })
+        }}
+    );
+
+    #[quickcheck]
+    fn add_number_values(a: f64, b: f64) {
+        let sum = math_op!(a, b, +);
+        assert_eq!(sum, Value::Number(a + b));
+    }
+
+    #[quickcheck]
+    fn subtract_number_values(a: f64, b: f64) {
+        let subtraction = math_op!(a, b, -);
+        assert_eq!(subtraction, Value::Number(a - b));
+    }
+
+    #[quickcheck]
+    fn multiply_number_values(a: f64, b: f64) {
+        let multiplication = math_op!(a, b, *);
+        assert_eq!(multiplication, Value::Number(a * b));
+    }
+
+    #[quickcheck]
+    fn divide_number_values(a: f64, b: f64) {
+        let division = math_op!(a, b, /);
+        assert_eq!(division, Value::Number(a / b));
     }
 }

@@ -46,45 +46,6 @@ pub enum Stmt {
     Print { expr: Expr },
 }
 
-impl Expr {
-    pub fn print(&self) {
-        match self {
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => {
-                left.print();
-                print!(" {} ", operator);
-                right.print();
-            }
-            Expr::Unary { expr, operator } => {
-                print!("{}(", operator);
-                expr.print();
-                print!(")");
-            }
-            Expr::Atom(atom) => {
-                print!("{}", atom);
-            }
-            Expr::Grouping { expr } => {
-                print!("(");
-                expr.print();
-                print!(")");
-            }
-            Expr::Var { identifier, is_ref } => {
-                print!("ref={} var<{}>", is_ref, identifier);
-            }
-            Expr::Block { body } => {
-                print!("{{");
-                for stmt in body {
-                    print!("stmt ");
-                }
-                print!("}}");
-            }
-        }
-    }
-}
-
 pub trait Visitor<T> {
     type Result;
     fn visit(&mut self, t: &T) -> Self::Result;
