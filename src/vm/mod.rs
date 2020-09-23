@@ -4,7 +4,7 @@ use std::slice::Iter;
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::bytecode::{Chunk, Number, Opcode, Value};
+use crate::bytecode::{Address, Chunk, Number, Opcode, Value};
 use crate::settings::Settings;
 
 #[derive(Debug, Default)]
@@ -35,6 +35,12 @@ impl VM {
             .map_err(|_| anyhow!("Accessed value from the stack that wasn't a number."))
     }
 
+    fn pop_reference(&mut self) -> Result<Address> {
+        self.pop_stack()?
+            .into_reference()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a reference."))
+    }
+
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<InterpretValue> {
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
@@ -58,12 +64,6 @@ impl VM {
         // life a little bit easier :)
         let codes: Iter<Opcode> = chunk.into_iter();
         for opcode in codes {
-            if self.settings.debug {
-                println!("=== {:?} ===", opcode);
-                println!("=== STACK ===");
-                println!("{:?}", self.stack);
-            }
-
             match opcode {
                 Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index).clone()),
                 Opcode::True => self.stack.push(Value::Bool(true)),
@@ -88,29 +88,14 @@ impl VM {
                 Opcode::LessEqual => bin_op!(<=, 'l'),
                 Opcode::Greater => bin_op!(>, 'l'),
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
-                Opcode::Print => {
-                    println!("{:?}", self.pop_stack()?);
-                }
-                Opcode::DefineVar => {
+                Opcode::Print => println!("{:?}", self.pop_stack()?),
+                Opcode::Assign => {
                     let value = self.pop_stack()?;
-                    self.stack.push(value);
+                    let address = self.pop_reference()?;
+                    self.stack[address as usize] = value;
                 }
-                Opcode::AssignVar => {
-                    let value = self.pop_stack()?;
-                    let name = self.pop_string()?;
-                    self.globals
-                        .get_mut(&name)
-                        .map(|v| *v = value)
-                        .with_context(|| format!("Variable '{}' doesn't exist", name))?;
-                }
-                Opcode::GetVar => {
-                    let name = self.pop_string()?;
-                    self.globals
-                        .get(&name)
-                        .cloned()
-                        .map(|v| self.stack.push(v))
-                        .with_context(|| format!("Variable '{}' doesn't exist", name))?;
-                }
+                Opcode::VarRef(index) => self.stack.push(Value::Reference(*index)),
+                Opcode::Var(index) => self.stack.push(self.stack[*index as usize].clone()),
                 Opcode::Pop => {
                     self.pop_stack()?;
                 }

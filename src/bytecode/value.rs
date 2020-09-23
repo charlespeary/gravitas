@@ -5,6 +5,7 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 
 pub type Number = f64;
+pub type Address = u8;
 
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Value {
@@ -12,6 +13,7 @@ pub enum Value {
     Bool(bool),
     String(String),
     Variable(String),
+    Reference(Address),
     Null,
 }
 
@@ -68,15 +70,6 @@ implement_operations_for_value!(
     Mul mul,
     Div div,
 );
-
-// impl Value {
-//     pub fn as_number(&self) -> Result<Number> {
-//         match self {
-//             Value::Number(num) => Ok(*num),
-//             _ => Err(anyhow!("This isn't a number!")),
-//         }
-//     }
-// }
 
 impl Into<bool> for Value {
     fn into(self) -> bool {

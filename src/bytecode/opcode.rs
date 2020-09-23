@@ -29,9 +29,9 @@ pub enum Opcode {
     Pop,
     PopN(u8),
     // Variables
-    DefineVar,
-    GetVar,
-    AssignVar,
+    Var(u8),
+    VarRef(u8),
+    Assign,
 }
 
 impl From<Token> for Opcode {
@@ -47,7 +47,7 @@ impl From<Token> for Opcode {
             Token::LessEqual => Opcode::LessEqual,
             Token::Greater => Opcode::Greater,
             Token::GreaterEqual => Opcode::GreaterEqual,
-            Token::Assign => Opcode::AssignVar,
+            Token::Assign => Opcode::Assign,
             _ => panic!("Can't transform {} into opcode.", token),
         }
     }

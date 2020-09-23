@@ -1,4 +1,3 @@
-use std::io::repeat;
 use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
@@ -47,9 +46,15 @@ impl Parser {
                 }
                 Err(e) => {
                     self.errors.push(e);
-                    // while !self.peek_token().is_stmt() {
-                    //     self.next_token();
-                    // }
+
+                    while let Some(token) = self.tokens.peek() {
+                        if !token.is_stmt() {
+                            self.next_token();
+                        } else {
+                            break;
+                        }
+                    }
+                    return self.parse();
                 }
             }
         }
@@ -102,7 +107,11 @@ impl Parser {
     fn var_expr(&mut self) -> Result<Expr> {
         let token = self.next_token();
         if let Ok(identifier) = token.into_identifier() {
-            Ok(Expr::Var { identifier })
+            // If next token is an assignment, then we are parsing binary expression
+            // In order to assign some value to variable in VM we're gonna need this to
+            // evaluate to variable's reference, not its value.
+            let is_ref = self.peek_eq(Token::Assign);
+            Ok(Expr::Var { identifier, is_ref })
         } else {
             Err(anyhow!("Invalid token got into var_expr call!"))
         }
@@ -348,7 +357,8 @@ mod test {
         assert_eq!(
             parser.expr(0).unwrap(),
             Expr::Var {
-                identifier: String::from("variable")
+                is_ref: false,
+                identifier: String::from("variable"),
             }
         )
     }
@@ -365,7 +375,8 @@ mod test {
             .unwrap(),
             Stmt::Print {
                 expr: Expr::Var {
-                    identifier: String::from("variable")
+                    is_ref: false,
+                    identifier: String::from("variable"),
                 }
             }
         );

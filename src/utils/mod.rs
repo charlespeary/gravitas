@@ -48,7 +48,7 @@ pub fn compile(code: &str) -> Result<(), Either<Error, Vec<Error>>> {
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(|e| Either::Right(e))?;
     println!("Parsed: {:#?}", ast);
-    let mut bg = BytecodeGenerator::default();
+    let mut bg = BytecodeGenerator::new();
     let chunk = bg.generate(&ast).map_err(|e| Either::Left(e))?;
     println!("GENERATED: {:#?}", chunk);
     let mut vm = VM::default();

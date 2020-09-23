@@ -58,7 +58,6 @@ where
 #[cfg(test)]
 mod test {
     use super::peek_nth as into_peek_nth;
-    use super::*;
 
     /// Returns items sequentially
     #[test]

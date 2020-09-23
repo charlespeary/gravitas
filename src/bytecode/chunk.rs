@@ -14,6 +14,10 @@ impl Chunk {
         self.code.len() - 1
     }
 
+    pub fn size(&self) -> usize {
+        self.code.len()
+    }
+
     pub fn add_constant(&mut self, constant: Value) -> u8 {
         self.constants.push(constant);
         let constant_index = (self.constants.len() - 1) as u8;
@@ -34,7 +38,7 @@ impl<'a> IntoIterator for &'a Chunk {
     type IntoIter = Iter<'a, Opcode>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.code.as_slice().into_iter()
+        self.code.as_slice().iter()
     }
 }
 

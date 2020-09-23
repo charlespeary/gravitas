@@ -1,8 +1,8 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 pub use chunk::Chunk;
 pub use opcode::Opcode;
-pub use value::{Number, Value};
+pub use value::{Address, Number, Value};
 
 use crate::parser::{Atom, Expr, Stmt, Token, Visitable, Visitor};
 
@@ -10,12 +10,28 @@ mod chunk;
 mod opcode;
 mod value;
 
+/// State of the scope / block
+#[derive(Default, Debug)]
+pub struct Scope {
+    /// Amount of declared variables in the given scope.
+    pub declared: usize,
+}
+
 #[derive(Default)]
 pub struct BytecodeGenerator {
     chunk: Chunk,
+    locals: Vec<String>,
+    scopes: Vec<Scope>,
 }
 
 impl BytecodeGenerator {
+    pub fn new() -> Self {
+        Self {
+            scopes: vec![Scope::default()],
+            ..Default::default()
+        }
+    }
+
     pub fn generate<I>(&mut self, ast: &Vec<I>) -> Result<Chunk>
     where
         I: Visitable,
@@ -27,6 +43,36 @@ impl BytecodeGenerator {
 
         // temporary clone until I figure out how to generate bytecode properly
         Ok(self.chunk.clone())
+    }
+
+    pub fn begin_scope(&mut self) {
+        self.scopes.push(Scope::default())
+    }
+
+    pub fn end_scope(&mut self) {
+        let scope = self
+            .scopes
+            .pop()
+            .expect("Tried to pop scope that doesn't exist");
+
+        self.chunk.grow(Opcode::PopN(scope.declared as u8));
+    }
+
+    pub fn add_local(&mut self, name: String) {
+        self.locals.push(name);
+        self.scopes.last_mut().map_or_else(
+            || panic!("Couldn't access current scope!"),
+            |s| {
+                s.declared += 1;
+            },
+        );
+    }
+
+    pub fn find_local(&self, name: &str) -> Result<usize> {
+        self.locals
+            .iter()
+            .rposition(|l| l == name)
+            .with_context(|| format!("{} doesn't exist", name))
     }
 }
 
@@ -70,14 +116,21 @@ impl Visitor<Expr> for BytecodeGenerator {
                 };
                 self.chunk.grow(opcode);
             }
-            Expr::Var { identifier } => {
-                self.chunk.add_constant(Value::String(identifier.clone()));
-                self.chunk.grow(Opcode::GetVar);
+            Expr::Var { identifier, is_ref } => {
+                let local = self.find_local(identifier)? as u8;
+                let opcode = match *is_ref {
+                    true => Opcode::VarRef(local),
+                    false => Opcode::Var(local),
+                };
+
+                self.chunk.grow(opcode);
             }
             Expr::Block { body } => {
+                self.begin_scope();
                 for stmt in body {
                     stmt.accept(self)?;
                 }
+                self.end_scope();
             }
         };
         Ok(())
@@ -93,14 +146,15 @@ impl Visitor<Stmt> for BytecodeGenerator {
                 expr.accept(self)?;
                 self.chunk.grow(Opcode::Print);
             }
-            Stmt::Expr { expr, terminated } => {
+            Stmt::Expr {
+                expr,
+                terminated: _,
+            } => {
                 expr.accept(self)?;
-                self.chunk.grow(Opcode::Pop);
             }
             Stmt::Var { expr, identifier } => {
                 expr.accept(self)?;
-                // self.chunk.add_constant(Value::String(identifier.clone()));
-                self.chunk.grow(Opcode::DefineVar);
+                self.add_local(identifier.clone());
             }
         }
         // these clones are temporary, since I'm not sure how I will end up generating the bytecode

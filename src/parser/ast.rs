@@ -19,6 +19,7 @@ pub enum Expr {
     },
     Var {
         identifier: String,
+        is_ref: bool,
     },
     Unary {
         expr: Box<Expr>,
@@ -70,8 +71,8 @@ impl Expr {
                 expr.print();
                 print!(")");
             }
-            Expr::Var { identifier } => {
-                print!("var<{}>", identifier);
+            Expr::Var { identifier, is_ref } => {
+                print!("ref={} var<{}>", is_ref, identifier);
             }
             Expr::Block { body } => {
                 print!("{{");
