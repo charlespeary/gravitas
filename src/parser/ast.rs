@@ -1,3 +1,4 @@
+use anyhow::Result;
 use derive_more::Display;
 
 use crate::parser::Token;
@@ -47,12 +48,12 @@ pub enum Stmt {
 }
 
 pub trait Visitor<T> {
-    type Result;
-    fn visit(&mut self, t: &T) -> Self::Result;
+    type Item;
+    fn visit(&mut self, t: &T) -> Result<Self::Item>;
 }
 
 pub trait Visitable: Sized {
-    fn accept<T>(&self, t: &mut T) -> T::Result
+    fn accept<T>(&self, t: &mut T) -> Result<T::Item>
     where
         T: Visitor<Self>,
     {
