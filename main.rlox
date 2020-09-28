@@ -1,1 +1,8 @@
-print 0 / 1;
+if false {
+    print "foo";
+} elif false {
+    print "bar";
+} else {
+    print "zoo";
+}
+print "??";

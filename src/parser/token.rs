@@ -2,6 +2,8 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
+use crate::parser::ast::BranchType;
+
 #[derive(Logos, Debug, Display, Clone, PartialEq, EnumAsInner)]
 pub enum Token {
     #[token("|")]
@@ -50,6 +52,8 @@ pub enum Token {
     Comment,
     #[token("if")]
     If,
+    #[token("elif")]
+    ElseIf,
     #[token("else")]
     Else,
     #[token("false")]
@@ -95,6 +99,16 @@ pub enum Token {
     #[error]
     #[regex(r"[ \t\n\f]+", logos::skip)]
     Error,
+}
+
+impl From<BranchType> for Token {
+    fn from(bt: BranchType) -> Token {
+        match bt {
+            BranchType::If => Token::If,
+            BranchType::ElseIf => Token::ElseIf,
+            BranchType::Else => Token::Else,
+        }
+    }
 }
 
 #[derive(Display)]

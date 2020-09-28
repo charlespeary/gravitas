@@ -1,6 +1,8 @@
+use derive_more::Display;
+
 use crate::parser::Token;
 
-#[derive(Debug, PartialOrd, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialOrd, PartialEq, Copy, Clone, Display)]
 pub enum Opcode {
     // Values
     True,
@@ -22,6 +24,9 @@ pub enum Opcode {
     LessEqual,
     Greater,
     GreaterEqual,
+    // Jumps
+    JumpIfFalse(u8),
+    Jump(u8),
     // ?
     Return,
     // Side effects

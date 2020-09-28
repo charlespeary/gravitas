@@ -4,7 +4,7 @@ use anyhow::{anyhow, Error, Result};
 
 pub use token::Token;
 
-pub use crate::parser::ast::{Atom, Expr, Stmt, Visitable, Visitor};
+pub use crate::parser::ast::{Atom, Block, BranchType, Expr, IfBranch, Stmt, Visitable, Visitor};
 use crate::parser::token::Affix;
 use crate::utils::{peek_nth, PeekNth};
 
@@ -12,7 +12,7 @@ mod ast;
 mod token;
 
 macro_rules! expect {
-    ($self: ident, $token: path) => {{
+    ($self: ident, $token: expr) => {{
         if !$self.peek_eq($token) {
             return Err(anyhow!("Expected {}!", $token));
         } else {
@@ -38,7 +38,7 @@ impl Parser {
 
     // UTILITIES
 
-    pub fn parse(mut self) -> Result<Vec<Stmt>, Vec<Error>> {
+    pub fn parse(mut self) -> Result<Expr, Vec<Error>> {
         while self.tokens.peek().is_some() {
             match self.stmt() {
                 Ok(stmt) => {
@@ -60,7 +60,10 @@ impl Parser {
         }
 
         if self.errors.is_empty() {
-            Ok(self.stmts)
+            // Global block wrapping all statements
+            Ok(Expr::Block {
+                body: Block { body: self.stmts },
+            })
         } else {
             Err(self.errors)
         }
@@ -82,6 +85,38 @@ impl Parser {
         self.tokens.next().expect("Tried to iterate empty iterator")
     }
 
+    // GRAMMAR
+
+    fn parse_block(&mut self) -> Result<Block> {
+        expect!(self, Token::OpenBrace);
+
+        let mut body: Vec<Stmt> = Vec::new();
+
+        while !self.peek_eq(Token::CloseBrace) {
+            body.push(self.stmt()?);
+        }
+
+        expect!(self, Token::CloseBrace);
+
+        Ok(Block { body })
+    }
+
+    fn parse_if_branch(&mut self, branch_type: BranchType) -> Result<IfBranch> {
+        expect!(self, Token::from(branch_type));
+        let condition = match branch_type {
+            BranchType::Else => Expr::Atom(Atom::Bool(true)),
+            _ => self.expr(0)?,
+        };
+
+        let body = self.parse_block()?;
+
+        Ok(IfBranch {
+            branch_type,
+            condition,
+            body,
+        })
+    }
+
     // EXPRESSIONS
 
     fn expr(&mut self, rbp: usize) -> Result<Expr> {
@@ -100,6 +135,7 @@ impl Parser {
             Token::Identifier(_) => self.var_expr(),
             Token::OpenParenthesis => self.grouping_expr(),
             Token::OpenBrace => self.block_expr(),
+            Token::If => self.if_expr(),
             _ => self.atom_expr(),
         }
     }
@@ -167,17 +203,25 @@ impl Parser {
     }
 
     fn block_expr(&mut self) -> Result<Expr> {
-        expect!(self, Token::OpenBrace);
+        Ok(Expr::Block {
+            body: self.parse_block()?,
+        })
+    }
 
-        let mut body: Vec<Stmt> = Vec::new();
+    fn if_expr(&mut self) -> Result<Expr> {
+        let mut branches: Vec<IfBranch> = vec![];
 
-        while !self.peek_eq(Token::CloseBrace) {
-            body.push(self.stmt()?);
+        branches.push(self.parse_if_branch(BranchType::If)?);
+
+        while self.peek_eq(Token::ElseIf) {
+            branches.push(self.parse_if_branch(BranchType::ElseIf)?);
         }
 
-        expect!(self, Token::CloseBrace);
+        if self.peek_eq(Token::Else) {
+            branches.push(self.parse_if_branch(BranchType::Else)?);
+        }
 
-        Ok(Expr::Block { body })
+        Ok(Expr::If { branches })
     }
 
     // STATEMENTS
@@ -403,10 +447,12 @@ mod test {
                 .block_expr()
                 .expect("Failed to parse block expression"),
             Expr::Block {
-                body: vec![Stmt::Var {
-                    identifier: String::from("var"),
-                    expr: Expr::Atom(Atom::Number(10.0)),
-                }]
+                body: Block {
+                    body: vec![Stmt::Var {
+                        identifier: String::from("var"),
+                        expr: Expr::Atom(Atom::Number(10.0)),
+                    }]
+                }
             }
         )
     }

@@ -6,17 +6,20 @@ use anyhow::{anyhow, Context, Result};
 
 use crate::bytecode::{Address, Chunk, Number, Opcode, Value};
 use crate::settings::Settings;
+use crate::utils::log;
 
 #[derive(Debug, Default)]
 pub struct VM {
     settings: Settings,
     stack: Vec<Value>,
     globals: HashMap<String, Value>,
+    ip: usize,
 }
 
 type InterpretValue = String;
 
 impl VM {
+    // TODO: Implement this as into()
     fn pop_stack(&mut self) -> Result<Value> {
         self.stack
             .pop()
@@ -42,28 +45,29 @@ impl VM {
     }
 
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<InterpretValue> {
+        log::title_success("INTERPRETATION");
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
             ($operator:tt, 'm') => {{
                 let a = self.pop_stack()?;
                 let b = self.pop_stack()?;
-                let result = a $operator b;
+                let result = b $operator a;
                 self.stack.push(result?)
             }};
             // macro for logical operations
              ($operator:tt, 'l') => {{
+                println!("{:#?} ", self.stack);
                 let a = self.pop_stack()?;
                 let b = self.pop_stack()?;
-                self.stack.push( Value::Bool(a $operator b))
+
+                self.stack.push( Value::Bool(b $operator a))
             }};
         }
 
-        // this line isn't necessary, but somehow the Jetbrains plugin
-        // can't infer type for the into_iter on bytecode, so I make the plugin
-        // life a little bit easier :)
-        let codes: Iter<Opcode> = chunk.into_iter();
-        for opcode in codes {
+        while let Some(opcode) = chunk.code.get(self.ip) {
+            log::vm_info(opcode);
+            log::vm_stack(&self.stack);
             match opcode {
                 Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index).clone()),
                 Opcode::True => self.stack.push(Value::Bool(true)),
@@ -104,10 +108,20 @@ impl VM {
                         self.pop_stack()?;
                     }
                 }
+                Opcode::JumpIfFalse(jump) => {
+                    let value: bool = self.pop_stack()?.into();
+                    if !value {
+                        self.ip += (*jump) as usize;
+                    }
+                }
+                Opcode::Jump(jump) => {
+                    self.ip += (*jump) as usize;
+                }
                 Opcode::Return => {
                     println!("Return: {:#?}", self.stack.pop());
                 }
             }
+            self.ip += 1;
         }
         Ok(format!("{:#?}", self.stack))
     }

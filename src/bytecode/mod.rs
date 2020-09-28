@@ -4,7 +4,7 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::{Address, Number, Value};
 
-use crate::parser::{Atom, Expr, Stmt, Token, Visitable, Visitor};
+use crate::parser::{Atom, Block, BranchType, Expr, IfBranch, Stmt, Token, Visitable, Visitor};
 
 mod chunk;
 mod opcode;
@@ -32,14 +32,14 @@ impl BytecodeGenerator {
         }
     }
 
-    pub fn generate<I>(&mut self, ast: &[I]) -> Result<Chunk>
+    pub fn generate<I>(&mut self, ast: &I) -> Result<Chunk>
     where
         I: Visitable,
         Self: Visitor<I>,
     {
-        for node in ast {
-            node.accept(self)?;
-        }
+        // for node in ast {
+        ast.accept(self)?;
+        // }
 
         // temporary clone until I figure out how to generate bytecode properly
         Ok(self.chunk.clone())
@@ -74,6 +74,31 @@ impl BytecodeGenerator {
             .iter()
             .rposition(|l| l == name)
             .with_context(|| format!("{} doesn't exist", name))
+    }
+
+    fn lookup_instruction_size<I>(ast: &I) -> Result<usize>
+    where
+        I: Visitable,
+        Self: Visitor<I>,
+    {
+        let mut bg = BytecodeGenerator::new();
+        let chunk = bg.generate(ast)?;
+        Ok(chunk.size() + 1)
+    }
+
+    fn evaluate_branch(&mut self, branch: &IfBranch, jump: usize, jif: usize) -> Result<()> {
+        branch.condition.accept(self)?;
+        match &branch.branch_type {
+            BranchType::If | BranchType::ElseIf => {
+                self.chunk.grow(Opcode::JumpIfFalse(jif as u8));
+            }
+            _ => {}
+        }
+        branch.body.accept(self)?;
+        if jump > 0 && branch.branch_type != BranchType::Else {
+            self.chunk.grow(Opcode::Jump(jump as u8));
+        }
+        Ok(())
     }
 }
 
@@ -128,12 +153,24 @@ impl Visitor<Expr> for BytecodeGenerator {
             }
             Expr::Block { body } => {
                 self.begin_scope();
-                for stmt in body {
-                    stmt.accept(self)?;
-                }
+                body.accept(self)?;
                 self.end_scope();
             }
-        };
+            Expr::If { branches } => {
+                for (i, branch) in branches.iter().enumerate() {
+                    let rest = &branches[i + 1..];
+                    let jump: usize = rest
+                        .iter()
+                        .map(|b| BytecodeGenerator::lookup_instruction_size(&b.body))
+                        .collect::<Result<Vec<usize>>>()?
+                        .iter()
+                        .sum();
+                    let jif = BytecodeGenerator::lookup_instruction_size(&branch.body)?;
+
+                    self.evaluate_branch(branch, jump, jif)?;
+                }
+            }
+        }
         Ok(())
     }
 }
@@ -148,11 +185,12 @@ impl Visitor<Stmt> for BytecodeGenerator {
                 expr.accept(self)?;
                 self.chunk.grow(Opcode::Print);
             }
-            Stmt::Expr {
-                expr,
-                terminated: _,
-            } => {
+            Stmt::Expr { expr, terminated } => {
                 expr.accept(self)?;
+                if *terminated {
+                    self.chunk.grow(Opcode::Pop);
+                    self.chunk.grow(Opcode::Null);
+                }
             }
             Stmt::Var { expr, identifier } => {
                 expr.accept(self)?;
@@ -164,8 +202,24 @@ impl Visitor<Stmt> for BytecodeGenerator {
     }
 }
 
+impl Visitor<Block> for BytecodeGenerator {
+    type Item = ();
+
+    fn visit(&mut self, block: &Block) -> Result<Self::Item> {
+        self.begin_scope();
+        for stmt in &block.body {
+            stmt.accept(self)?;
+        }
+        self.end_scope();
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::bytecode::opcode::Opcode::{Constant, JumpIfFalse};
+    use crate::parser::Block;
+
     use super::*;
 
     fn into_bytecode(chunk: Chunk) -> Vec<Opcode> {
@@ -179,7 +233,7 @@ mod tests {
     {
         let mut bg = BytecodeGenerator::new();
         let chunk = bg
-            .generate(&[ast])
+            .generate(&ast)
             .expect("Couldn't generate chunk from given ast");
         (chunk.clone(), into_bytecode(chunk))
     }
@@ -336,7 +390,7 @@ mod tests {
             bg.add_local(VARIABLE_NAME.to_owned());
         }
         let chunk = bg
-            .generate(&[ast])
+            .generate(&ast)
             .with_context(|| "Couldn't generate chunk from given ast")?;
 
         Ok((
@@ -392,10 +446,12 @@ mod tests {
     fn expr_block() {
         // Block adds the opcode responsible for dropping the temporary variables at the end of the scope.
         let ast = Expr::Block {
-            body: vec![Stmt::Var {
-                identifier: String::from("foo"),
-                expr: Expr::Atom(Atom::Number(10.0)),
-            }],
+            body: Block {
+                body: vec![Stmt::Var {
+                    identifier: String::from("foo"),
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                }],
+            },
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
@@ -405,10 +461,12 @@ mod tests {
 
         // If there were no variables created in the block, then the PopN opcode is not added.
         let ast = Expr::Block {
-            body: vec![Stmt::Expr {
-                expr: Expr::Atom(Atom::Number(10.0)),
-                terminated: true,
-            }],
+            body: Block {
+                body: vec![Stmt::Expr {
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                    terminated: true,
+                }],
+            },
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
@@ -422,14 +480,16 @@ mod tests {
         let mut bg = BytecodeGenerator::default();
 
         let ast = Expr::Block {
-            body: vec![Stmt::Var {
-                identifier: String::from(VARIABLE_NAME),
-                expr: Expr::Atom(Atom::Number(10.0)),
-            }],
+            body: Block {
+                body: vec![Stmt::Var {
+                    identifier: String::from(VARIABLE_NAME),
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                }],
+            },
         };
 
         let chunk = bg
-            .generate(&[ast])
+            .generate(&ast)
             .expect("Couldn't generate bytecode for given ast");
 
         let bytecode = into_bytecode(chunk.clone());
@@ -463,5 +523,117 @@ mod tests {
 
         assert_eq!(bytecode, vec![Opcode::Constant(0)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn if_expr_if() {
+        let ast = Expr::If {
+            branches: vec![IfBranch {
+                branch_type: BranchType::If,
+                condition: Expr::Atom(Atom::Bool(true)),
+                body: Block {
+                    body: vec![Stmt::Var {
+                        identifier: String::from("foo"),
+                        expr: Expr::Atom(Atom::Bool(true)),
+                    }],
+                },
+            }],
+        };
+        let (_, bytecode) = generate_bytecode(ast);
+        assert_eq!(
+            bytecode,
+            vec![
+                Opcode::True,
+                Opcode::JumpIfFalse(3),
+                Opcode::True,
+                Opcode::PopN(1),
+            ]
+        )
+    }
+
+    #[test]
+    fn if_expr_elif() {
+        let ast = Expr::If {
+            branches: vec![
+                IfBranch {
+                    branch_type: BranchType::If,
+                    condition: Expr::Atom(Atom::Bool(false)),
+                    body: Block {
+                        body: vec![Stmt::Var {
+                            identifier: String::from("foo"),
+                            expr: Expr::Atom(Atom::Bool(true)),
+                        }],
+                    },
+                },
+                IfBranch {
+                    branch_type: BranchType::ElseIf,
+                    condition: Expr::Atom(Atom::Bool(true)),
+                    body: Block {
+                        body: vec![Stmt::Var {
+                            identifier: String::from("bar"),
+                            expr: Expr::Atom(Atom::Bool(true)),
+                        }],
+                    },
+                },
+            ],
+        };
+        let (_, bytecode) = generate_bytecode(ast);
+        assert_eq!(
+            bytecode,
+            vec![
+                Opcode::False,
+                Opcode::JumpIfFalse(3),
+                Opcode::True,
+                Opcode::PopN(1),
+                Opcode::Jump(3),
+                Opcode::True,
+                Opcode::JumpIfFalse(3),
+                Opcode::True,
+                Opcode::PopN(1)
+            ]
+        )
+    }
+
+    #[test]
+    fn if_expr_else() {
+        let ast = Expr::If {
+            branches: vec![
+                IfBranch {
+                    branch_type: BranchType::If,
+                    condition: Expr::Atom(Atom::Bool(false)),
+                    body: Block {
+                        body: vec![Stmt::Var {
+                            identifier: String::from("foo"),
+                            expr: Expr::Atom(Atom::Bool(true)),
+                        }],
+                    },
+                },
+                IfBranch {
+                    branch_type: BranchType::Else,
+                    // Parser always makes else have a truthful condition
+                    condition: Expr::Atom(Atom::Bool(true)),
+                    body: Block {
+                        body: vec![Stmt::Var {
+                            identifier: String::from("bar"),
+                            expr: Expr::Atom(Atom::Bool(true)),
+                        }],
+                    },
+                },
+            ],
+        };
+        let (_, bytecode) = generate_bytecode(ast);
+        assert_eq!(
+            bytecode,
+            vec![
+                Opcode::False,
+                Opcode::JumpIfFalse(3),
+                Opcode::True,
+                Opcode::PopN(1),
+                Opcode::Jump(3),
+                Opcode::True,
+                Opcode::True,
+                Opcode::PopN(1)
+            ]
+        )
     }
 }

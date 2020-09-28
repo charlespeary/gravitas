@@ -4,7 +4,7 @@ use crate::bytecode::{Opcode, Value};
 
 #[derive(Debug, Default, Clone)]
 pub struct Chunk {
-    code: Vec<Opcode>,
+    pub code: Vec<Opcode>,
     constants: Vec<Value>,
 }
 

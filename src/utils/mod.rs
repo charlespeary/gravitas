@@ -13,47 +13,84 @@ pub use self::iter::{peek_nth, PeekNth};
 
 mod iter;
 
+pub mod log {
+    use std::fmt::Debug;
+
+    use colored::Colorize;
+
+    use crate::bytecode::{Opcode, Value};
+
+    pub fn title_error(t: &str) {
+        let text = format!("========= {} =========", t);
+        println!("\n{}\n", text.red().bold());
+    }
+
+    pub fn title_success(t: &str) {
+        let text = format!("========= {} =========", t);
+        println!("\n{}\n ", text.green().bold());
+    }
+
+    pub fn body<T: Debug>(i: &T) {
+        let text = format!("{:#?}", i);
+        println!("{}", text.as_str().white());
+    }
+
+    pub fn vm_info(opcode: &Opcode) {
+        let title = "OPCODE".yellow().bold();
+        let body = format!("{:?}", opcode).yellow();
+        println!("{}: {}", title, body);
+    }
+
+    pub fn vm_stack(stack: &Vec<Value>) {
+        let title = "        STACK:".blue().bold();
+        println!("{} {}", title, format!("{:?}", stack).blue());
+    }
+}
+
 #[derive(Debug)]
 pub enum Either<L, R> {
     Left(L),
     Right(R),
 }
 
-pub fn initialize(settings: &Settings) -> Result<()> {
+type Compiled = Result<(), Either<Error, Vec<Error>>>;
+
+pub fn initialize(settings: &Settings) -> Compiled {
     if let Some(path) = &settings.file_path {
-        let code = read_to_string(path).with_context(|| "Given input file doesn't exist.")?;
-        let result = compile(&code);
-        println!("compiled: {:#?}", result);
+        let code = read_to_string(path)
+            .with_context(|| "Given input file doesn't exist.")
+            .map_err(Either::Left)?;
+
+        compile(&code)?;
     } else {
         loop {
             println!("> ");
 
             let mut input = String::new();
-            match stdin().read_line(&mut input) {
-                Ok(n) => {
-                    let result = compile(&input);
-                    println!("compiled: {:#?}", result);
-                }
-                Err(error) => {
-                    println!("error: {}", error);
-                }
-            }
+            stdin()
+                .read_line(&mut input)
+                .with_context(|| "Couldn't read the line")
+                .map_err(Either::Left)?;
+            compile(&input)?;
         }
     }
     Ok(())
 }
 
-pub fn compile(code: &str) -> Result<(), Either<Error, Vec<Error>>> {
+pub fn compile(code: &str) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(code).collect();
+    log::title_success("LEXED");
+    log::body(&tokens);
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(Either::Right)?;
-    println!("Parsed: {:#?}", ast);
+    log::title_success("PARSED");
+    log::body(&ast);
     let mut bg = BytecodeGenerator::new();
     let chunk = bg.generate(&ast).map_err(Either::Left)?;
-    println!("GENERATED: {:#?}", chunk);
+    log::title_success("GENERATED");
+    log::body(&chunk.code);
     let mut vm = VM::default();
-    let interpreted = vm.interpret(&chunk);
-    println!("INTERPRETED: {:#?}", interpreted);
+    let _ = vm.interpret(&chunk);
     Ok(())
 }
 

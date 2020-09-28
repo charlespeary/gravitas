@@ -1,5 +1,6 @@
 use anyhow::Result;
 use derive_more::Display;
+use enum_as_inner::EnumAsInner;
 
 use crate::parser::Token;
 
@@ -11,7 +12,32 @@ pub enum Atom {
     Null,
 }
 
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum BranchType {
+    If,
+    ElseIf,
+    Else,
+}
+
 #[derive(Debug, PartialEq)]
+pub struct IfBranch {
+    pub condition: Expr,
+    pub body: Block,
+    pub branch_type: BranchType,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Block {
+    pub body: Vec<Stmt>,
+}
+
+impl Into<Expr> for Block {
+    fn into(self) -> Expr {
+        Expr::Block { body: self }
+    }
+}
+
+#[derive(Debug, PartialEq, EnumAsInner)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -30,7 +56,10 @@ pub enum Expr {
         expr: Box<Expr>,
     },
     Block {
-        body: Vec<Stmt>,
+        body: Block,
+    },
+    If {
+        branches: Vec<IfBranch>,
     },
     Atom(Atom),
 }
@@ -64,3 +93,5 @@ pub trait Visitable: Sized {
 impl Visitable for Expr {}
 
 impl Visitable for Stmt {}
+
+impl Visitable for Block {}
