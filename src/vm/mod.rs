@@ -92,7 +92,7 @@ impl VM {
                 Opcode::LessEqual => bin_op!(<=, 'l'),
                 Opcode::Greater => bin_op!(>, 'l'),
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
-                Opcode::Print => println!("{:?}", self.pop_stack()?),
+                Opcode::Print => println!("{}", self.pop_stack()?),
                 Opcode::Assign => {
                     let value = self.pop_stack()?;
                     let address = self.pop_reference()?;

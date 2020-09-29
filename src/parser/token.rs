@@ -1,8 +1,13 @@
 use derive_more::Display;
 use enum_as_inner::EnumAsInner;
-use logos::Logos;
+use logos::{Lexer, Logos};
 
 use crate::parser::ast::BranchType;
+
+fn text(lex: &mut Lexer<Token>) -> Option<String> {
+    let slice: String = lex.slice().parse().ok()?;
+    Some(slice[1..slice.len() - 1].to_owned())
+}
 
 #[derive(Logos, Debug, Display, Clone, PartialEq, EnumAsInner)]
 pub enum Token {
@@ -92,7 +97,7 @@ pub enum Token {
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
     Number(f64),
-    #[regex("\"[^\"]*\"", | lex | lex.slice().parse())]
+    #[regex("\"[^\"]*\"", text)]
     Text(String),
     #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
     Identifier(String),
