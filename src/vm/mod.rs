@@ -44,6 +44,13 @@ impl VM {
             .map_err(|_| anyhow!("Accessed value from the stack that wasn't a reference."))
     }
 
+    fn drop(&mut self, amount: u8) -> Result<()> {
+        for _ in 0..amount {
+            self.pop_stack()?;
+        }
+        Ok(())
+    }
+
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<InterpretValue> {
         log::title_success("INTERPRETATION");
         /// Helper to simplify repetitive usage of binary operators
@@ -57,7 +64,6 @@ impl VM {
             }};
             // macro for logical operations
              ($operator:tt, 'l') => {{
-                println!("{:#?} ", self.stack);
                 let a = self.pop_stack()?;
                 let b = self.pop_stack()?;
 
@@ -66,8 +72,9 @@ impl VM {
         }
 
         while let Some(opcode) = chunk.code.get(self.ip) {
-            log::vm_info(opcode);
-            log::vm_stack(&self.stack);
+            log::vm_title("OPCODE", opcode);
+            log::vm_subtitle("IP", &self.ip);
+            log::vm_subtitle("STACK", &self.stack);
             match opcode {
                 Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index).clone()),
                 Opcode::True => self.stack.push(Value::Bool(true)),
@@ -97,16 +104,12 @@ impl VM {
                     let value = self.pop_stack()?;
                     let address = self.pop_reference()?;
                     self.stack[address as usize] = value;
+                    self.stack.push(Value::Null);
                 }
                 Opcode::VarRef(index) => self.stack.push(Value::Reference(*index)),
                 Opcode::Var(index) => self.stack.push(self.stack[*index as usize].clone()),
-                Opcode::Pop => {
-                    self.pop_stack()?;
-                }
                 Opcode::PopN(amount) => {
-                    for _ in 0..*amount {
-                        self.pop_stack()?;
-                    }
+                    self.drop(*amount)?;
                 }
                 Opcode::JumpIfFalse(jump) => {
                     let value: bool = self.pop_stack()?.into();
@@ -114,8 +117,17 @@ impl VM {
                         self.ip += (*jump) as usize;
                     }
                 }
-                Opcode::Jump(jump) => {
+                Opcode::JumpForward(jump) => {
                     self.ip += (*jump) as usize;
+                }
+                Opcode::JumpBack(jump) => {
+                    self.ip -= *jump as usize;
+                    continue;
+                }
+                Opcode::Block(declared) => {
+                    let result = self.pop_stack()?;
+                    self.drop(*declared)?;
+                    self.stack.push(result);
                 }
                 Opcode::Return => {
                     println!("Return: {:#?}", self.stack.pop());

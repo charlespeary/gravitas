@@ -29,6 +29,7 @@ pub struct IfBranch {
 #[derive(Debug, PartialEq)]
 pub struct Block {
     pub body: Vec<Stmt>,
+    pub final_expr: Option<Box<Expr>>,
 }
 
 impl Into<Expr> for Block {
@@ -36,6 +37,9 @@ impl Into<Expr> for Block {
         Expr::Block { body: self }
     }
 }
+
+#[derive(Debug, PartialEq)]
+pub struct Ast(pub Vec<Stmt>);
 
 #[derive(Debug, PartialEq, EnumAsInner)]
 pub enum Expr {
@@ -61,13 +65,17 @@ pub enum Expr {
     If {
         branches: Vec<IfBranch>,
     },
+    While {
+        condition: Box<Expr>,
+        body: Block,
+    },
     Atom(Atom),
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     // Expressions
-    Expr { expr: Expr, terminated: bool },
+    Expr { expr: Expr },
     // Declarations
     Var { expr: Expr, identifier: String },
     // Class,
@@ -89,6 +97,8 @@ pub trait Visitable: Sized {
         t.visit(self)
     }
 }
+
+impl Visitable for Ast {}
 
 impl Visitable for Expr {}
 

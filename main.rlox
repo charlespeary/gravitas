@@ -1,8 +1,10 @@
-if false {
-    print "foo";
-} elif false {
-    print "bar";
+var x = if false {
+    2 + 5
+} elif false{
+    2 + 10
 } else {
-    print "zoo";
-}
-print "??";
+    var x = 10;
+    5
+};
+
+print x;

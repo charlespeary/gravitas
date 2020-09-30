@@ -26,12 +26,14 @@ pub enum Opcode {
     GreaterEqual,
     // Jumps
     JumpIfFalse(u8),
-    Jump(u8),
-    // ?
+    JumpForward(u8),
+    JumpBack(u8),
+    // Expressions
     Return,
+    // Block holds number of variables declared inside to drop
+    Block(u8),
     // Side effects
     Print,
-    Pop,
     PopN(u8),
     // Variables
     Var(u8),

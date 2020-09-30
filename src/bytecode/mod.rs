@@ -4,14 +4,16 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::{Address, Number, Value};
 
-use crate::parser::{Atom, Block, BranchType, Expr, IfBranch, Stmt, Token, Visitable, Visitor};
+use crate::parser::{
+    Ast, Atom, Block, BranchType, Expr, IfBranch, Stmt, Token, Visitable, Visitor,
+};
 
 mod chunk;
 mod opcode;
 mod value;
 
 /// State of the scope / block
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct Scope {
     /// Amount of declared variables in the given scope.
     pub declared: usize,
@@ -54,8 +56,12 @@ impl BytecodeGenerator {
             .scopes
             .pop()
             .expect("Tried to pop scope that doesn't exist");
+        // Pop locals from given scope
+        for _ in 0..scope.declared {
+            self.locals.pop();
+        }
         if scope.declared > 0 {
-            self.chunk.grow(Opcode::PopN(scope.declared as u8));
+            self.chunk.grow(Opcode::Block(scope.declared as u8));
         }
     }
 
@@ -76,18 +82,28 @@ impl BytecodeGenerator {
             .with_context(|| format!("{} doesn't exist", name))
     }
 
-    fn lookup_instruction_size<I>(ast: &I) -> Result<usize>
+    fn calculate_size<I>(ast: &I, parent: &BytecodeGenerator) -> Result<usize>
     where
         I: Visitable,
         Self: Visitor<I>,
     {
-        let mut bg = BytecodeGenerator::new();
+        let mut bg = BytecodeGenerator::from(parent);
         let chunk = bg.generate(ast)?;
         Ok(chunk.size() + 1)
     }
 
+    fn lookup_size<I>(&self, ast: &I) -> Result<usize>
+    where
+        I: Visitable,
+        Self: Visitor<I>,
+    {
+        BytecodeGenerator::calculate_size(ast, self)
+    }
+
     fn evaluate_branch(&mut self, branch: &IfBranch, jump: usize, jif: usize) -> Result<()> {
-        branch.condition.accept(self)?;
+        if branch.branch_type != BranchType::Else {
+            branch.condition.accept(self)?;
+        }
         match &branch.branch_type {
             BranchType::If | BranchType::ElseIf => {
                 self.chunk.grow(Opcode::JumpIfFalse(jif as u8));
@@ -96,7 +112,27 @@ impl BytecodeGenerator {
         }
         branch.body.accept(self)?;
         if jump > 0 && branch.branch_type != BranchType::Else {
-            self.chunk.grow(Opcode::Jump(jump as u8));
+            self.chunk.grow(Opcode::JumpForward(jump as u8));
+        }
+        Ok(())
+    }
+}
+
+impl From<&BytecodeGenerator> for BytecodeGenerator {
+    fn from(outer: &BytecodeGenerator) -> Self {
+        BytecodeGenerator {
+            locals: outer.locals.clone(),
+            scopes: outer.scopes.clone(),
+            ..Default::default()
+        }
+    }
+}
+
+impl Visitor<Ast> for BytecodeGenerator {
+    type Item = ();
+    fn visit(&mut self, ast: &Ast) -> Result<Self::Item> {
+        for stmt in &ast.0 {
+            stmt.accept(self)?;
         }
         Ok(())
     }
@@ -152,23 +188,30 @@ impl Visitor<Expr> for BytecodeGenerator {
                 self.chunk.grow(opcode);
             }
             Expr::Block { body } => {
-                self.begin_scope();
                 body.accept(self)?;
-                self.end_scope();
             }
             Expr::If { branches } => {
                 for (i, branch) in branches.iter().enumerate() {
                     let rest = &branches[i + 1..];
                     let jump: usize = rest
                         .iter()
-                        .map(|b| BytecodeGenerator::lookup_instruction_size(&b.body))
+                        .map(|b| self.lookup_size(&b.body))
                         .collect::<Result<Vec<usize>>>()?
                         .iter()
                         .sum();
-                    let jif = BytecodeGenerator::lookup_instruction_size(&branch.body)?;
+                    let jif = self.lookup_size(&branch.body)?;
 
                     self.evaluate_branch(branch, jump, jif)?;
                 }
+            }
+            Expr::While { body, condition } => {
+                let start = self.chunk.size() as u8;
+                condition.accept(self)?;
+                self.chunk
+                    .grow(Opcode::JumpIfFalse(self.lookup_size(body)? as u8));
+                body.accept(self)?;
+                let end = self.chunk.size() as u8;
+                self.chunk.grow(Opcode::JumpBack(end - start));
             }
         }
         Ok(())
@@ -185,12 +228,9 @@ impl Visitor<Stmt> for BytecodeGenerator {
                 expr.accept(self)?;
                 self.chunk.grow(Opcode::Print);
             }
-            Stmt::Expr { expr, terminated } => {
+            Stmt::Expr { expr } => {
                 expr.accept(self)?;
-                if *terminated {
-                    self.chunk.grow(Opcode::Pop);
-                    self.chunk.grow(Opcode::Null);
-                }
+                self.chunk.grow(Opcode::PopN(1));
             }
             Stmt::Var { expr, identifier } => {
                 expr.accept(self)?;
@@ -206,9 +246,20 @@ impl Visitor<Block> for BytecodeGenerator {
     type Item = ();
 
     fn visit(&mut self, block: &Block) -> Result<Self::Item> {
+        let Block { body, final_expr } = block;
         self.begin_scope();
-        for stmt in &block.body {
-            stmt.accept(self)?;
+
+        for item in body {
+            item.accept(self)?;
+        }
+
+        match final_expr {
+            Some(expr) => {
+                expr.accept(self)?;
+            }
+            _ => {
+                self.chunk.grow(Opcode::Null);
+            }
         }
         self.end_scope();
         Ok(())
@@ -217,7 +268,7 @@ impl Visitor<Block> for BytecodeGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::bytecode::opcode::Opcode::{Constant, JumpIfFalse};
+    use crate::bytecode::opcode::Opcode::JumpIfFalse;
     use crate::parser::Block;
 
     use super::*;
@@ -267,7 +318,6 @@ mod tests {
 
     #[quickcheck]
     fn expr_atom_text(text: String) {
-        println!("{}", text);
         let ast = Expr::Atom(Atom::Text(text.clone()));
         let (chunk, bytecode) = generate_bytecode(ast);
         assert_eq!(bytecode, vec![Opcode::Constant(0)]);
@@ -451,6 +501,7 @@ mod tests {
                     identifier: String::from("foo"),
                     expr: Expr::Atom(Atom::Number(10.0)),
                 }],
+                final_expr: None,
             },
         };
 
@@ -464,8 +515,8 @@ mod tests {
             body: Block {
                 body: vec![Stmt::Expr {
                     expr: Expr::Atom(Atom::Number(10.0)),
-                    terminated: true,
                 }],
+                final_expr: None,
             },
         };
 
@@ -485,6 +536,7 @@ mod tests {
                     identifier: String::from(VARIABLE_NAME),
                     expr: Expr::Atom(Atom::Number(10.0)),
                 }],
+                final_expr: None,
             },
         };
 
@@ -516,7 +568,6 @@ mod tests {
         // Stmt::Expr is just a side effect to kick off the expression stored inside it.
         let ast = Stmt::Expr {
             expr: Expr::Atom(Atom::Number(10.0)),
-            terminated: false,
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
@@ -536,6 +587,7 @@ mod tests {
                         identifier: String::from("foo"),
                         expr: Expr::Atom(Atom::Bool(true)),
                     }],
+                    final_expr: None,
                 },
             }],
         };
@@ -563,6 +615,7 @@ mod tests {
                             identifier: String::from("foo"),
                             expr: Expr::Atom(Atom::Bool(true)),
                         }],
+                        final_expr: None,
                     },
                 },
                 IfBranch {
@@ -573,6 +626,7 @@ mod tests {
                             identifier: String::from("bar"),
                             expr: Expr::Atom(Atom::Bool(true)),
                         }],
+                        final_expr: None,
                     },
                 },
             ],
@@ -585,7 +639,7 @@ mod tests {
                 Opcode::JumpIfFalse(3),
                 Opcode::True,
                 Opcode::PopN(1),
-                Opcode::Jump(3),
+                Opcode::JumpForward(3),
                 Opcode::True,
                 Opcode::JumpIfFalse(3),
                 Opcode::True,
@@ -606,6 +660,7 @@ mod tests {
                             identifier: String::from("foo"),
                             expr: Expr::Atom(Atom::Bool(true)),
                         }],
+                        final_expr: None,
                     },
                 },
                 IfBranch {
@@ -617,6 +672,7 @@ mod tests {
                             identifier: String::from("bar"),
                             expr: Expr::Atom(Atom::Bool(true)),
                         }],
+                        final_expr: None,
                     },
                 },
             ],
@@ -629,7 +685,7 @@ mod tests {
                 Opcode::JumpIfFalse(3),
                 Opcode::True,
                 Opcode::PopN(1),
-                Opcode::Jump(3),
+                Opcode::JumpForward(3),
                 Opcode::True,
                 Opcode::True,
                 Opcode::PopN(1)

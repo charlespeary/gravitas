@@ -2,11 +2,11 @@ use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
 
-pub use token::Token;
-
-pub use crate::parser::ast::{Atom, Block, BranchType, Expr, IfBranch, Stmt, Visitable, Visitor};
-use crate::parser::token::Affix;
-use crate::utils::{peek_nth, PeekNth};
+use crate::utils::{peek_nth, Either, PeekNth};
+pub use crate::{
+    parser::ast::{Ast, Atom, Block, BranchType, Expr, IfBranch, Stmt, Visitable, Visitor},
+    parser::token::{Affix, Token},
+};
 
 mod ast;
 mod token;
@@ -24,25 +24,24 @@ macro_rules! expect {
 pub struct Parser {
     errors: Vec<Error>,
     tokens: PeekNth<IntoIter<Token>>,
-    stmts: Vec<Stmt>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
             errors: Vec::new(),
-            stmts: Vec::new(),
             tokens: peek_nth(tokens.into_iter()),
         }
     }
 
     // UTILITIES
 
-    pub fn parse(mut self) -> Result<Expr, Vec<Error>> {
+    pub fn parse(mut self) -> Result<Ast, Vec<Error>> {
+        let mut stmts: Vec<Stmt> = vec![];
         while self.tokens.peek().is_some() {
             match self.stmt() {
                 Ok(stmt) => {
-                    self.stmts.push(stmt);
+                    stmts.push(stmt);
                 }
                 Err(e) => {
                     self.errors.push(e);
@@ -54,16 +53,13 @@ impl Parser {
                             break;
                         }
                     }
-                    return self.parse();
                 }
             }
         }
 
         if self.errors.is_empty() {
             // Global block wrapping all statements
-            Ok(Expr::Block {
-                body: Block { body: self.stmts },
-            })
+            Ok(Ast(stmts))
         } else {
             Err(self.errors)
         }
@@ -90,15 +86,31 @@ impl Parser {
     fn parse_block(&mut self) -> Result<Block> {
         expect!(self, Token::OpenBrace);
 
-        let mut body: Vec<Stmt> = Vec::new();
+        let mut block_items: Vec<Either<Stmt, Expr>> = Vec::new();
 
         while !self.peek_eq(Token::CloseBrace) {
-            body.push(self.stmt()?);
+            block_items.push(self.parse_expr_or_stmt()?);
         }
+
+        // TODO: dirty WIP logic
+        let final_expr = if block_items.last().map(|i| i.is_right()).unwrap_or(false) {
+            block_items.pop().unwrap().into_right().ok().map(Box::new)
+        } else {
+            None
+        };
+
+        let body = block_items
+            .into_iter()
+            .map(|i| {
+                i.into_left().map_err(|_| {
+                    anyhow!("Standalone expressions in block are only supported at the end!")
+                })
+            })
+            .collect::<Result<Vec<Stmt>>>()?;
 
         expect!(self, Token::CloseBrace);
 
-        Ok(Block { body })
+        Ok(Block { body, final_expr })
     }
 
     fn parse_if_branch(&mut self, branch_type: BranchType) -> Result<IfBranch> {
@@ -115,6 +127,21 @@ impl Parser {
             condition,
             body,
         })
+    }
+
+    fn parse_expr_or_stmt(&mut self) -> Result<Either<Stmt, Expr>> {
+        match self.peek_token().is_stmt() {
+            true => Ok(Either::Left(self.stmt()?)),
+            false => {
+                let expr = self.expr(0)?;
+                if self.peek_eq(Token::Semicolon) {
+                    expect!(self, Token::Semicolon);
+                    Ok(Either::Left(Stmt::Expr { expr }))
+                } else {
+                    Ok(Either::Right(expr))
+                }
+            }
+        }
     }
 
     // EXPRESSIONS
@@ -136,6 +163,7 @@ impl Parser {
             Token::OpenParenthesis => self.grouping_expr(),
             Token::OpenBrace => self.block_expr(),
             Token::If => self.if_expr(),
+            Token::While => self.while_expr(),
             _ => self.atom_expr(),
         }
     }
@@ -224,6 +252,14 @@ impl Parser {
         Ok(Expr::If { branches })
     }
 
+    fn while_expr(&mut self) -> Result<Expr> {
+        expect!(self, Token::While);
+        let condition = Box::new(self.expr(0)?);
+        let body = self.parse_block()?;
+
+        Ok(Expr::While { condition, body })
+    }
+
     // STATEMENTS
 
     fn stmt(&mut self) -> Result<Stmt> {
@@ -243,11 +279,8 @@ impl Parser {
 
     fn expr_stmt(&mut self) -> Result<Stmt> {
         let expr = self.expr(0)?;
-        let terminated = self.peek_eq(Token::Semicolon);
-        if terminated {
-            self.next_token();
-        }
-        Ok(Stmt::Expr { expr, terminated })
+        expect!(self, Token::Semicolon);
+        Ok(Stmt::Expr { expr })
     }
 
     fn var_stmt(&mut self) -> Result<Stmt> {
@@ -451,7 +484,8 @@ mod test {
                     body: vec![Stmt::Var {
                         identifier: String::from("var"),
                         expr: Expr::Atom(Atom::Number(10.0)),
-                    }]
+                    }],
+                    final_expr: None,
                 }
             }
         )

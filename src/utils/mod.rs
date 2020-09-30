@@ -2,6 +2,7 @@ use std::fs::read_to_string;
 use std::io::stdin;
 
 use anyhow::{Context, Error, Result};
+use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
 use crate::bytecode::BytecodeGenerator;
@@ -35,22 +36,38 @@ pub mod log {
         println!("{}", text.as_str().white());
     }
 
-    pub fn vm_info(opcode: &Opcode) {
-        let title = "OPCODE".yellow().bold();
-        let body = format!("{:?}", opcode).yellow();
+    pub fn vm_title<T: Debug>(text: &str, i: &T) {
+        let title = text.yellow().bold();
+        let body = format!("{:?}", i).yellow();
         println!("{}: {}", title, body);
     }
 
-    pub fn vm_stack(stack: &Vec<Value>) {
-        let title = "        STACK:".blue().bold();
-        println!("{} {}", title, format!("{:?}", stack).blue());
+    pub fn vm_subtitle<T: Debug>(text: &str, i: &T) {
+        let title = format!("        {}: ", text).as_str().blue().bold();
+        println!("{} {}", title, format!("{:?}", i).blue());
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, EnumAsInner)]
 pub enum Either<L, R> {
     Left(L),
     Right(R),
+}
+
+impl<L, R> Either<L, R> {
+    pub fn is_left(&self) -> bool {
+        match self {
+            Either::Left(_) => true,
+            Either::Right(_) => false,
+        }
+    }
+
+    pub fn is_right(&self) -> bool {
+        match self {
+            Either::Left(_) => false,
+            Either::Right(_) => true,
+        }
+    }
 }
 
 type Compiled = Result<(), Either<Error, Vec<Error>>>;
