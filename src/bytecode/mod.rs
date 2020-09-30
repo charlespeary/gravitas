@@ -268,7 +268,7 @@ impl Visitor<Block> for BytecodeGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::bytecode::opcode::Opcode::JumpIfFalse;
+    use crate::bytecode::opcode::Opcode::{Constant, JumpIfFalse};
     use crate::parser::Block;
 
     use super::*;
@@ -493,8 +493,7 @@ mod tests {
     }
 
     #[test]
-    fn expr_block() {
-        // Block adds the opcode responsible for dropping the temporary variables at the end of the scope.
+    fn expr_block_no_final_expr() {
         let ast = Expr::Block {
             body: Block {
                 body: vec![Stmt::Var {
@@ -507,72 +506,47 @@ mod tests {
 
         let (chunk, bytecode) = generate_bytecode(ast);
 
-        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
+        assert_eq!(
+            bytecode,
+            vec![Opcode::Constant(0), Opcode::Null, Opcode::Block(1)]
+        );
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
+    }
 
-        // If there were no variables created in the block, then the PopN opcode is not added.
+    #[test]
+    fn expr_block_final_expr() {
         let ast = Expr::Block {
             body: Block {
-                body: vec![Stmt::Expr {
-                    expr: Expr::Atom(Atom::Number(10.0)),
-                }],
-                final_expr: None,
+                body: vec![],
+                final_expr: Some(Box::new(Expr::Atom(Atom::Number(10.0)))),
             },
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
 
+        // When no variables are created inside the block, then no Opcode::Block is added
+        // because there are no variables to drop
         assert_eq!(bytecode, vec![Opcode::Constant(0)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
-    }
-
-    #[test]
-    fn stmt_var() {
-        let mut bg = BytecodeGenerator::default();
 
         let ast = Expr::Block {
             body: Block {
                 body: vec![Stmt::Var {
-                    identifier: String::from(VARIABLE_NAME),
-                    expr: Expr::Atom(Atom::Number(10.0)),
+                    identifier: String::from("foo"),
+                    expr: Expr::Atom(Atom::Null),
                 }],
-                final_expr: None,
+                final_expr: Some(Box::new(Expr::Atom(Atom::Number(10.0)))),
             },
-        };
-
-        let chunk = bg
-            .generate(&ast)
-            .expect("Couldn't generate bytecode for given ast");
-
-        let bytecode = into_bytecode(chunk.clone());
-
-        // Bytecode generator adds newly created variable to the locals vector,
-        // so it can remember and figure out where variables should be stored on stack.
-        assert_eq!(bg.locals, vec![VARIABLE_NAME.to_owned()]);
-        // We can search for given local and get back its index on the stack wrapped in a Result.
-        // Error is thrown if variable was not created and therefore doesn't exist.
-        bg.begin_scope();
-        assert_eq!(
-            bg.find_local(VARIABLE_NAME)
-                .expect("Variable not found in the vector of local variables."),
-            0
-        );
-        bg.end_scope();
-        // Variable declaration doesn't add any opcode overhead, because all variables are just temporary values on the stack.
-        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
-        assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
-    }
-
-    #[test]
-    fn stmt_expr() {
-        // Stmt::Expr is just a side effect to kick off the expression stored inside it.
-        let ast = Stmt::Expr {
-            expr: Expr::Atom(Atom::Number(10.0)),
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
 
-        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        // Opcode::Block is added whenever we declare variables inside the block, so they are dropped
+        // at the end of the block.
+        assert_eq!(
+            bytecode,
+            vec![Opcode::Null, Opcode::Constant(0), Opcode::Block(1)]
+        );
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
     }
 
@@ -636,14 +610,16 @@ mod tests {
             bytecode,
             vec![
                 Opcode::False,
-                Opcode::JumpIfFalse(3),
+                Opcode::JumpIfFalse(4),
                 Opcode::True,
-                Opcode::PopN(1),
-                Opcode::JumpForward(3),
+                Opcode::Null,
+                Opcode::Block(1),
+                Opcode::JumpForward(4),
                 Opcode::True,
-                Opcode::JumpIfFalse(3),
+                Opcode::JumpIfFalse(4),
                 Opcode::True,
-                Opcode::PopN(1)
+                Opcode::Null,
+                Opcode::Block(1)
             ]
         )
     }
@@ -682,14 +658,100 @@ mod tests {
             bytecode,
             vec![
                 Opcode::False,
-                Opcode::JumpIfFalse(3),
+                Opcode::JumpIfFalse(4),
                 Opcode::True,
-                Opcode::PopN(1),
-                Opcode::JumpForward(3),
+                Opcode::Null,
+                Opcode::Block(1),
+                Opcode::JumpForward(4),
                 Opcode::True,
-                Opcode::True,
-                Opcode::PopN(1)
+                Opcode::Null,
+                Opcode::Block(1)
             ]
         )
+    }
+
+    #[test]
+    fn while_expr() {
+        let ast = Expr::While {
+            condition: Box::new(Expr::Binary {
+                left: Box::new(Expr::Atom(Atom::Number(10.0))),
+                operator: Token::Less,
+                right: Box::new(Expr::Atom(Atom::Number(20.0))),
+            }),
+            body: Block {
+                body: vec![Stmt::Print {
+                    expr: Expr::Atom(Atom::Text(String::from("while loop"))),
+                }],
+                final_expr: None,
+            },
+        };
+
+        let (_, bytecode) = generate_bytecode(ast);
+
+        assert_eq!(
+            bytecode,
+            vec![
+                Opcode::Constant(0),
+                Opcode::Constant(1),
+                Opcode::Less,
+                Opcode::JumpIfFalse(4),
+                Opcode::Constant(2),
+                Opcode::Print,
+                Opcode::Null,
+                Opcode::JumpBack(7)
+            ]
+        )
+    }
+
+    // STATEMENTS
+
+    #[test]
+    fn stmt_var() {
+        let mut bg = BytecodeGenerator::default();
+
+        let ast = Expr::Block {
+            body: Block {
+                body: vec![Stmt::Var {
+                    identifier: String::from(VARIABLE_NAME),
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                }],
+                final_expr: None,
+            },
+        };
+
+        let chunk = bg
+            .generate(&ast)
+            .expect("Couldn't generate bytecode for given ast");
+
+        let bytecode = into_bytecode(chunk.clone());
+
+        // Bytecode generator adds newly created variable to the locals vector,
+        // so it can remember and figure out where variables should be stored on stack.
+        assert_eq!(bg.locals, vec![VARIABLE_NAME.to_owned()]);
+        // We can search for given local and get back its index on the stack wrapped in a Result.
+        // Error is thrown if variable was not created and therefore doesn't exist.
+        bg.begin_scope();
+        assert_eq!(
+            bg.find_local(VARIABLE_NAME)
+                .expect("Variable not found in the vector of local variables."),
+            0
+        );
+        bg.end_scope();
+        // Variable declaration doesn't add any opcode overhead, because all variables are just temporary values on the stack.
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
+        assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn stmt_expr() {
+        // Stmt::Expr is just a side effect to kick off the expression stored inside it.
+        let ast = Stmt::Expr {
+            expr: Expr::Atom(Atom::Number(10.0)),
+        };
+
+        let (chunk, bytecode) = generate_bytecode(ast);
+
+        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
     }
 }

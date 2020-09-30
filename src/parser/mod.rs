@@ -491,6 +491,29 @@ mod test {
         )
     }
 
+    #[test]
+    fn while_expr() {
+        let mut parser = Parser::new(vec![
+            Token::While,
+            Token::True,
+            Token::OpenBrace,
+            Token::Number(10.0),
+            Token::CloseBrace,
+        ]);
+        assert_eq!(
+            parser
+                .expr(0)
+                .expect("Unable to parse expression from given tokens."),
+            Expr::While {
+                condition: Box::new(Expr::Atom(Atom::Bool(true))),
+                body: Block {
+                    body: vec![],
+                    final_expr: Some(Box::new(Expr::Atom(Atom::Number(10.0)))),
+                },
+            }
+        );
+    }
+
     // STATEMENTS
 
     #[test]
