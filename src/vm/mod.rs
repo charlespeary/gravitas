@@ -72,9 +72,11 @@ impl VM {
         }
 
         while let Some(opcode) = chunk.code.get(self.ip) {
-            log::vm_title("OPCODE", opcode);
-            log::vm_subtitle("IP", &self.ip);
-            log::vm_subtitle("STACK", &self.stack);
+            if self.settings.debug {
+                log::vm_title("OPCODE", opcode);
+                log::vm_subtitle("IP", &self.ip);
+                log::vm_subtitle("STACK", &self.stack);
+            }
             match opcode {
                 Opcode::Constant(index) => self.stack.push(chunk.read_constant(*index).clone()),
                 Opcode::True => self.stack.push(Value::Bool(true)),

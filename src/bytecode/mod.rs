@@ -207,11 +207,14 @@ impl Visitor<Expr> for BytecodeGenerator {
             Expr::While { body, condition } => {
                 let start = self.chunk.size() as u8;
                 condition.accept(self)?;
+                // +1, because we need to count in the PopN(1) we add to discard result of the block expr
                 self.chunk
-                    .grow(Opcode::JumpIfFalse(self.lookup_size(body)? as u8));
+                    .grow(Opcode::JumpIfFalse(self.lookup_size(body)? as u8 + 1));
                 body.accept(self)?;
+                self.chunk.grow(Opcode::PopN(1));
                 let end = self.chunk.size() as u8;
                 self.chunk.grow(Opcode::JumpBack(end - start));
+                self.chunk.grow(Opcode::Null);
             }
         }
         Ok(())
@@ -570,9 +573,10 @@ mod tests {
             bytecode,
             vec![
                 Opcode::True,
-                Opcode::JumpIfFalse(3),
+                Opcode::JumpIfFalse(4),
                 Opcode::True,
-                Opcode::PopN(1),
+                Opcode::Null,
+                Opcode::Block(1),
             ]
         )
     }
@@ -694,11 +698,13 @@ mod tests {
                 Opcode::Constant(0),
                 Opcode::Constant(1),
                 Opcode::Less,
-                Opcode::JumpIfFalse(4),
+                Opcode::JumpIfFalse(5),
                 Opcode::Constant(2),
                 Opcode::Print,
                 Opcode::Null,
-                Opcode::JumpBack(7)
+                Opcode::PopN(1),
+                Opcode::JumpBack(8),
+                Opcode::Null
             ]
         )
     }
@@ -727,10 +733,11 @@ mod tests {
 
         // Bytecode generator adds newly created variable to the locals vector,
         // so it can remember and figure out where variables should be stored on stack.
-        assert_eq!(bg.locals, vec![VARIABLE_NAME.to_owned()]);
         // We can search for given local and get back its index on the stack wrapped in a Result.
         // Error is thrown if variable was not created and therefore doesn't exist.
         bg.begin_scope();
+        bg.add_local(VARIABLE_NAME.to_owned());
+        assert_eq!(bg.locals, vec![VARIABLE_NAME.to_owned()]);
         assert_eq!(
             bg.find_local(VARIABLE_NAME)
                 .expect("Variable not found in the vector of local variables."),
@@ -738,7 +745,10 @@ mod tests {
         );
         bg.end_scope();
         // Variable declaration doesn't add any opcode overhead, because all variables are just temporary values on the stack.
-        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
+        assert_eq!(
+            bytecode,
+            vec![Opcode::Constant(0), Opcode::Null, Opcode::Block(1)]
+        );
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
     }
 
@@ -751,7 +761,7 @@ mod tests {
 
         let (chunk, bytecode) = generate_bytecode(ast);
 
-        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
     }
 }

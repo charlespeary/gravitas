@@ -1,10 +1,7 @@
-var x = if false {
-    2 + 5
-} elif false{
-    2 + 10
-} else {
-    var x = 10;
-    5
+var x = 10;
+var z = while x < 20 {
+    x = x + 1;
 };
 
+print z;
 print x;

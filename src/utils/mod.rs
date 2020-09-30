@@ -72,13 +72,13 @@ impl<L, R> Either<L, R> {
 
 type Compiled = Result<(), Either<Error, Vec<Error>>>;
 
-pub fn initialize(settings: &Settings) -> Compiled {
+pub fn initialize(settings: Settings) -> Compiled {
     if let Some(path) = &settings.file_path {
         let code = read_to_string(path)
             .with_context(|| "Given input file doesn't exist.")
             .map_err(Either::Left)?;
 
-        compile(&code)?;
+        compile(&code, &settings)?;
     } else {
         loop {
             println!("> ");
@@ -88,13 +88,13 @@ pub fn initialize(settings: &Settings) -> Compiled {
                 .read_line(&mut input)
                 .with_context(|| "Couldn't read the line")
                 .map_err(Either::Left)?;
-            compile(&input)?;
+            compile(&input, &settings)?;
         }
     }
     Ok(())
 }
 
-pub fn compile(code: &str) -> Compiled {
+pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(code).collect();
     log::title_success("LEXED");
     log::body(&tokens);
@@ -106,7 +106,7 @@ pub fn compile(code: &str) -> Compiled {
     let chunk = bg.generate(&ast).map_err(Either::Left)?;
     log::title_success("GENERATED");
     log::body(&chunk.code);
-    let mut vm = VM::default();
+    let mut vm = VM::from(settings.clone());
     let _ = vm.interpret(&chunk);
     Ok(())
 }

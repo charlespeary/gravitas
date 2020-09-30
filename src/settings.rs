@@ -1,6 +1,6 @@
 use clap::Clap;
 
-#[derive(Clap, Default, Debug)]
+#[derive(Clap, Default, Debug, Clone)]
 pub struct Settings {
     /// Show executed opcodes
     #[clap(short)]

@@ -19,7 +19,7 @@ mod vm;
 
 fn main() -> Result<()> {
     let settings = Settings::parse();
-    match initialize(&settings) {
+    match initialize(settings) {
         Ok(_) => {}
         Err(e) => {
             utils::log::title_error("ERROR");
