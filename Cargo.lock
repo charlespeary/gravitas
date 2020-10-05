@@ -370,21 +370,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 
 [[package]]
-name = "rlox"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "colored",
- "derive_more",
- "enum-as-inner",
- "lazy_static",
- "logos",
- "quickcheck",
- "quickcheck_macros",
-]
-
-[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -474,6 +459,21 @@ name = "version_check"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+
+[[package]]
+name = "vtas"
+version = "0.1.0"
+dependencies = [
+    "anyhow",
+    "clap",
+    "colored",
+    "derive_more",
+    "enum-as-inner",
+    "lazy_static",
+    "logos",
+    "quickcheck",
+    "quickcheck_macros",
+]
 
 [[package]]
 name = "wasi"

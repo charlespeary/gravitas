@@ -10,26 +10,25 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn grow(&mut self, opcode: Opcode) -> usize {
+        let inserted_at = self.code.len();
         self.code.push(opcode);
-        self.code.len() - 1
+        inserted_at
     }
 
     pub fn size(&self) -> usize {
         self.code.len()
     }
 
-    pub fn add_constant(&mut self, constant: Value) -> u8 {
+    pub fn add_constant(&mut self, constant: Value) -> usize {
         self.constants.push(constant);
-        let constant_index = (self.constants.len() - 1) as u8;
+        let constant_index = self.constants.len() - 1;
         self.grow(Opcode::Constant(constant_index));
         constant_index
     }
 
     // TODO: Handle longer constants
-    pub fn read_constant(&self, index: u8) -> &Value {
-        self.constants
-            .get(index as usize)
-            .expect("Chunk in wrong state!")
+    pub fn read_constant(&self, index: usize) -> &Value {
+        self.constants.get(index).expect("Chunk in wrong state!")
     }
 }
 

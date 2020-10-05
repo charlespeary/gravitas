@@ -61,6 +61,10 @@ pub enum Token {
     ElseIf,
     #[token("else")]
     Else,
+    #[token("match")]
+    Match,
+    #[token("_")]
+    Default,
     #[token("false")]
     False,
     #[token("true")]

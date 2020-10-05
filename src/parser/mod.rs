@@ -2,6 +2,7 @@ use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
 
+use crate::parser::ast::ExprOrStmt;
 use crate::utils::{peek_nth, Either, PeekNth};
 pub use crate::{
     parser::ast::{Ast, Atom, Block, BranchType, Expr, IfBranch, Stmt, Visitable, Visitor},
@@ -81,6 +82,10 @@ impl Parser {
         self.tokens.next().expect("Tried to iterate empty iterator")
     }
 
+    // fn error<T>(&mut self, token: Token) -> Result<T> {
+    //     token.
+    // }
+
     // GRAMMAR
 
     fn parse_block(&mut self) -> Result<Block> {
@@ -129,7 +134,7 @@ impl Parser {
         })
     }
 
-    fn parse_expr_or_stmt(&mut self) -> Result<Either<Stmt, Expr>> {
+    fn parse_expr_or_stmt(&mut self) -> Result<ExprOrStmt> {
         match self.peek_token().is_stmt() {
             true => Ok(Either::Left(self.stmt()?)),
             false => {
@@ -144,14 +149,12 @@ impl Parser {
         }
     }
 
-    // EXPRESSIONS
-
-    fn expr(&mut self, rbp: usize) -> Result<Expr> {
-        let mut expr = self.prefix()?;
-        while self.peek_bp(Affix::Infix) > rbp {
-            expr = self.binary_expr(expr)?;
+    fn parse_optional_expr(&mut self) -> Result<Option<Expr>> {
+        if !self.peek_eq(Token::Semicolon) {
+            Ok(Some(self.expr(0)?))
+        } else {
+            Ok(None)
         }
-        Ok(expr)
     }
 
     fn prefix(&mut self) -> Result<Expr> {
@@ -164,8 +167,19 @@ impl Parser {
             Token::OpenBrace => self.block_expr(),
             Token::If => self.if_expr(),
             Token::While => self.while_expr(),
+            Token::Break => self.break_expr(),
             _ => self.atom_expr(),
         }
+    }
+
+    // EXPRESSIONS
+
+    fn expr(&mut self, rbp: usize) -> Result<Expr> {
+        let mut expr = self.prefix()?;
+        while self.peek_bp(Affix::Infix) > rbp {
+            expr = self.binary_expr(expr)?;
+        }
+        Ok(expr)
     }
 
     fn var_expr(&mut self) -> Result<Expr> {
@@ -183,17 +197,20 @@ impl Parser {
 
     fn atom_expr(&mut self) -> Result<Expr> {
         let token = self.next_token();
-        match token {
-            Token::Text(text) => Ok(Expr::Atom(Atom::Text(text))),
-            Token::Number(num) => Ok(Expr::Atom(Atom::Number(num))),
-            Token::False => Ok(Expr::Atom(Atom::Bool(false))),
-            Token::True => Ok(Expr::Atom(Atom::Bool(true))),
-            Token::Null => Ok(Expr::Atom(Atom::Null)),
-            _ => Err(anyhow!(
-                "This token is not supported by the parser: {}",
-                token
-            )),
-        }
+        Ok(match token {
+            Token::Text(text) => Expr::Atom(Atom::Text(text)),
+            Token::Number(num) => Expr::Atom(Atom::Number(num)),
+            Token::False => Expr::Atom(Atom::Bool(false)),
+            Token::True => Expr::Atom(Atom::Bool(true)),
+            Token::Null => Expr::Atom(Atom::Null),
+            Token::Continue => Expr::Continue,
+            _ => {
+                return Err(anyhow!(
+                    "This token is not supported by the parser: {}",
+                    token
+                ))
+            }
+        })
     }
 
     fn grouping_expr(&mut self) -> Result<Expr> {
@@ -258,6 +275,13 @@ impl Parser {
         let body = self.parse_block()?;
 
         Ok(Expr::While { condition, body })
+    }
+
+    fn break_expr(&mut self) -> Result<Expr> {
+        expect!(self, Token::Break);
+        let expr = self.parse_optional_expr()?.map(Box::new);
+
+        Ok(Expr::Break { expr })
     }
 
     // STATEMENTS

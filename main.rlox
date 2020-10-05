@@ -1,7 +1,33 @@
-var x = 10;
-var z = while x < 20 {
-    x = x + 1;
+var a = if true {
+    5
 };
 
-print z;
-print x;
+var b = if false {
+    10
+} else {
+    15
+};
+
+var c = if false {
+    1
+} elif false {
+    2
+} else {
+    3
+};
+
+var d = while false {
+    print "foo";
+};
+
+
+var temp = 0;
+var e = while temp < 10 {
+    temp = temp + 1;
+};
+
+print a;
+print b;
+print c;
+print d;
+print e;

@@ -5,7 +5,7 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 
 pub type Number = f64;
-pub type Address = u8;
+pub type Address = usize;
 
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Value {

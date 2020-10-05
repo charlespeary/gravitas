@@ -4,9 +4,7 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::{Address, Number, Value};
 
-use crate::parser::{
-    Ast, Atom, Block, BranchType, Expr, IfBranch, Stmt, Token, Visitable, Visitor,
-};
+use crate::parser::{Ast, Atom, Block, Expr, IfBranch, Stmt, Token, Visitable, Visitor};
 
 mod chunk;
 mod opcode;
@@ -19,11 +17,26 @@ pub struct Scope {
     pub declared: usize,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Loop {
+    starting_index: usize,
+    // Number of continue and break expressions in given loop
+    patches: Vec<Patch>,
+}
+
+const PATCH: usize = 0;
+
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+pub struct Patch {
+    index: usize,
+}
+
 #[derive(Default)]
 pub struct BytecodeGenerator {
     chunk: Chunk,
     locals: Vec<String>,
     scopes: Vec<Scope>,
+    loops: Vec<Loop>,
 }
 
 impl BytecodeGenerator {
@@ -39,12 +52,51 @@ impl BytecodeGenerator {
         I: Visitable,
         Self: Visitor<I>,
     {
-        // for node in ast {
         ast.accept(self)?;
-        // }
 
         // temporary clone until I figure out how to generate bytecode properly
         Ok(self.chunk.clone())
+    }
+
+    pub fn curr_index(&mut self) -> usize {
+        let size = self.chunk.size();
+        if size == 0 {
+            0
+        } else {
+            size - 1
+        }
+    }
+
+    pub fn emit_code(&mut self, opcode: Opcode) -> usize {
+        self.chunk.grow(opcode)
+    }
+
+    // OPCODE PATCHING
+    pub fn emit_patch(&mut self, opcode: Opcode) -> Patch {
+        let index = self.emit_code(opcode);
+        Patch { index }
+    }
+
+    pub fn patch(&mut self, patch: &Patch) {
+        let current_index = self.curr_index();
+
+        let opcode = self
+            .chunk
+            .code
+            .get_mut(patch.index)
+            .expect("Patch tried to access wrong opcode.");
+        println!(
+            "Current index: {} Patch index: {}",
+            current_index, patch.index
+        );
+        let patched_opcode = opcode.patch(current_index - patch.index);
+        let _ = std::mem::replace(opcode, patched_opcode);
+    }
+
+    pub fn patch_many(&mut self, patches: &[Patch]) {
+        for patch in patches {
+            self.patch(patch);
+        }
     }
 
     pub fn begin_scope(&mut self) {
@@ -61,8 +113,30 @@ impl BytecodeGenerator {
             self.locals.pop();
         }
         if scope.declared > 0 {
-            self.chunk.grow(Opcode::Block(scope.declared as u8));
+            self.emit_code(Opcode::Block(scope.declared));
         }
+    }
+
+    pub fn begin_loop(&mut self) -> usize {
+        let starting_index = self.curr_index();
+        self.loops.push(Loop {
+            starting_index,
+            patches: vec![],
+        });
+        self.loops.len()
+    }
+
+    pub fn end_loop(&mut self) -> Loop {
+        self.loops
+            .pop()
+            .expect("Bytecode emitter is in invalid state. Tried to pop loop in no-loop context.")
+    }
+
+    pub fn current_loop(&mut self) -> &mut Loop {
+        // Static analysis will ensure that we won't ever generate bytecode
+        // that will contain code meant for loops placed outside the loops, so
+        // we can safely unwrap this.
+        self.loops.last_mut().unwrap()
     }
 
     pub fn add_local(&mut self, name: String) {
@@ -82,39 +156,14 @@ impl BytecodeGenerator {
             .with_context(|| format!("{} doesn't exist", name))
     }
 
-    fn calculate_size<I>(ast: &I, parent: &BytecodeGenerator) -> Result<usize>
-    where
-        I: Visitable,
-        Self: Visitor<I>,
-    {
-        let mut bg = BytecodeGenerator::from(parent);
-        let chunk = bg.generate(ast)?;
-        Ok(chunk.size() + 1)
-    }
-
-    fn lookup_size<I>(&self, ast: &I) -> Result<usize>
-    where
-        I: Visitable,
-        Self: Visitor<I>,
-    {
-        BytecodeGenerator::calculate_size(ast, self)
-    }
-
-    fn evaluate_branch(&mut self, branch: &IfBranch, jump: usize, jif: usize) -> Result<()> {
-        if branch.branch_type != BranchType::Else {
-            branch.condition.accept(self)?;
-        }
-        match &branch.branch_type {
-            BranchType::If | BranchType::ElseIf => {
-                self.chunk.grow(Opcode::JumpIfFalse(jif as u8));
-            }
-            _ => {}
-        }
+    fn evaluate_branch(&mut self, branch: &IfBranch) -> Result<Patch> {
+        branch.condition.accept(self)?;
+        let patch = self.emit_patch(Opcode::JumpIfFalse(PATCH));
         branch.body.accept(self)?;
-        if jump > 0 && branch.branch_type != BranchType::Else {
-            self.chunk.grow(Opcode::JumpForward(jump as u8));
-        }
-        Ok(())
+        let jump_forward = self.emit_patch(Opcode::JumpForward(PATCH));
+        println!("BRANCH");
+        self.patch(&patch);
+        Ok(jump_forward)
     }
 }
 
@@ -123,6 +172,7 @@ impl From<&BytecodeGenerator> for BytecodeGenerator {
         BytecodeGenerator {
             locals: outer.locals.clone(),
             scopes: outer.scopes.clone(),
+            loops: outer.loops.clone(),
             ..Default::default()
         }
     }
@@ -148,10 +198,10 @@ impl Visitor<Expr> for BytecodeGenerator {
                     self.chunk.add_constant(Value::Number(*num));
                 }
                 Atom::Bool(bool) => {
-                    self.chunk.grow((*bool).into());
+                    self.emit_code((*bool).into());
                 }
                 Atom::Null => {
-                    self.chunk.grow(Opcode::Null);
+                    self.emit_code(Opcode::Null);
                 }
                 Atom::Text(string) => {
                     self.chunk.add_constant(Value::String(string.clone()));
@@ -164,7 +214,7 @@ impl Visitor<Expr> for BytecodeGenerator {
             } => {
                 left.accept(self)?;
                 right.accept(self)?;
-                self.chunk.grow(operator.clone().into());
+                self.emit_code(operator.clone().into());
             }
             Expr::Grouping { expr } => {
                 expr.accept(self)?;
@@ -176,45 +226,60 @@ impl Visitor<Expr> for BytecodeGenerator {
                     Token::Minus => Opcode::Negate,
                     _ => unreachable!(),
                 };
-                self.chunk.grow(opcode);
+                self.emit_code(opcode);
             }
             Expr::Var { identifier, is_ref } => {
-                let local = self.find_local(identifier)? as u8;
+                let local = self.find_local(identifier)?;
                 let opcode = match *is_ref {
                     true => Opcode::VarRef(local),
                     false => Opcode::Var(local),
                 };
 
-                self.chunk.grow(opcode);
+                self.emit_code(opcode);
             }
             Expr::Block { body } => {
                 body.accept(self)?;
             }
             Expr::If { branches } => {
-                for (i, branch) in branches.iter().enumerate() {
-                    let rest = &branches[i + 1..];
-                    let jump: usize = rest
-                        .iter()
-                        .map(|b| self.lookup_size(&b.body))
-                        .collect::<Result<Vec<usize>>>()?
-                        .iter()
-                        .sum();
-                    let jif = self.lookup_size(&branch.body)?;
-
-                    self.evaluate_branch(branch, jump, jif)?;
+                let branches_patches: Vec<Patch> = branches
+                    .iter()
+                    .map(|b| self.evaluate_branch(b))
+                    .collect::<Result<Vec<Patch>>>()?;
+                self.emit_code(Opcode::Null);
+                println!("JUMP FORWARD");
+                self.patch_many(&branches_patches);
+            }
+            Expr::Break { expr } => {
+                if let Some(break_expr) = expr {
+                    break_expr.accept(self)?;
+                } else {
+                    self.emit_code(Opcode::Null);
                 }
+                let break_patch = self.emit_patch(Opcode::Break(PATCH));
+                self.current_loop().patches.push(break_patch);
+            }
+
+            Expr::Continue => {
+                let ending_index = self.curr_index();
+                let starting_index = self.current_loop().starting_index;
+                self.emit_code(Opcode::JumpBack(ending_index - starting_index));
             }
             Expr::While { body, condition } => {
-                let start = self.chunk.size() as u8;
+                self.begin_loop();
+                let start = self.curr_index();
                 condition.accept(self)?;
-                // +1, because we need to count in the PopN(1) we add to discard result of the block expr
-                self.chunk
-                    .grow(Opcode::JumpIfFalse(self.lookup_size(body)? as u8 + 1));
+
+                let jif = self.emit_patch(Opcode::JumpIfFalse(PATCH));
                 body.accept(self)?;
-                self.chunk.grow(Opcode::PopN(1));
-                let end = self.chunk.size() as u8;
-                self.chunk.grow(Opcode::JumpBack(end - start));
-                self.chunk.grow(Opcode::Null);
+
+                self.emit_code(Opcode::PopN(1));
+                let end = self.curr_index();
+                self.emit_code(Opcode::JumpBack(end - start));
+                self.patch(&jif);
+                self.emit_code(Opcode::Null);
+
+                let current_loop = self.end_loop();
+                self.patch_many(&current_loop.patches);
             }
         }
         Ok(())
@@ -229,18 +294,17 @@ impl Visitor<Stmt> for BytecodeGenerator {
             // TODO: Delete this statement when concept of std lib is done
             Stmt::Print { expr } => {
                 expr.accept(self)?;
-                self.chunk.grow(Opcode::Print);
+                self.emit_code(Opcode::Print);
             }
             Stmt::Expr { expr } => {
                 expr.accept(self)?;
-                self.chunk.grow(Opcode::PopN(1));
+                self.emit_code(Opcode::PopN(1));
             }
             Stmt::Var { expr, identifier } => {
                 expr.accept(self)?;
                 self.add_local(identifier.clone());
             }
         }
-        // these clones are temporary, since I'm not sure how I will end up generating the bytecode
         Ok(())
     }
 }
@@ -261,7 +325,7 @@ impl Visitor<Block> for BytecodeGenerator {
                 expr.accept(self)?;
             }
             _ => {
-                self.chunk.grow(Opcode::Null);
+                self.emit_code(Opcode::Null);
             }
         }
         self.end_scope();
@@ -271,8 +335,7 @@ impl Visitor<Block> for BytecodeGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::bytecode::opcode::Opcode::{Constant, JumpIfFalse};
-    use crate::parser::Block;
+    use crate::parser::{Block, BranchType};
 
     use super::*;
 
@@ -577,6 +640,8 @@ mod tests {
                 Opcode::True,
                 Opcode::Null,
                 Opcode::Block(1),
+                Opcode::JumpForward(1),
+                Opcode::Null
             ]
         )
     }
@@ -618,12 +683,14 @@ mod tests {
                 Opcode::True,
                 Opcode::Null,
                 Opcode::Block(1),
-                Opcode::JumpForward(4),
+                Opcode::JumpForward(7),
                 Opcode::True,
                 Opcode::JumpIfFalse(4),
                 Opcode::True,
                 Opcode::Null,
-                Opcode::Block(1)
+                Opcode::Block(1),
+                Opcode::JumpForward(1),
+                Opcode::Null
             ]
         )
     }
@@ -666,10 +733,14 @@ mod tests {
                 Opcode::True,
                 Opcode::Null,
                 Opcode::Block(1),
-                Opcode::JumpForward(4),
+                Opcode::JumpForward(7),
+                Opcode::True,
+                Opcode::JumpIfFalse(4),
                 Opcode::True,
                 Opcode::Null,
-                Opcode::Block(1)
+                Opcode::Block(1),
+                Opcode::JumpForward(1),
+                Opcode::Null
             ]
         )
     }
@@ -703,8 +774,8 @@ mod tests {
                 Opcode::Print,
                 Opcode::Null,
                 Opcode::PopN(1),
-                Opcode::JumpBack(8),
-                Opcode::Null
+                Opcode::JumpBack(7),
+                Opcode::Null,
             ]
         )
     }

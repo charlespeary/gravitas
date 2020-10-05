@@ -1,5 +1,5 @@
 [package]
-name = "rlox"
+name = "vtas"
 version = "0.1.0"
 authors = ["Sniadek <karolgruszka9@gmail.com>"]
 edition = "2018"

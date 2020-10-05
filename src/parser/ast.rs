@@ -3,6 +3,7 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 
 use crate::parser::Token;
+use crate::utils::Either;
 
 #[derive(Debug, Display, PartialEq)]
 pub enum Atom {
@@ -41,6 +42,8 @@ impl Into<Expr> for Block {
 #[derive(Debug, PartialEq)]
 pub struct Ast(pub Vec<Stmt>);
 
+pub type ExprOrStmt = Either<Stmt, Expr>;
+
 #[derive(Debug, PartialEq, EnumAsInner)]
 pub enum Expr {
     Binary {
@@ -69,6 +72,10 @@ pub enum Expr {
         condition: Box<Expr>,
         body: Block,
     },
+    Break {
+        expr: Option<Box<Expr>>,
+    },
+    Continue,
     Atom(Atom),
 }
 

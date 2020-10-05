@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::ops::Neg;
-use std::slice::Iter;
 
 use anyhow::{anyhow, Context, Result};
 
@@ -21,21 +20,11 @@ type InterpretValue = String;
 impl VM {
     // TODO: Implement this as into()
     fn pop_stack(&mut self) -> Result<Value> {
-        self.stack
-            .pop()
-            .with_context(|| "Tried to pop value from an empty stack")
-    }
-
-    fn pop_string(&mut self) -> Result<String> {
-        self.pop_stack()?
-            .into_string()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a string."))
-    }
-
-    fn pop_number(&mut self) -> Result<Number> {
-        self.pop_stack()?
-            .into_number()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a number."))
+        let value = self.stack.pop();
+        if self.settings.debug {
+            log::vm_subtitle("POP STACK", &value);
+        }
+        value.with_context(|| "Tried to pop value from an empty stack")
     }
 
     fn pop_reference(&mut self) -> Result<Address> {
@@ -44,7 +33,7 @@ impl VM {
             .map_err(|_| anyhow!("Accessed value from the stack that wasn't a reference."))
     }
 
-    fn drop(&mut self, amount: u8) -> Result<()> {
+    fn drop(&mut self, amount: usize) -> Result<()> {
         for _ in 0..amount {
             self.pop_stack()?;
         }
@@ -130,6 +119,11 @@ impl VM {
                     let result = self.pop_stack()?;
                     self.drop(*declared)?;
                     self.stack.push(result);
+                }
+                Opcode::Break(jump) => {
+                    let value = self.pop_stack()?;
+                    self.ip += *jump as usize;
+                    self.stack.push(value);
                 }
                 Opcode::Return => {
                     println!("Return: {:#?}", self.stack.pop());

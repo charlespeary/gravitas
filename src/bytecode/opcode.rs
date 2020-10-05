@@ -2,13 +2,14 @@ use derive_more::Display;
 
 use crate::parser::Token;
 
-#[derive(Debug, PartialOrd, PartialEq, Copy, Clone, Display)]
+// TODO: Investigate alternative to usize, so enums are not aligned to 8 bytes
+#[derive(Debug, PartialOrd, PartialEq, Eq, Copy, Clone, Display, Hash)]
 pub enum Opcode {
     // Values
     True,
     False,
     Null,
-    Constant(u8),
+    Constant(usize),
     // Negation stuff
     Not,
     Negate,
@@ -25,20 +26,34 @@ pub enum Opcode {
     Greater,
     GreaterEqual,
     // Jumps
-    JumpIfFalse(u8),
-    JumpForward(u8),
-    JumpBack(u8),
+    JumpIfFalse(usize),
+    JumpForward(usize),
+    JumpBack(usize),
     // Expressions
     Return,
+    Break(usize),
     // Block holds number of variables declared inside to drop
-    Block(u8),
+    Block(usize),
     // Side effects
     Print,
-    PopN(u8),
+    PopN(usize),
     // Variables
-    Var(u8),
-    VarRef(u8),
+    Var(usize),
+    VarRef(usize),
     Assign,
+}
+
+impl Opcode {
+    pub fn patch(self, index: usize) -> Self {
+        match self {
+            Opcode::JumpIfFalse(_) => Opcode::JumpIfFalse(index),
+            Opcode::JumpForward(_) => Opcode::JumpForward(index),
+            Opcode::JumpBack(_) => Opcode::JumpBack(index),
+            Opcode::Block(_) => Opcode::Block(index),
+            Opcode::Break(_) => Opcode::Break(index),
+            _ => unreachable!("Tried to patch invalid opcode"),
+        }
+    }
 }
 
 impl From<Token> for Opcode {
