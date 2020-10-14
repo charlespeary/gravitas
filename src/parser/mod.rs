@@ -2,7 +2,7 @@ use std::vec::IntoIter;
 
 use anyhow::{anyhow, Error, Result};
 
-use crate::parser::ast::ExprOrStmt;
+use crate::parser::ast::{Arg, ExprOrStmt, FunctionType};
 use crate::utils::{peek_nth, Either, PeekNth};
 pub use crate::{
     parser::ast::{Ast, Atom, Block, BranchType, Expr, IfBranch, Stmt, Visitable, Visitor},
@@ -74,6 +74,10 @@ impl Parser {
         self.tokens.peek().map_or(false, |t| t == &expected)
     }
 
+    fn peek_eq_many(&mut self, expected: &[Token]) -> bool {
+        expected.contains(self.peek_token())
+    }
+
     fn peek_token(&mut self) -> &Token {
         self.tokens.peek().expect("Tried to peek empty iterator")
     }
@@ -81,10 +85,6 @@ impl Parser {
     fn next_token(&mut self) -> Token {
         self.tokens.next().expect("Tried to iterate empty iterator")
     }
-
-    // fn error<T>(&mut self, token: Token) -> Result<T> {
-    //     token.
-    // }
 
     // GRAMMAR
 
@@ -95,6 +95,12 @@ impl Parser {
 
         while !self.peek_eq(Token::CloseBrace) {
             block_items.push(self.parse_expr_or_stmt()?);
+        }
+
+        if !block_items.iter().rev().skip(1).all(|item| item.is_left()) {
+            return Err(anyhow!(
+                "Expressions are only allowed at the end of the block!"
+            ));
         }
 
         // TODO: dirty WIP logic
@@ -155,6 +161,24 @@ impl Parser {
         } else {
             Ok(None)
         }
+    }
+
+    fn parse_args(&mut self) -> Result<Vec<Arg>> {
+        let mut args: Vec<Arg> = vec![];
+
+        while !self.peek_eq_many(&[Token::CloseParenthesis, Token::CloseBrace]) {
+            if let Ok(arg) = self.next_token().into_identifier() {
+                args.push(Arg(arg));
+
+                // skip commas
+                if self.peek_eq(Token::Coma) {
+                    self.next_token();
+                }
+            } else {
+                return Err(anyhow!("Expected argument. Received invalid token."));
+            }
+        }
+        Ok(args)
     }
 
     fn prefix(&mut self) -> Result<Expr> {
@@ -290,6 +314,7 @@ impl Parser {
         match self.peek_token() {
             Token::Print => self.print_stmt(),
             Token::Var => self.var_stmt(),
+            Token::Function => self.function_stmt(),
             _ => self.expr_stmt(),
         }
     }
@@ -316,6 +341,19 @@ impl Parser {
             Ok(Stmt::Var { expr, identifier })
         } else {
             Err(anyhow!("Something went wrong"))
+        }
+    }
+
+    fn function_stmt(&mut self) -> Result<Stmt> {
+        let _token = self.next_token();
+        if let Ok(name) = self.next_token().into_identifier() {
+            expect!(self, Token::OpenParenthesis);
+            let args = self.parse_args()?;
+            expect!(self, Token::CloseParenthesis);
+            let body = self.parse_block()?;
+            Ok(Stmt::Function { name, args, body })
+        } else {
+            Err(anyhow!("Expected function name!"))
         }
     }
 }

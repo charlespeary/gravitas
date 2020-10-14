@@ -1,3 +1,5 @@
+mod call_frame;
+
 use std::collections::HashMap;
 use std::ops::Neg;
 
@@ -6,19 +8,20 @@ use anyhow::{anyhow, Context, Result};
 use crate::bytecode::{Address, Chunk, Number, Opcode, Value};
 use crate::settings::Settings;
 use crate::utils::log;
+use crate::vm::call_frame::CallFrame;
 
 #[derive(Debug, Default)]
-pub struct VM {
+pub struct VM<'a> {
     settings: Settings,
     stack: Vec<Value>,
+    call_stack: Vec<CallFrame<'a>>,
     globals: HashMap<String, Value>,
     ip: usize,
 }
 
 type InterpretValue = String;
 
-impl VM {
-    // TODO: Implement this as into()
+impl<'a> VM<'a> {
     fn pop_stack(&mut self) -> Result<Value> {
         let value = self.stack.pop();
         if self.settings.debug {
@@ -90,7 +93,7 @@ impl VM {
                 Opcode::LessEqual => bin_op!(<=, 'l'),
                 Opcode::Greater => bin_op!(>, 'l'),
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
-                Opcode::Print => println!("{}", self.pop_stack()?),
+                Opcode::Print => println!("{:#?}", self.pop_stack()?),
                 Opcode::Assign => {
                     let value = self.pop_stack()?;
                     let address = self.pop_reference()?;
@@ -135,29 +138,11 @@ impl VM {
     }
 }
 
-impl From<Settings> for VM {
+impl<'a> From<Settings> for VM<'a> {
     fn from(settings: Settings) -> Self {
         VM {
             settings,
             ..Default::default()
         }
     }
-}
-
-// tests are empty for now, because I'm not yet sure whether VM will return the result of the interpretation
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    fn interpret_return() {}
-
-    fn interpret_addition() {}
-
-    fn interpret_subtraction() {}
-
-    fn interpret_multiplication() {}
-
-    fn interpret_division() {}
-
-    fn interpret_negation() {}
 }

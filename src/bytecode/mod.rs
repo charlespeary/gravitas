@@ -1,12 +1,13 @@
 use anyhow::{Context, Result};
 
+use crate::parser::{Ast, Atom, Block, Expr, IfBranch, Stmt, Token, Visitable, Visitor};
 pub use chunk::Chunk;
+pub use function::Function;
 pub use opcode::Opcode;
 pub use value::{Address, Number, Value};
 
-use crate::parser::{Ast, Atom, Block, Expr, IfBranch, Stmt, Token, Visitable, Visitor};
-
 mod chunk;
+mod function;
 mod opcode;
 mod value;
 
@@ -304,6 +305,7 @@ impl Visitor<Stmt> for BytecodeGenerator {
                 expr.accept(self)?;
                 self.add_local(identifier.clone());
             }
+            Stmt::Function { name, args, body } => {}
         }
         Ok(())
     }

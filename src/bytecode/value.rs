@@ -1,19 +1,20 @@
 use std::ops::{Add, Neg};
 
+use crate::bytecode::Function;
 use anyhow::{anyhow, Result};
-use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 
 pub type Number = f64;
 pub type Address = usize;
 
-#[derive(Debug, Display, Clone, PartialEq, PartialOrd, EnumAsInner)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Value {
     Number(Number),
     Bool(bool),
     String(String),
     Variable(String),
     Reference(Address),
+    Function(Function),
     Null,
 }
 

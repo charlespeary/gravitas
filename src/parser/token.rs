@@ -130,11 +130,9 @@ impl Token {
     /// Get binding power of the token
     /// e.g infix minus should have smaller binding power
     /// than infix star, so we can parse the expressions in correct order.
-    /// ```
     ///         2 + 2 * 8
     ///     should be parsed into   
     /// Expr::Binary(2, + , Expr::Binary(2 * 8))
-    /// ```
     pub fn bp(&self, affix: Affix) -> usize {
         match affix {
             Affix::Prefix => match self {

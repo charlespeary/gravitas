@@ -464,15 +464,15 @@ checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
 name = "vtas"
 version = "0.1.0"
 dependencies = [
-    "anyhow",
-    "clap",
-    "colored",
-    "derive_more",
-    "enum-as-inner",
-    "lazy_static",
-    "logos",
-    "quickcheck",
-    "quickcheck_macros",
+ "anyhow",
+ "clap",
+ "colored",
+ "derive_more",
+ "enum-as-inner",
+ "lazy_static",
+ "logos",
+ "quickcheck",
+ "quickcheck_macros",
 ]
 
 [[package]]

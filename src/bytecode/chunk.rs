@@ -1,8 +1,9 @@
 use std::slice::Iter;
 
 use crate::bytecode::{Opcode, Value};
+use derive_more::Display;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub code: Vec<Opcode>,
     constants: Vec<Value>,
@@ -26,7 +27,6 @@ impl Chunk {
         constant_index
     }
 
-    // TODO: Handle longer constants
     pub fn read_constant(&self, index: usize) -> &Value {
         self.constants.get(index).expect("Chunk in wrong state!")
     }

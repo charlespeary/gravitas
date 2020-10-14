@@ -39,6 +39,14 @@ impl Into<Expr> for Block {
     }
 }
 
+pub enum FunctionType {
+    Closure,
+    Standard,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Arg(pub String);
+
 #[derive(Debug, PartialEq)]
 pub struct Ast(pub Vec<Stmt>);
 
@@ -82,13 +90,23 @@ pub enum Expr {
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     // Expressions
-    Expr { expr: Expr },
+    Expr {
+        expr: Expr,
+    },
     // Declarations
-    Var { expr: Expr, identifier: String },
-    // Class,
-    // Func,
+    Var {
+        expr: Expr,
+        identifier: String,
+    },
     // Side effects
-    Print { expr: Expr },
+    Print {
+        expr: Expr,
+    },
+    Function {
+        args: Vec<Arg>,
+        body: Block,
+        name: String,
+    },
 }
 
 pub trait Visitor<T> {
