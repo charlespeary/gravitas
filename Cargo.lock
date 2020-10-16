@@ -473,6 +473,8 @@ dependencies = [
  "logos",
  "quickcheck",
  "quickcheck_macros",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -10,6 +10,13 @@ mod chunk;
 mod function;
 mod opcode;
 mod value;
+mod expr;
+mod stmt;
+
+pub (crate) type GenerationResult = Result<Vec<Opcode>>;
+pub (crate) trait Bytecode {
+    fn emit(&self, emitter: &mut BytecodeGenerator) -> GenerationResult;
+}
 
 /// State of the scope / block
 #[derive(Default, Debug, Copy, Clone)]

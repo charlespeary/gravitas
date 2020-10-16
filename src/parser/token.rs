@@ -2,7 +2,6 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 use logos::{Lexer, Logos};
 
-use crate::parser::ast::BranchType;
 
 fn text(lex: &mut Lexer<Token>) -> Option<String> {
     let slice: String = lex.slice().parse().ok()?;
@@ -110,15 +109,6 @@ pub enum Token {
     Error,
 }
 
-impl From<BranchType> for Token {
-    fn from(bt: BranchType) -> Token {
-        match bt {
-            BranchType::If => Token::If,
-            BranchType::ElseIf => Token::ElseIf,
-            BranchType::Else => Token::Else,
-        }
-    }
-}
 
 #[derive(Display)]
 pub enum Affix {
@@ -157,6 +147,7 @@ impl Token {
         }
     }
 
+
     /// Helper to determine whether token is associated with parsing the statements
     pub fn is_stmt(&self) -> bool {
         matches!(
@@ -171,7 +162,7 @@ mod test {
     use super::*;
 
     /// Token is able to find a rule for corresponding kind of affix.
-    /// It defaults to 0
+        /// It defaults to 0
     #[test]
     fn finds_rule() {
         assert_eq!(Token::Minus.bp(Affix::Infix), 5);
