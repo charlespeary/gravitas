@@ -1,5 +1,3 @@
-mod call_frame;
-
 use std::collections::HashMap;
 use std::ops::Neg;
 
@@ -9,6 +7,8 @@ use crate::bytecode::{Address, Chunk, Number, Opcode, Value};
 use crate::settings::Settings;
 use crate::utils::log;
 use crate::vm::call_frame::CallFrame;
+
+mod call_frame;
 
 #[derive(Debug, Default)]
 pub struct VM<'a> {
@@ -88,7 +88,7 @@ impl<'a> VM<'a> {
                 Opcode::Divide => bin_op!(/, 'm'),
                 Opcode::Multiply => bin_op!(*, 'm'),
                 Opcode::BangEqual => bin_op!(!=, 'l'),
-                Opcode::Equal => bin_op!(==, 'l'),
+                Opcode::Compare => bin_op!(==, 'l'),
                 Opcode::Less => bin_op!(<, 'l'),
                 Opcode::LessEqual => bin_op!(<=, 'l'),
                 Opcode::Greater => bin_op!(>, 'l'),

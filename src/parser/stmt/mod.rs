@@ -1,31 +1,46 @@
 use anyhow::Result;
 
-use crate::parser::{ast::Visitable, Parser, stmt::{expr::ExprStmt, function::FunctionStmt, print::PrintStmt, var::VarStmt}, Token};
+use crate::parser::{
+    stmt::{expr::ExprStmt, function::FunctionStmt, print::PrintStmt, var::VarStmt},
+    Parser, Token,
+};
 
 use super::expr::{Binary, Block, Expr};
 
 pub mod expr;
 pub mod function;
-pub mod var;
 pub mod print;
+pub mod var;
 
-#[derive(Debug, PartialEq)]
-pub(crate) enum Stmt {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Stmt {
     Expr(ExprStmt),
     Var(VarStmt),
     Print(PrintStmt),
     Function(FunctionStmt),
 }
 
-impl Visitable for Stmt {}
+#[macro_export]
+macro_rules! stmt {
+    ($val: expr) => {
+        Into::<Stmt>::into($val)
+    };
+}
+
+#[macro_export]
+macro_rules! try_stmt {
+    ($val: expr) => {
+        Into::<Stmt>::into($val?)
+    };
+}
 
 impl Parser {
     pub fn stmt(&mut self) -> Result<Stmt> {
-        match self.peek_token() {
-            Token::Var => self.parse_var_stmt(),
-            Token::Function => self.parse_function_stmt(),
-            Token::Print => self.parse_print_stmt(),
-            _ => self.parse_expr_stmt()
-        }
+        Ok(match self.peek_token() {
+            Token::Var => try_stmt!(self.parse_var_stmt()),
+            Token::Function => try_stmt!(self.parse_function_stmt()),
+            Token::Print => try_stmt!(self.parse_print_stmt()),
+            _ => try_stmt!(self.parse_expr_stmt()),
+        })
     }
 }

@@ -2,7 +2,6 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 use logos::{Lexer, Logos};
 
-
 fn text(lex: &mut Lexer<Token>) -> Option<String> {
     let slice: String = lex.slice().parse().ok()?;
     Some(slice[1..slice.len() - 1].to_owned())
@@ -49,7 +48,7 @@ pub enum Token {
     #[token(">=")]
     GreaterEqual,
     #[token("==")]
-    Equal,
+    Compare,
     #[token("=")]
     Assign,
     #[token("//")]
@@ -109,7 +108,6 @@ pub enum Token {
     Error,
 }
 
-
 #[derive(Display)]
 pub enum Affix {
     Infix,
@@ -133,7 +131,7 @@ impl Token {
             Affix::Infix => match self {
                 Token::Assign => 1,
                 Token::BangEqual => 4,
-                Token::Equal => 4,
+                Token::Compare => 4,
                 Token::Greater => 4,
                 Token::GreaterEqual => 4,
                 Token::Less => 4,
@@ -146,7 +144,6 @@ impl Token {
             },
         }
     }
-
 
     /// Helper to determine whether token is associated with parsing the statements
     pub fn is_stmt(&self) -> bool {
@@ -162,7 +159,7 @@ mod test {
     use super::*;
 
     /// Token is able to find a rule for corresponding kind of affix.
-        /// It defaults to 0
+    /// It defaults to 0
     #[test]
     fn finds_rule() {
         assert_eq!(Token::Minus.bp(Affix::Infix), 5);

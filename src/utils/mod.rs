@@ -1,18 +1,18 @@
-use std::fs::read_to_string;
-use std::io::stdin;
+use std::{fs::read_to_string, io::stdin};
 
 use anyhow::{Context, Error, Result};
 use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
-use crate::bytecode::BytecodeGenerator;
-use crate::parser::{Parser, Token};
-use crate::settings::Settings;
-use crate::vm::VM;
+use crate::{
+    bytecode::{BytecodeFrom, BytecodeGenerator},
+    parser::{Parser, Token},
+    settings::Settings,
+    utils::iter::{peek_nth, PeekNth},
+    vm::VM,
+};
 
-pub use self::iter::{peek_nth, PeekNth};
-
-mod iter;
+pub mod iter;
 
 pub mod log {
     use std::fmt::Debug;
@@ -103,7 +103,7 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
     log::title_success("PARSED");
     log::body(&ast);
     let mut bg = BytecodeGenerator::new();
-    let chunk = bg.generate(&ast).map_err(Either::Left)?;
+    let chunk = bg.compile(&ast).map_err(Either::Left)?;
     log::title_success("GENERATED");
     log::body(&chunk.code);
     let mut vm = VM::from(settings.clone());

@@ -1,14 +1,16 @@
 use anyhow::Result;
 
-use crate::parser::{expr::{Atom, Block, Expr}, Parser, Token};
+use crate::parser::{
+    expr::{Atom, Block, Expr},
+    Parser, Token,
+};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub(crate) enum BranchType {
+pub enum BranchType {
     If,
     ElseIf,
     Else,
 }
-
 
 impl From<BranchType> for Token {
     fn from(bt: BranchType) -> Token {
@@ -20,15 +22,16 @@ impl From<BranchType> for Token {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct IfBranch {
+#[derive(Debug, Clone, PartialEq)]
+pub struct IfBranch {
     pub condition: Expr,
     pub body: Block,
     pub branch_type: BranchType,
 }
 
-pub(crate) struct If {
-    branches: Vec<IfBranch>,
+#[derive(Debug, Clone, PartialEq)]
+pub struct If {
+    pub branches: Vec<IfBranch>,
 }
 
 impl Into<Expr> for If {
@@ -43,7 +46,7 @@ impl Parser {
 
         let condition = match branch_type {
             BranchType::Else => Expr::Atom(Atom::Bool(true)),
-            _ => self.parse_expr()?
+            _ => self.parse_expr()?,
         };
 
         let body = self.parse_block()?;

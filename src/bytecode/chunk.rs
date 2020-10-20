@@ -1,7 +1,8 @@
 use std::slice::Iter;
 
-use crate::bytecode::{Opcode, Value};
 use derive_more::Display;
+
+use crate::bytecode::{Opcode, Value};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd)]
 pub struct Chunk {
@@ -43,6 +44,8 @@ impl<'a> IntoIterator for &'a Chunk {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use super::*;
 
     #[test]

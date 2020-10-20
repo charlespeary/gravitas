@@ -1,32 +1,66 @@
-use anyhow::Result;
-
-use crate::{BytecodeGenerator, parser::{ast::Visitor, expr::Expr, stmt::Stmt}};
-use crate::parser::ast::Visitable;
+use crate::{
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult},
+    parser::expr::{Expr, Grouping},
+};
 
 mod atom;
 mod binary;
 mod block;
 mod conditional;
-mod grouping;
 mod loops;
 mod unary;
 mod var;
 
-impl Visitor<Expr> for BytecodeGenerator {
-    type Item = Result<()>;
+impl BytecodeFrom<Box<Expr>> for BytecodeGenerator {
+    fn generate(&mut self, expr: &Box<Expr>) -> GenerationResult {
+        self.generate(expr.as_ref())?;
+        Ok(())
+    }
+}
 
-    fn visit(&mut self, expr: &Expr) -> Self::Item {
+impl BytecodeFrom<Expr> for BytecodeGenerator {
+    fn generate(&mut self, expr: &Expr) -> GenerationResult {
         match expr {
-            Expr::Block(block) => block.accept(self),
-            Expr::Var(var) => var.accept(self),
-            Expr::Continue(con) => con.accept(self),
-            Expr::Break(bre) => bre.accept(self),
-            Expr::Grouping(group) => group.accept(self),
-            Expr::While(wl) => wl.accept(self),
-            Expr::Atom(atom) => atom.accept(self),
-            Expr::Unary(unary) => unary.accept(self),
-            Expr::If(ifc) => ifc.accept(self),
-            Expr::Binary(binary) => binary.accept(self)
-        }
+            Expr::Block(block) => self.generate(block),
+            Expr::Var(var) => self.generate(var),
+            Expr::Continue(con) => self.generate(con),
+            Expr::Break(bre) => self.generate(bre),
+            Expr::Grouping(group) => self.generate(group),
+            Expr::While(wl) => self.generate(wl),
+            Expr::Atom(atom) => self.generate(atom),
+            Expr::Unary(unary) => self.generate(unary),
+            Expr::If(ifc) => self.generate(ifc),
+            Expr::Binary(binary) => self.generate(binary),
+        }?;
+        Ok(())
+    }
+}
+
+impl BytecodeFrom<Grouping> for BytecodeGenerator {
+    fn generate(&mut self, grouping: &Grouping) -> GenerationResult {
+        self.generate(&grouping.expr)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use pretty_assertions::assert_eq;
+
+    use crate::{
+        bytecode::{test::generate_bytecode, Opcode},
+        parser::expr::Atom,
+    };
+
+    use super::*;
+
+    #[test]
+    fn expr_grouping() {
+        let ast = Grouping {
+            expr: Box::new(Expr::Atom(Atom::Bool(true))),
+        };
+        let (_, bytecode) = generate_bytecode(ast);
+
+        assert_eq!(bytecode, vec![Opcode::True])
     }
 }

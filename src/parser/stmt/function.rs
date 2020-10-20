@@ -1,15 +1,17 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 
 use crate::parser::{expr::Block, Parser, Stmt, Token};
 
-pub(crate) struct Arg {
-    val: String
+#[derive(Debug, Clone, PartialEq)]
+pub struct Arg {
+    pub val: String,
 }
 
-pub(crate) struct FunctionStmt {
-    name: String,
-    args: Vec<Arg>,
-    body: Block,
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionStmt {
+    pub name: String,
+    pub args: Vec<Arg>,
+    pub body: Block,
 }
 
 impl Into<Stmt> for FunctionStmt {

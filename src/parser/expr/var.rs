@@ -2,9 +2,10 @@ use anyhow::{anyhow, Result};
 
 use crate::parser::{expr::Expr, Parser, Token};
 
-pub(crate) struct Var {
-    identifier: String,
-    is_ref: bool,
+#[derive(Debug, Clone, PartialEq)]
+pub struct Var {
+    pub identifier: String,
+    pub is_ref: bool,
 }
 
 impl Into<Expr> for Var {
@@ -14,9 +15,9 @@ impl Into<Expr> for Var {
 }
 
 impl Parser {
-    fn parse_var(&mut self) -> Result<Var> {
+    pub fn parse_var(&mut self) -> Result<Var> {
         let token = self.next_token();
-        if let Ok(identifier) = token.into_identifier() {
+        if let Ok(identifier) = token.clone().into_identifier() {
             //    If next token is an assignment, then we are parsing binary expression
             //    In order to assign some value to variable in VM we're gonna need this to
             //    evaluate to variable's reference, not its value.
@@ -25,5 +26,25 @@ impl Parser {
         } else {
             Err(anyhow!("Expected variable identifier but got {}", token))
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use pretty_assertions::{assert_eq, assert_ne};
+
+    use super::*;
+
+    #[test]
+    fn parse_var() {
+        let mut parser = Parser::new(vec![Token::Identifier(String::from("variable"))]);
+
+        assert_eq!(
+            parser.parse_var().unwrap(),
+            Var {
+                is_ref: false,
+                identifier: String::from("variable"),
+            }
+        )
     }
 }

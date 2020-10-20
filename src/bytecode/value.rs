@@ -1,8 +1,9 @@
 use std::ops::{Add, Neg};
 
-use crate::bytecode::Function;
 use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
+
+use crate::bytecode::Function;
 
 pub type Number = f64;
 pub type Address = usize;
@@ -85,6 +86,7 @@ impl Into<bool> for Value {
 #[cfg(test)]
 mod test {
     use anyhow::Result;
+    use pretty_assertions::{assert_eq, assert_ne};
 
     use super::*;
 

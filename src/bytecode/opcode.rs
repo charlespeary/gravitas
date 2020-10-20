@@ -19,8 +19,8 @@ pub enum Opcode {
     Multiply,
     Divide,
     // Comparison
+    Compare,
     BangEqual,
-    Equal,
     Less,
     LessEqual,
     Greater,
@@ -64,7 +64,7 @@ impl From<Token> for Opcode {
             Token::Star => Opcode::Multiply,
             Token::Divide => Opcode::Divide,
             Token::BangEqual => Opcode::BangEqual,
-            Token::Equal => Opcode::Equal,
+            Token::Compare => Opcode::Compare,
             Token::Less => Opcode::Less,
             Token::LessEqual => Opcode::LessEqual,
             Token::Greater => Opcode::Greater,
@@ -86,6 +86,8 @@ impl From<bool> for Opcode {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::{assert_eq, assert_ne};
+
     use super::*;
 
     // It's possible to instantiate few opcodes from Token
@@ -96,7 +98,7 @@ mod test {
         assert_eq!(Opcode::from(Token::Star), Opcode::Multiply);
         assert_eq!(Opcode::from(Token::Divide), Opcode::Divide);
         assert_eq!(Opcode::from(Token::BangEqual), Opcode::BangEqual);
-        assert_eq!(Opcode::from(Token::Equal), Opcode::Equal);
+        assert_eq!(Opcode::from(Token::Compare), Opcode::Compare);
         assert_eq!(Opcode::from(Token::Less), Opcode::Less);
         assert_eq!(Opcode::from(Token::LessEqual), Opcode::LessEqual);
         assert_eq!(Opcode::from(Token::Greater), Opcode::Greater);

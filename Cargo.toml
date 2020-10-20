@@ -4,8 +4,6 @@ version = "0.1.0"
 authors = ["Sniadek <karolgruszka9@gmail.com>"]
 edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-proc-macro = true
 
 [dependencies]
 anyhow = "1.0.32"
@@ -15,9 +13,8 @@ lazy_static = "1.4.0"
 derive_more = "0.99.9"
 enum-as-inner = "0.3.3"
 colored = "2.0.0"
-syn = "1.0"
-quote = "1.0"
 
 [dev-dependencies]
 quickcheck = "0.9"
 quickcheck_macros = "0.9"
+pretty_assertions = "0.6.1"

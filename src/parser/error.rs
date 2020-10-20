@@ -1,1 +1,1 @@
-pub (crate) struct Error;
+pub struct Error;

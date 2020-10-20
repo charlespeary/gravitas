@@ -1,9 +1,7 @@
 use anyhow::Result;
 use enum_as_inner::EnumAsInner;
 
-use crate::parser::{Affix, ast::Visitable, IfBranch, Parser, Token};
-
-pub use self::{
+pub use crate::parser::expr::{
     atom::Atom,
     binary::{Binary, Operator},
     block::Block,
@@ -13,17 +11,19 @@ pub use self::{
     unary::Unary,
     var::Var,
 };
+use crate::parser::{Affix, Parser, Token};
 
 pub mod atom;
 pub mod binary;
 pub mod block;
-pub mod loops;
 pub mod conditional;
-pub mod unary;
 pub mod grouping;
+pub mod loops;
+pub mod unary;
+pub mod var;
 
-#[derive(Debug, PartialEq, EnumAsInner)]
-pub(crate) enum Expr {
+#[derive(Debug, Clone, PartialEq, EnumAsInner)]
+pub enum Expr {
     Binary(Binary),
     Var(Var),
     Unary(Unary),
@@ -36,7 +36,19 @@ pub(crate) enum Expr {
     Atom(Atom),
 }
 
-impl Visitable for Expr {}
+#[macro_export]
+macro_rules! expr {
+    ($val: expr) => {
+        Into::<Expr>::into($val)
+    };
+}
+
+#[macro_export]
+macro_rules! try_expr {
+    ($val: expr) => {
+        Into::<Expr>::into($val?)
+    };
+}
 
 impl Parser {
     pub fn parse_expr(&mut self) -> Result<Expr> {
@@ -44,12 +56,20 @@ impl Parser {
     }
 
     pub fn parse_expr_bp(&mut self, rbp: usize) -> Result<Expr> {
-        let mut expr: Expr = match self.next_token() {
-            _ => self.parse_atom()
-        }.into();
+        let mut expr = match self.peek_token() {
+            Token::While => try_expr!(self.parse_while_loop()),
+            Token::OpenParenthesis => try_expr!(self.parse_grouping()),
+            Token::OpenBrace => try_expr!(self.parse_block()),
+            Token::If => try_expr!(self.parse_if()),
+            Token::Minus | Token::Bang => try_expr!(self.parse_unary()),
+            Token::Identifier(_) => try_expr!(self.parse_var()),
+            _ => try_expr!(self.parse_atom()),
+        };
 
         while self.peek_bp(Affix::Infix) > rbp {
-            expr = self.parse_binary(expr, 0)?.into();
+            expr = self.parse_binary(expr)?.into();
         }
+
+        Ok(expr)
     }
 }

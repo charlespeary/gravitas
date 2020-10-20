@@ -1,16 +1,17 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{ast::{ExprOrStmt, Visitable}, expr::Expr, Parser, stmt::{expr::ExprStmt, Stmt}, Token};
+use crate::parser::{
+    expr::Expr,
+    stmt::{expr::ExprStmt, Stmt},
+    Parser, Token,
+};
 use crate::utils::Either;
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct Block {
+#[derive(Debug, Clone, PartialEq)]
+pub struct Block {
     pub body: Vec<Stmt>,
     pub final_expr: Option<Box<Expr>>,
 }
-
-impl Visitable for Block {}
-
 
 impl Into<Expr> for Block {
     fn into(self) -> Expr {
@@ -19,11 +20,11 @@ impl Into<Expr> for Block {
 }
 
 impl Parser {
-    fn parse_expr_or_stmt(&mut self) -> Result<ExprOrStmt> {
+    fn parse_expr_or_stmt(&mut self) -> Result<Either<Stmt, Expr>> {
         match self.peek_token().is_stmt() {
             true => Ok(Either::Left(self.stmt()?)),
             false => {
-                let expr = self.expr(0)?;
+                let expr = self.parse_expr()?;
                 if self.peek_eq(Token::Semicolon) {
                     self.expect(Token::Semicolon)?;
                     Ok(Either::Left(ExprStmt { expr }.into()))
@@ -68,5 +69,40 @@ impl Parser {
         self.expect(Token::CloseBrace)?;
 
         Ok(Block { body, final_expr })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use pretty_assertions::{assert_eq, assert_ne};
+
+    use crate::parser::{expr::Atom, stmt::var::VarStmt, Stmt};
+
+    use super::*;
+
+    #[test]
+    fn block_expr() {
+        let mut parser = Parser::new(vec![
+            Token::OpenBrace,
+            Token::Var,
+            Token::Identifier(String::from("var")),
+            Token::Assign,
+            Token::Number(10.0),
+            Token::Semicolon,
+            Token::CloseBrace,
+        ]);
+
+        assert_eq!(
+            parser
+                .parse_block()
+                .expect("Failed to parse block expression"),
+            Block {
+                body: vec![Stmt::Var(VarStmt {
+                    identifier: String::from("var"),
+                    expr: Expr::Atom(Atom::Number(10.0)),
+                })],
+                final_expr: None,
+            }
+        )
     }
 }

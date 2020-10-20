@@ -1,9 +1,13 @@
 use anyhow::Result;
 
-use crate::parser::{expr::{Affix, Expr}, Parser, Token};
+use crate::parser::{
+    expr::{Affix, Expr},
+    Parser, Token,
+};
 
-pub(crate) struct Grouping {
-    expr: Box<Expr>
+#[derive(Debug, Clone, PartialEq)]
+pub struct Grouping {
+    pub expr: Box<Expr>,
 }
 
 impl Into<Expr> for Grouping {
@@ -21,5 +25,30 @@ impl Parser {
         Ok(Grouping {
             expr: Box::new(expr),
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use pretty_assertions::{assert_eq, assert_ne};
+
+    use crate::parser::expr::Atom;
+
+    use super::*;
+
+    #[test]
+    fn grouping_expr() {
+        let mut parser = Parser::new(vec![
+            Token::OpenParenthesis,
+            Token::Number(10.0),
+            Token::CloseParenthesis,
+        ]);
+
+        assert_eq!(
+            parser.parse_grouping().unwrap(),
+            Grouping {
+                expr: Box::new(Expr::Atom(Atom::Number(10.0)))
+            }
+        )
     }
 }
