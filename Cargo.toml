@@ -3,7 +3,6 @@ name = "vtas"
 version = "0.1.0"
 authors = ["Sniadek <karolgruszka9@gmail.com>"]
 edition = "2018"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -18,3 +17,4 @@ colored = "2.0.0"
 [dev-dependencies]
 quickcheck = "0.9"
 quickcheck_macros = "0.9"
+pretty_assertions = "0.6.1"

@@ -1,8 +1,10 @@
 use std::slice::Iter;
 
+use derive_more::Display;
+
 use crate::bytecode::{Opcode, Value};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub code: Vec<Opcode>,
     constants: Vec<Value>,
@@ -26,7 +28,6 @@ impl Chunk {
         constant_index
     }
 
-    // TODO: Handle longer constants
     pub fn read_constant(&self, index: usize) -> &Value {
         self.constants.get(index).expect("Chunk in wrong state!")
     }
@@ -43,6 +44,8 @@ impl<'a> IntoIterator for &'a Chunk {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use super::*;
 
     #[test]

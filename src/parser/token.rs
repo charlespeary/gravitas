@@ -2,8 +2,6 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 use logos::{Lexer, Logos};
 
-use crate::parser::ast::BranchType;
-
 fn text(lex: &mut Lexer<Token>) -> Option<String> {
     let slice: String = lex.slice().parse().ok()?;
     Some(slice[1..slice.len() - 1].to_owned())
@@ -50,7 +48,7 @@ pub enum Token {
     #[token(">=")]
     GreaterEqual,
     #[token("==")]
-    Equal,
+    Compare,
     #[token("=")]
     Assign,
     #[token("//")]
@@ -110,16 +108,6 @@ pub enum Token {
     Error,
 }
 
-impl From<BranchType> for Token {
-    fn from(bt: BranchType) -> Token {
-        match bt {
-            BranchType::If => Token::If,
-            BranchType::ElseIf => Token::ElseIf,
-            BranchType::Else => Token::Else,
-        }
-    }
-}
-
 #[derive(Display)]
 pub enum Affix {
     Infix,
@@ -130,11 +118,9 @@ impl Token {
     /// Get binding power of the token
     /// e.g infix minus should have smaller binding power
     /// than infix star, so we can parse the expressions in correct order.
-    /// ```
     ///         2 + 2 * 8
     ///     should be parsed into   
     /// Expr::Binary(2, + , Expr::Binary(2 * 8))
-    /// ```
     pub fn bp(&self, affix: Affix) -> usize {
         match affix {
             Affix::Prefix => match self {
@@ -145,7 +131,7 @@ impl Token {
             Affix::Infix => match self {
                 Token::Assign => 1,
                 Token::BangEqual => 4,
-                Token::Equal => 4,
+                Token::Compare => 4,
                 Token::Greater => 4,
                 Token::GreaterEqual => 4,
                 Token::Less => 4,
