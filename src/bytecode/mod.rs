@@ -1,22 +1,16 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 pub use chunk::Chunk;
-pub use function::Function;
 pub use opcode::Opcode;
 pub use value::{Address, Number, Value};
 
-use crate::parser::{
-    expr::{conditional::IfBranch, Expr},
-    stmt::Stmt,
-    Ast, Token,
-};
+use crate::parser::Ast;
 
-mod chunk;
-mod expr;
-mod function;
-mod opcode;
-mod stmt;
-mod value;
+pub mod chunk;
+pub mod expr;
+pub mod opcode;
+pub mod stmt;
+pub mod value;
 
 pub type GenerationResult = Result<()>;
 
@@ -61,14 +55,15 @@ impl BytecodeGenerator {
         }
     }
 
-    pub fn compile<I>(&mut self, ast: &I) -> Result<Chunk>
+    pub fn compile<I>(ast: &I) -> Result<Chunk>
     where
         Self: BytecodeFrom<I>,
     {
-        self.generate(ast)?;
+        let mut emitter = BytecodeGenerator::new();
+        emitter.generate(ast)?;
 
         // temporary clone until I figure out how to generate bytecode properly
-        Ok(self.chunk.clone())
+        Ok(emitter.chunk)
     }
 
     pub fn curr_index(&mut self) -> usize {
@@ -189,10 +184,8 @@ mod test {
     where
         BytecodeGenerator: BytecodeFrom<I>,
     {
-        let mut bg = BytecodeGenerator::new();
-        let chunk = bg
-            .compile(&ast)
-            .expect("Couldn't generate chunk from given ast");
+        let chunk =
+            BytecodeGenerator::compile(&ast).expect("Couldn't generate chunk from given ast");
         (chunk.clone(), into_bytecode(chunk))
     }
 }

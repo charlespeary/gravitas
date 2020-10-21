@@ -102,8 +102,7 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let ast = parser.parse().map_err(Either::Right)?;
     log::title_success("PARSED");
     log::body(&ast);
-    let mut bg = BytecodeGenerator::new();
-    let chunk = bg.compile(&ast).map_err(Either::Left)?;
+    let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
     log::title_success("GENERATED");
     log::body(&chunk.code);
     let mut vm = VM::from(settings.clone());

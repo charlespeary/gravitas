@@ -4,10 +4,10 @@ use crate::{
     parser::stmt::Stmt,
 };
 
-mod expr;
-mod function;
-mod print;
-mod var;
+pub mod expr;
+pub mod function;
+pub mod print;
+pub mod var;
 
 impl BytecodeFrom<Stmt> for BytecodeGenerator {
     fn generate(&mut self, stmt: &Stmt) -> GenerationResult {

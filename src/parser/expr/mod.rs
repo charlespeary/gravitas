@@ -1,32 +1,35 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
-pub use crate::parser::expr::{
-    atom::Atom,
-    binary::{Binary, Operator},
-    block::Block,
-    conditional::If,
-    grouping::Grouping,
-    loops::{Break, Continue, WhileLoop},
-    unary::Unary,
-    var::Var,
+pub use crate::parser::{
+    expr::{
+        affix::Affix,
+        atom::Atom,
+        binary::Binary,
+        block::Block,
+        conditional::If,
+        grouping::Grouping,
+        loops::{Break, Continue, WhileLoop},
+        var::Var,
+    },
+    operator::Operator,
+    Parser, Token,
 };
-use crate::parser::{Affix, Parser, Token};
 
+pub mod affix;
 pub mod atom;
 pub mod binary;
 pub mod block;
 pub mod conditional;
 pub mod grouping;
 pub mod loops;
-pub mod unary;
 pub mod var;
 
 #[derive(Debug, Clone, PartialEq, EnumAsInner)]
 pub enum Expr {
+    Affix(Affix),
     Binary(Binary),
     Var(Var),
-    Unary(Unary),
     Grouping(Grouping),
     Block(Block),
     If(If),
@@ -55,21 +58,61 @@ impl Parser {
         Ok(self.parse_expr_bp(0)?)
     }
 
-    pub fn parse_expr_bp(&mut self, rbp: usize) -> Result<Expr> {
-        let mut expr = match self.peek_token() {
+    pub fn parse_expr_bp(&mut self, min_bp: u8) -> Result<Expr> {
+        let mut lhs = match self.peek_token()?.clone() {
+            Token::Operator(operator) => {
+                let ((), r_bp) = operator.prefix_bp()?;
+                // advance operator
+                self.next_token();
+                Expr::Affix(Affix {
+                    operator,
+                    expr: Box::new(self.parse_expr_bp(r_bp)?),
+                })
+            }
             Token::While => try_expr!(self.parse_while_loop()),
             Token::OpenParenthesis => try_expr!(self.parse_grouping()),
             Token::OpenBrace => try_expr!(self.parse_block()),
             Token::If => try_expr!(self.parse_if()),
-            Token::Minus | Token::Bang => try_expr!(self.parse_unary()),
             Token::Identifier(_) => try_expr!(self.parse_var()),
             _ => try_expr!(self.parse_atom()),
         };
 
-        while self.peek_bp(Affix::Infix) > rbp {
-            expr = self.parse_binary(expr)?.into();
-        }
+        // try to peek next token and see if it's an operator
+        while let Some(op) = self.peek_next() {
+            if let Ok(operator) = op
+                .clone()
+                .into_operator()
+                .map_err(|_| anyhow!("Expected operator"))
+            {
+                if let Ok((l_bp, ())) = operator.postfix_bp() {
+                    if l_bp < min_bp {
+                        break;
+                    }
+                    self.next_token();
+                    lhs = Expr::Affix(Affix {
+                        operator,
+                        expr: Box::new(lhs),
+                    });
+                    continue;
+                }
 
-        Ok(expr)
+                let (l_bp, r_bp) = operator.infix_bp()?;
+                if l_bp < min_bp {
+                    break;
+                }
+                self.next_token();
+
+                // parse right side of the expression and turn the left side into binary
+                let rhs = self.parse_expr_bp(r_bp)?;
+                lhs = Expr::Binary(Binary {
+                    lhs: Box::new(lhs),
+                    operator,
+                    rhs: Box::new(rhs),
+                });
+            } else {
+                break;
+            }
+        }
+        Ok(lhs)
     }
 }

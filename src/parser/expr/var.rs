@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{expr::Expr, Parser, Token};
+use crate::parser::{expr::Expr, operator::Operator, Parser, Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Var {
@@ -21,7 +21,7 @@ impl Parser {
             //    If next token is an assignment, then we are parsing binary expression
             //    In order to assign some value to variable in VM we're gonna need this to
             //    evaluate to variable's reference, not its value.
-            let is_ref = self.peek_eq(Token::Assign);
+            let is_ref = self.peek_eq(Token::Operator(Operator::Assign));
             Ok(Var { identifier, is_ref })
         } else {
             Err(anyhow!("Expected variable identifier but got {}", token))
@@ -31,7 +31,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use super::*;
 

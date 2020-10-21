@@ -21,7 +21,7 @@ impl Into<Expr> for Block {
 
 impl Parser {
     fn parse_expr_or_stmt(&mut self) -> Result<Either<Stmt, Expr>> {
-        match self.peek_token().is_stmt() {
+        match self.peek_token()?.is_stmt() {
             true => Ok(Either::Left(self.stmt()?)),
             false => {
                 let expr = self.parse_expr()?;
@@ -76,7 +76,7 @@ impl Parser {
 mod test {
     use pretty_assertions::{assert_eq, assert_ne};
 
-    use crate::parser::{expr::Atom, stmt::var::VarStmt, Stmt};
+    use crate::parser::{expr::Atom, operator::Operator, stmt::var::VarStmt, Stmt};
 
     use super::*;
 
@@ -86,7 +86,7 @@ mod test {
             Token::OpenBrace,
             Token::Var,
             Token::Identifier(String::from("var")),
-            Token::Assign,
+            Token::Operator(Operator::Assign),
             Token::Number(10.0),
             Token::Semicolon,
             Token::CloseBrace,

@@ -43,6 +43,8 @@ impl<'a> VM<'a> {
         Ok(())
     }
 
+    // fn current_frame(&mut self) ->
+
     pub fn interpret(&mut self, chunk: &Chunk) -> Result<InterpretValue> {
         log::title_success("INTERPRETATION");
         /// Helper to simplify repetitive usage of binary operators
@@ -62,6 +64,8 @@ impl<'a> VM<'a> {
                 self.stack.push( Value::Bool(b $operator a))
             }};
         }
+
+        let frame = self.call_stack.last();
 
         while let Some(opcode) = chunk.code.get(self.ip) {
             if self.settings.debug {
@@ -146,3 +150,6 @@ impl<'a> From<Settings> for VM<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {}

@@ -36,13 +36,12 @@ mod test {
         if should_declare {
             bg.add_local(VARIABLE_NAME.to_owned());
         }
-        let chunk = bg
-            .compile(&ast)
+        bg.generate(&ast)
             .with_context(|| "Couldn't generate chunk from given ast")?;
 
         Ok((
-            chunk.clone(),
-            chunk.into_iter().cloned().collect::<Vec<Opcode>>(),
+            bg.chunk.clone(),
+            bg.chunk.into_iter().cloned().collect::<Vec<Opcode>>(),
         ))
     }
 

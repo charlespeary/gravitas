@@ -1,41 +1,24 @@
-use std::convert::TryInto;
-
-use anyhow::Result;
-
 use crate::parser::{
     expr::{Expr, Operator},
-    Affix, Parser,
+    Parser,
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Unary {
+pub struct Affix {
     pub expr: Box<Expr>,
+    // It might be Affix or postfix
     pub operator: Operator,
 }
 
-impl Into<Expr> for Unary {
+impl Into<Expr> for Affix {
     fn into(self) -> Expr {
-        Expr::Unary(self)
-    }
-}
-
-impl Parser {
-    pub fn parse_unary(&mut self) -> Result<Unary> {
-        let token = self.next_token();
-        let bp = token.bp(Affix::Prefix);
-        let operator: Operator = token.try_into()?;
-        let expr = self.parse_expr_bp(bp)?;
-
-        Ok(Unary {
-            expr: Box::new(expr),
-            operator,
-        })
+        Expr::Affix(self)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use crate::parser::{
         expr::{Atom, Expr, Grouping},
@@ -47,20 +30,20 @@ mod test {
     #[test]
     fn unary_expr() {
         let mut parser = Parser::new(vec![
-            Token::Minus,
+            Token::Operator(Operator::Minus),
             Token::OpenParenthesis,
             Token::Number(10.0),
             Token::CloseParenthesis,
         ]);
 
         assert_eq!(
-            parser.parse_unary().unwrap(),
-            Unary {
+            parser.parse_expr().unwrap(),
+            Expr::Affix(Affix {
                 operator: Operator::Minus,
                 expr: Box::new(Expr::Grouping(Grouping {
                     expr: Box::new(Expr::Atom(Atom::Number(10.0)))
                 })),
-            }
+            })
         );
     }
 }

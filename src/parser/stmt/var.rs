@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{Expr, Parser, Stmt, Token};
+use crate::parser::{operator::Operator, Expr, Parser, Stmt, Token};
 
+///
 #[derive(Debug, Clone, PartialEq)]
 pub struct VarStmt {
     pub expr: Expr,
@@ -15,10 +16,13 @@ impl Into<Stmt> for VarStmt {
 }
 
 impl Parser {
+    /// Parse variable declaration statement
     pub fn parse_var_stmt(&mut self) -> Result<VarStmt> {
         let _token = self.next_token();
-        if let Ok(identifier) = self.next_token().into_identifier() {
-            self.expect(Token::Assign)?;
+        if let Ok(identifier) = self.peek_token()?.clone().into_identifier() {
+            // advance identifier
+            self.next_token();
+            self.expect(Token::Operator(Operator::Assign))?;
             let expr = self.parse_expr()?;
             self.expect(Token::Semicolon)?;
             Ok(VarStmt { expr, identifier })
@@ -30,7 +34,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use crate::parser::expr::Atom;
 
@@ -42,7 +46,7 @@ mod test {
             Parser::new(vec![
                 Token::Var,
                 Token::Identifier(String::from("variable")),
-                Token::Assign,
+                Token::Operator(Operator::Assign),
                 Token::Number(10.0),
                 Token::Semicolon,
             ])
@@ -53,5 +57,37 @@ mod test {
                 expr: Expr::Atom(Atom::Number(10.0)),
             }
         );
+    }
+
+    // parse_var_stmt should fail if expression is not finished with semicolon.
+    #[test]
+    fn require_semicolon() {
+        let mut parser = Parser::new(vec![
+            Token::Var,
+            Token::Identifier(String::from("foo")),
+            Token::Operator(Operator::Assign),
+            Token::Number(2.0),
+        ]);
+
+        assert_eq!(
+            parser.parse_var_stmt().unwrap_err().to_string().as_str(),
+            "Expected Semicolon but got unexpected end of input"
+        );
+
+        let mut parser = Parser::new(vec![
+            Token::Var,
+            Token::Identifier(String::from("foo")),
+            Token::Operator(Operator::Assign),
+            Token::Number(2.0),
+            Token::Semicolon,
+        ]);
+
+        assert_eq!(
+            parser.parse_var_stmt().unwrap(),
+            VarStmt {
+                identifier: String::from("foo"),
+                expr: Expr::Atom(Atom::Number(2.0)),
+            }
+        )
     }
 }

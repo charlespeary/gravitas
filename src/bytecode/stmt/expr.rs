@@ -17,7 +17,7 @@ mod test {
     use crate::{
         bytecode::{test::generate_bytecode, Opcode, Value},
         parser::{
-            expr::{atom::Atom, block::Block, Expr, Operator},
+            expr::{atom::Atom, Expr},
             stmt::Stmt,
         },
     };

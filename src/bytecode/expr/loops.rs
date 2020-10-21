@@ -72,9 +72,9 @@ mod test {
     fn while_expr() {
         let ast = WhileLoop {
             condition: Box::new(Expr::Binary(Binary {
-                left: Box::new(Expr::Atom(Atom::Number(10.0))),
+                lhs: Box::new(Expr::Atom(Atom::Number(10.0))),
                 operator: Operator::Less,
-                right: Box::new(Expr::Atom(Atom::Number(20.0))),
+                rhs: Box::new(Expr::Atom(Atom::Number(20.0))),
             })),
             body: Block {
                 body: vec![Stmt::Print(PrintStmt {

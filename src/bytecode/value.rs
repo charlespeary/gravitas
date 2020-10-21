@@ -3,7 +3,7 @@ use std::ops::{Add, Neg};
 use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
-use crate::bytecode::Function;
+use crate::bytecode::stmt::function::Function;
 
 pub type Number = f64;
 pub type Address = usize;

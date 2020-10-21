@@ -5,13 +5,13 @@ use crate::parser::{
     Parser, Token,
 };
 
-use super::expr::{Binary, Block, Expr};
-
 pub mod expr;
 pub mod function;
 pub mod print;
 pub mod var;
 
+/// Statements are used to perform side effects, such as kicking off the expression's evaluation or
+/// variable, class, function declarations.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Expr(ExprStmt),
@@ -35,8 +35,9 @@ macro_rules! try_stmt {
 }
 
 impl Parser {
+    /// Looks for statement's keyword and tries to parse appropriate part of grammar.
     pub fn stmt(&mut self) -> Result<Stmt> {
-        Ok(match self.peek_token() {
+        Ok(match self.peek_token()? {
             Token::Var => try_stmt!(self.parse_var_stmt()),
             Token::Function => try_stmt!(self.parse_function_stmt()),
             Token::Print => try_stmt!(self.parse_print_stmt()),

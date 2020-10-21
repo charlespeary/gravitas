@@ -2,7 +2,9 @@ use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 use logos::{Lexer, Logos};
 
-fn text(lex: &mut Lexer<Token>) -> Option<String> {
+use crate::parser::operator::{lex_operator, Operator};
+
+fn lex_text(lex: &mut Lexer<Token>) -> Option<String> {
     let slice: String = lex.slice().parse().ok()?;
     Some(slice[1..slice.len() - 1].to_owned())
 }
@@ -21,38 +23,12 @@ pub enum Token {
     CloseBrace,
     #[token(",")]
     Coma,
-    #[token(".")]
-    Dot,
-    #[token("-")]
-    Minus,
-    #[token("+")]
-    Plus,
-    #[token("*")]
-    Star,
-    #[token("/")]
-    Divide,
-    #[token("%")]
-    Modulo,
+    #[regex(r"\+|\-|\*|/|>|>=|<=|<|!|!=|=|==|\\.", lex_operator)]
+    Operator(Operator),
     #[token(";")]
     Semicolon,
-    #[token("!")]
-    Bang,
-    #[token("!=")]
-    BangEqual,
-    #[token("<")]
-    Less,
-    #[token("<=")]
-    LessEqual,
-    #[token(">")]
-    Greater,
-    #[token(">=")]
-    GreaterEqual,
-    #[token("==")]
-    Compare,
-    #[token("=")]
-    Assign,
-    #[token("//")]
-    Comment,
+    // #[regex("\/\/.*", logos::skip)]
+    // Comment,
     #[token("if")]
     If,
     #[token("elif")]
@@ -99,7 +75,7 @@ pub enum Token {
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
     Number(f64),
-    #[regex("\"[^\"]*\"", text)]
+    #[regex("\"[^\"]*\"", lex_text)]
     Text(String),
     #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
     Identifier(String),
@@ -108,43 +84,7 @@ pub enum Token {
     Error,
 }
 
-#[derive(Display)]
-pub enum Affix {
-    Infix,
-    Prefix,
-}
-
 impl Token {
-    /// Get binding power of the token
-    /// e.g infix minus should have smaller binding power
-    /// than infix star, so we can parse the expressions in correct order.
-    ///         2 + 2 * 8
-    ///     should be parsed into   
-    /// Expr::Binary(2, + , Expr::Binary(2 * 8))
-    pub fn bp(&self, affix: Affix) -> usize {
-        match affix {
-            Affix::Prefix => match self {
-                Token::Minus => 7,
-                Token::Bang => 7,
-                _ => 0,
-            },
-            Affix::Infix => match self {
-                Token::Assign => 1,
-                Token::BangEqual => 4,
-                Token::Compare => 4,
-                Token::Greater => 4,
-                Token::GreaterEqual => 4,
-                Token::Less => 4,
-                Token::LessEqual => 4,
-                Token::Plus => 5,
-                Token::Minus => 5,
-                Token::Star => 6,
-                Token::Divide => 6,
-                _ => 0,
-            },
-        }
-    }
-
     /// Helper to determine whether token is associated with parsing the statements
     pub fn is_stmt(&self) -> bool {
         matches!(
@@ -158,15 +98,6 @@ impl Token {
 mod test {
     use super::*;
 
-    /// Token is able to find a rule for corresponding kind of affix.
-    /// It defaults to 0
-    #[test]
-    fn finds_rule() {
-        assert_eq!(Token::Minus.bp(Affix::Infix), 5);
-        assert_eq!(Token::Minus.bp(Affix::Prefix), 7);
-        assert_eq!(Token::Error.bp(Affix::Prefix), 0);
-    }
-
     /// Checks whether Token is of type related to statements. E.g "var" keyword
     #[test]
     fn is_stmt() {
@@ -174,5 +105,38 @@ mod test {
         assert!(Token::Print.is_stmt());
         assert!(Token::Function.is_stmt());
         assert!(Token::Class.is_stmt());
+    }
+
+    #[test]
+    fn isnt_stmt() {
+        assert!(!Token::Bar.is_stmt());
+        assert!(!Token::OpenParenthesis.is_stmt());
+        assert!(!Token::CloseParenthesis.is_stmt());
+        assert!(!Token::OpenBrace.is_stmt());
+        assert!(!Token::CloseBrace.is_stmt());
+        assert!(!Token::Coma.is_stmt());
+        assert!(!Token::Semicolon.is_stmt());
+        assert!(!Token::If.is_stmt());
+        assert!(!Token::ElseIf.is_stmt());
+        assert!(!Token::Else.is_stmt());
+        assert!(!Token::Match.is_stmt());
+        assert!(!Token::Default.is_stmt());
+        assert!(!Token::False.is_stmt());
+        assert!(!Token::True.is_stmt());
+        assert!(!Token::While.is_stmt());
+        assert!(!Token::For.is_stmt());
+        assert!(!Token::And.is_stmt());
+        assert!(!Token::Or.is_stmt());
+        assert!(!Token::Break.is_stmt());
+        assert!(!Token::Continue.is_stmt());
+        assert!(!Token::Return.is_stmt());
+        assert!(!Token::Super.is_stmt());
+        assert!(!Token::This.is_stmt());
+        assert!(!Token::Null.is_stmt());
+        assert!(!Token::Arrow.is_stmt());
+        assert!(!Token::Number(0.0).is_stmt());
+        assert!(!Token::Text(String::from("test")).is_stmt());
+        assert!(!Token::Identifier(String::from("test")).is_stmt());
+        assert!(!Token::Error.is_stmt());
     }
 }

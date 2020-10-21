@@ -68,9 +68,8 @@ mod test {
             final_expr: None,
         };
 
-        let chunk = bg
-            .compile(&ast)
-            .expect("Couldn't generate bytecode for given ast");
+        let chunk =
+            BytecodeGenerator::compile(&ast).expect("Couldn't generate bytecode for given ast");
 
         let bytecode = into_bytecode(chunk.clone());
 

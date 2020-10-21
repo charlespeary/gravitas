@@ -3,12 +3,12 @@ use crate::{
     parser::expr::{Expr, Grouping},
 };
 
+mod affix;
 mod atom;
 mod binary;
 mod block;
 mod conditional;
 mod loops;
-mod unary;
 mod var;
 
 impl BytecodeFrom<Box<Expr>> for BytecodeGenerator {
@@ -28,7 +28,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             Expr::Grouping(group) => self.generate(group),
             Expr::While(wl) => self.generate(wl),
             Expr::Atom(atom) => self.generate(atom),
-            Expr::Unary(unary) => self.generate(unary),
+            Expr::Affix(affix) => self.generate(affix),
             Expr::If(ifc) => self.generate(ifc),
             Expr::Binary(binary) => self.generate(binary),
         }?;

@@ -1,4 +1,4 @@
-use crate::bytecode::Function;
+use crate::bytecode::stmt::function::Function;
 
 #[derive(Debug)]
 pub struct CallFrame<'a> {

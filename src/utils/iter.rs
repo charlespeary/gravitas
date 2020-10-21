@@ -9,7 +9,7 @@ where
 {
     iter: Fuse<I>,
     buf: VecDeque<I::Item>,
-    pub current: Option<I::Item>,
+    pub index: usize,
 }
 
 pub fn peek_nth<I>(iterable: I) -> PeekNth<I::IntoIter>
@@ -20,7 +20,7 @@ where
     PeekNth {
         iter: iterable.into_iter().fuse(),
         buf: VecDeque::new(),
-        current: None,
+        index: 0,
     }
 }
 
@@ -48,10 +48,8 @@ where
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let current = self.buf.pop_front().or_else(|| self.iter.next());
-        // TODO: Find out if it can be implemented without this clone
-        self.current = current.clone();
-        current
+        self.index += 1;
+        self.buf.pop_front().or_else(|| self.iter.next())
     }
 }
 
@@ -85,20 +83,5 @@ mod test {
         assert_eq!(iter.peek_nth(1), Some(&2));
         assert_eq!(iter.peek_nth(2), Some(&3));
         assert_eq!(iter.peek_nth(4), None);
-    }
-
-    /// Returns current token
-    #[test]
-    fn current() {
-        let items = vec![1, 2, 3];
-        let mut iter = into_peek_nth(items.into_iter());
-        assert_eq!(iter.current, None);
-        iter.next();
-        assert_eq!(iter.current, Some(1));
-        iter.next();
-        assert_eq!(iter.current, Some(2));
-        iter.next();
-        assert_eq!(iter.current, Some(3));
-        iter.next();
     }
 }

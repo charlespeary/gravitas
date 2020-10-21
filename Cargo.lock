@@ -138,7 +138,7 @@ dependencies = [
     "heck",
     "proc-macro2",
     "quote",
- "syn",
+    "syn",
 ]
 
 [[package]]
@@ -298,8 +298,8 @@ dependencies = [
     "proc-macro-error-attr",
     "proc-macro2",
     "quote",
- "syn",
- "version_check",
+    "syn",
+    "version_check",
 ]
 
 [[package]]
