@@ -7,10 +7,11 @@ pub use crate::parser::{
         atom::Atom,
         binary::Binary,
         block::Block,
+        call::Call,
         conditional::If,
         grouping::Grouping,
+        identifier::Identifier,
         loops::{Break, Continue, WhileLoop},
-        var::Var,
     },
     operator::Operator,
     Parser, Token,
@@ -20,16 +21,18 @@ pub mod affix;
 pub mod atom;
 pub mod binary;
 pub mod block;
+pub mod call;
 pub mod conditional;
 pub mod grouping;
+pub mod identifier;
 pub mod loops;
-pub mod var;
 
 #[derive(Debug, Clone, PartialEq, EnumAsInner)]
 pub enum Expr {
     Affix(Affix),
     Binary(Binary),
-    Var(Var),
+    Call(Call),
+    Identifier(Identifier),
     Grouping(Grouping),
     Block(Block),
     If(If),
@@ -73,10 +76,13 @@ impl Parser {
             Token::OpenParenthesis => try_expr!(self.parse_grouping()),
             Token::OpenBrace => try_expr!(self.parse_block()),
             Token::If => try_expr!(self.parse_if()),
-            Token::Identifier(_) => try_expr!(self.parse_var()),
+            Token::Identifier(_) => try_expr!(self.parse_identifier()),
             _ => try_expr!(self.parse_atom()),
         };
 
+        if self.peek_eq(Token::OpenParenthesis) {
+            lhs = self.parse_call(lhs)?.into();
+        }
         // try to peek next token and see if it's an operator
         while let Some(op) = self.peek_next() {
             if let Ok(operator) = op

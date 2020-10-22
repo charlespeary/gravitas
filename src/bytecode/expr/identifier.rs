@@ -1,12 +1,12 @@
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, PATCH},
-    parser::expr::Var,
+    parser::expr::Identifier,
 };
 
-impl BytecodeFrom<Var> for BytecodeGenerator {
-    fn generate(&mut self, var: &Var) -> GenerationResult {
-        let Var { is_ref, identifier } = var;
-        let local = self.find_local(identifier)?;
+impl BytecodeFrom<Identifier> for BytecodeGenerator {
+    fn generate(&mut self, identifier: &Identifier) -> GenerationResult {
+        let Identifier { is_ref, value } = identifier;
+        let local = self.find_local(value)?;
         let opcode = match *is_ref {
             true => Opcode::VarRef(local),
             false => Opcode::Var(local),
@@ -51,8 +51,8 @@ mod test {
         // and is stored in the locals vector.
 
         // Variables that evaluate to value
-        let ast = Var {
-            identifier: VARIABLE_NAME.to_owned(),
+        let ast = Identifier {
+            value: VARIABLE_NAME.to_owned(),
             is_ref: false,
         };
 
@@ -60,8 +60,8 @@ mod test {
         assert_eq!(bytecode, vec![Opcode::Var(0)]);
 
         // Variables that evaluate to reference
-        let ast = Var {
-            identifier: VARIABLE_NAME.to_owned(),
+        let ast = Identifier {
+            value: VARIABLE_NAME.to_owned(),
             is_ref: true,
         };
 
@@ -72,15 +72,15 @@ mod test {
         // and isn't stored in the locals vector.
 
         // Variables that evaluate to value
-        let ast = Var {
-            identifier: VARIABLE_NAME.to_owned(),
+        let ast = Identifier {
+            value: VARIABLE_NAME.to_owned(),
             is_ref: false,
         };
         assert!(generate_bytecode_with_var(ast, OMIT_VAR).is_err());
 
         // Variables that evaluate to reference
-        let ast = Var {
-            identifier: VARIABLE_NAME.to_owned(),
+        let ast = Identifier {
+            value: VARIABLE_NAME.to_owned(),
             is_ref: true,
         };
         assert!(generate_bytecode_with_var(ast, OMIT_VAR).is_err());

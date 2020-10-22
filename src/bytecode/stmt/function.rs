@@ -12,15 +12,15 @@ pub struct Function {
 
 impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
     fn generate(&mut self, fnc: &FunctionStmt) -> GenerationResult {
-        let FunctionStmt { name, args, body } = fnc;
+        let FunctionStmt { name, params, body } = fnc;
         let mut emitter = BytecodeGenerator::new();
-        for arg in args.clone() {
-            emitter.add_local(arg.val);
+        for param in params.clone() {
+            emitter.add_local(param.val);
         }
         emitter.generate(body)?;
         let function_chunk = emitter.chunk;
         let function = Function {
-            arity: args.len(),
+            arity: params.len(),
             chunk: function_chunk,
             name: name.clone(),
         };

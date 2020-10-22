@@ -3,14 +3,14 @@ use anyhow::{anyhow, Result};
 use crate::parser::{expr::Block, Parser, Stmt, Token};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Arg {
+pub struct Param {
     pub val: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionStmt {
     pub name: String,
-    pub args: Vec<Arg>,
+    pub params: Vec<Param>,
     pub body: Block,
 }
 
@@ -21,15 +21,15 @@ impl Into<Stmt> for FunctionStmt {
 }
 
 impl Parser {
-    /// Parse arguments. Used both for closures and function declarations.
+    /// Parse parameters. Used both for closures and function declarations.
     /// It expects the open parenthesis/brace, parses all of the identifiers and expects the close parenthesis/brace.
-    /// Arguments must be followed by a coma.
-    pub fn parse_args(&mut self) -> Result<Vec<Arg>> {
-        let mut args: Vec<Arg> = vec![];
+    /// Parameters must be followed by a coma.
+    pub fn parse_params(&mut self) -> Result<Vec<Param>> {
+        let mut params: Vec<Param> = vec![];
 
         while !self.peek_eq_many(&[Token::CloseParenthesis, Token::CloseBrace]) {
             if let Ok(val) = self.next_token().into_identifier() {
-                args.push(Arg { val });
+                params.push(Param { val });
 
                 // skip commas
                 if self.peek_eq(Token::Coma) {
@@ -39,7 +39,7 @@ impl Parser {
                 return Err(anyhow!("Expected argument. Received invalid token."));
             }
         }
-        Ok(args)
+        Ok(params)
     }
 
     /// Parse function declaration statement.
@@ -48,10 +48,10 @@ impl Parser {
         let _token = self.next_token();
         if let Ok(name) = self.next_token().into_identifier() {
             self.expect(Token::OpenParenthesis)?;
-            let args = self.parse_args()?;
+            let params = self.parse_params()?;
             self.expect(Token::CloseParenthesis)?;
             let body = self.parse_block()?;
-            Ok(FunctionStmt { name, args, body })
+            Ok(FunctionStmt { name, params, body })
         } else {
             Err(anyhow!("Expected function name!"))
         }

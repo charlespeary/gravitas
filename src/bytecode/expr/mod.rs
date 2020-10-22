@@ -7,9 +7,10 @@ mod affix;
 mod atom;
 mod binary;
 mod block;
+mod call;
 mod conditional;
+mod identifier;
 mod loops;
-mod var;
 
 impl BytecodeFrom<Box<Expr>> for BytecodeGenerator {
     fn generate(&mut self, expr: &Box<Expr>) -> GenerationResult {
@@ -22,7 +23,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
     fn generate(&mut self, expr: &Expr) -> GenerationResult {
         match expr {
             Expr::Block(block) => self.generate(block),
-            Expr::Var(var) => self.generate(var),
+            Expr::Identifier(identifier) => self.generate(identifier),
             Expr::Continue(con) => self.generate(con),
             Expr::Break(bre) => self.generate(bre),
             Expr::Grouping(group) => self.generate(group),
@@ -30,6 +31,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             Expr::Atom(atom) => self.generate(atom),
             Expr::Affix(affix) => self.generate(affix),
             Expr::If(ifc) => self.generate(ifc),
+            Expr::Call(call) => self.generate(call),
             Expr::Binary(binary) => self.generate(binary),
         }?;
         Ok(())

@@ -18,7 +18,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::parser::{
-        expr::{atom::Atom, Expr, Grouping, Var},
+        expr::{atom::Atom, Expr, Grouping, Identifier},
         Parser, Token,
     };
 
@@ -54,8 +54,8 @@ mod test {
         assert_eq!(
             parser.parse_expr().expect("Couldn't parse expression"),
             Expr::Binary(Binary {
-                lhs: Box::new(Expr::Var(Var {
-                    identifier: String::from("var"),
+                lhs: Box::new(Expr::Identifier(Identifier {
+                    value: String::from("var"),
                     is_ref: true,
                 })),
                 operator: Operator::Assign,
