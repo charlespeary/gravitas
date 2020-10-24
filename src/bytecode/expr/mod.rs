@@ -32,6 +32,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             Expr::Affix(affix) => self.generate(affix),
             Expr::If(ifc) => self.generate(ifc),
             Expr::Call(call) => self.generate(call),
+            Expr::Return(ret) => self.generate(ret),
             Expr::Binary(binary) => self.generate(binary),
         }?;
         Ok(())

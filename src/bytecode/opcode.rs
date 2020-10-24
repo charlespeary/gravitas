@@ -1,19 +1,17 @@
 use derive_more::Display;
 
-use crate::parser::Token;
-
-// TODO: Investigate alternative to usize, so enums are not aligned to 8 bytes
 #[derive(Debug, PartialOrd, PartialEq, Eq, Copy, Clone, Display, Hash)]
 pub enum Opcode {
-    // Values
+    // Inline values
     True,
     False,
     Null,
+    // Constant
     Constant(usize),
-    // Negation stuff
+    // Negation
     Not,
     Negate,
-    // binary operators
+    // Binary
     Add,
     Subtract,
     Multiply,
@@ -37,10 +35,12 @@ pub enum Opcode {
     // Side effects
     Print,
     PopN(usize),
-    // Variables
-    Var(usize),
-    VarRef(usize),
+    // Get resource
+    Get,
+    // Assign value to a given resource
     Assign,
+    // Calls
+    Call,
 }
 
 impl Opcode {

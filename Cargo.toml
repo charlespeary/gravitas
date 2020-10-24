@@ -13,6 +13,7 @@ lazy_static = "1.4.0"
 derive_more = "0.99.9"
 enum-as-inner = "0.3.3"
 colored = "2.0.0"
+codespan = "0.9.5"
 
 [dev-dependencies]
 quickcheck = "0.9"

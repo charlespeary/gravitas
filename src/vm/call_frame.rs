@@ -1,8 +1,8 @@
-use crate::bytecode::stmt::function::Function;
+use crate::bytecode::Chunk;
 
-#[derive(Debug)]
-pub struct CallFrame<'a> {
-    function: &'a Function,
-    stack_start: usize,
-    return_address: usize,
+#[derive(Debug, Clone)]
+pub struct CallFrame {
+    pub chunk: Chunk,
+    pub stack_start: usize,
+    pub return_address: usize,
 }

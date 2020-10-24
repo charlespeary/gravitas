@@ -1,3 +1,4 @@
+#![feature(bool_to_option)]
 extern crate derive_more;
 #[cfg(test)]
 extern crate quickcheck;
@@ -11,13 +12,14 @@ use clap::Clap;
 use settings::Settings;
 use utils::initialize;
 
+pub use crate::{bytecode::BytecodeGenerator, parser::Parser, vm::VM};
+
 mod bytecode;
 mod parser;
 mod settings;
+mod std;
 mod utils;
 mod vm;
-
-pub use crate::{bytecode::BytecodeGenerator, parser::Parser, vm::VM};
 
 pub fn run() -> Result<()> {
     let settings = Settings::parse();

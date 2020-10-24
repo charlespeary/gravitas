@@ -1,8 +1,10 @@
+use std::hash::Hash;
+
 use anyhow::Result;
 
 pub use chunk::Chunk;
 pub use opcode::Opcode;
-pub use value::{Address, Number, Value};
+pub use value::{Address, Callable, Number, Value};
 
 use crate::parser::Ast;
 
@@ -18,9 +20,16 @@ pub trait BytecodeFrom<T> {
     fn generate(&mut self, data: &T) -> GenerationResult;
 }
 
+/// State of the generator
+#[derive(Debug, Default, Clone, Copy)]
+pub struct GeneratorState {
+    pub function_returned: bool,
+}
+
 /// State of the scope / block
 #[derive(Default, Debug, Copy, Clone)]
 pub struct Scope {
+    pub global: bool,
     /// Amount of declared variables in the given scope.
     pub declared: usize,
 }
@@ -45,12 +54,25 @@ pub struct BytecodeGenerator {
     locals: Vec<String>,
     scopes: Vec<Scope>,
     loops: Vec<Loop>,
+    state: GeneratorState,
 }
 
 impl BytecodeGenerator {
     pub fn new() -> Self {
         Self {
-            scopes: vec![Scope::default()],
+            scopes: vec![Scope {
+                global: true,
+                declared: 0,
+            }],
+            ..Default::default()
+        }
+    }
+
+    pub fn child(&self) -> Self {
+        Self {
+            scopes: self.scopes.clone(),
+            locals: self.locals.clone(),
+            loops: self.loops.clone(),
             ..Default::default()
         }
     }
@@ -93,10 +115,7 @@ impl BytecodeGenerator {
             .code
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
-        println!(
-            "Current index: {} Patch index: {}",
-            current_index, patch.index
-        );
+
         let patched_opcode = opcode.patch(current_index - patch.index);
         let _ = std::mem::replace(opcode, patched_opcode);
     }
@@ -125,6 +144,14 @@ impl BytecodeGenerator {
         }
     }
 
+    pub fn current_scope(&mut self) -> &mut Scope {
+        self.scopes.last_mut().unwrap()
+    }
+
+    pub fn in_global_scope(&self) -> bool {
+        self.scopes.last().expect("Global scope is required").global
+    }
+
     pub fn begin_loop(&mut self) -> usize {
         let starting_index = self.curr_index();
         self.loops.push(Loop {
@@ -146,16 +173,9 @@ impl BytecodeGenerator {
         // we can safely unwrap this.
         self.loops.last_mut().unwrap()
     }
-}
 
-impl From<&BytecodeGenerator> for BytecodeGenerator {
-    fn from(outer: &BytecodeGenerator) -> Self {
-        BytecodeGenerator {
-            locals: outer.locals.clone(),
-            scopes: outer.scopes.clone(),
-            loops: outer.loops.clone(),
-            ..Default::default()
-        }
+    pub fn add_constant(&mut self, value: Value) -> usize {
+        self.chunk.add_constant(value)
     }
 }
 

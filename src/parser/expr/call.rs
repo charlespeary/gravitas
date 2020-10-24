@@ -7,8 +7,8 @@ pub struct Args(pub Vec<Expr>);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Call {
-    expr: Box<Expr>,
-    args: Args,
+    pub caller: Box<Expr>,
+    pub args: Args,
 }
 
 impl Into<Expr> for Call {
@@ -17,11 +17,25 @@ impl Into<Expr> for Call {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Return {
+    pub expr: Option<Box<Expr>>,
+}
+
+impl Into<Expr> for Return {
+    fn into(self) -> Expr {
+        Expr::Return(self)
+    }
+}
+
 impl Parser {
     pub fn parse_args(&mut self) -> Result<Args> {
         let mut args: Vec<Expr> = vec![];
 
         loop {
+            if self.peek_eq(Token::CloseParenthesis) {
+                break;
+            }
             args.push(self.parse_expr()?);
             if !self.peek_eq(Token::Coma) {
                 break;
@@ -41,9 +55,16 @@ impl Parser {
         self.expect(Token::CloseParenthesis)?;
 
         Ok(Call {
-            expr: Box::new(expr),
+            caller: Box::new(expr),
             args,
         })
+    }
+
+    /// Parse return expression
+    pub fn parse_return(&mut self) -> Result<Return> {
+        self.expect(Token::Return)?;
+        let expr = self.parse_optional_expr()?.map(Box::new);
+        Ok(Return { expr })
     }
 }
 
@@ -112,5 +133,23 @@ mod test {
             Token::Number(30.0),
         ]);
         assert!(parser.parse_call(call_expr()).is_err())
+    }
+
+    #[test]
+    fn parse_return_with_expr() {
+        let mut parser = Parser::new(vec![Token::Return, Token::Number(2.0)]);
+
+        assert_eq!(
+            parser.parse_return().unwrap(),
+            Return {
+                expr: Some(Box::new(Expr::Atom(Atom::Number(2.0))))
+            }
+        )
+    }
+
+    fn parse_return_without_expr() {
+        let mut parser = Parser::new(vec![Token::Return]);
+
+        assert_eq!(parser.parse_return().unwrap(), Return { expr: None })
     }
 }

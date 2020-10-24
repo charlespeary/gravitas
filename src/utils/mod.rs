@@ -105,8 +105,9 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
     log::title_success("GENERATED");
     log::body(&chunk.code);
+    log::title_success("INTERPRETATION");
     let mut vm = VM::from(settings.clone());
-    let _ = vm.interpret(&chunk);
+    let _ = vm.interpret(chunk);
     Ok(())
 }
 

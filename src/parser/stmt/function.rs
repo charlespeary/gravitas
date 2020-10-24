@@ -1,6 +1,10 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{expr::Block, Parser, Stmt, Token};
+use crate::parser::{
+    expr::{Atom, Block, Expr},
+    stmt::var::VarStmt,
+    Parser, Stmt, Token,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Param {
@@ -51,6 +55,7 @@ impl Parser {
             let params = self.parse_params()?;
             self.expect(Token::CloseParenthesis)?;
             let body = self.parse_block()?;
+
             Ok(FunctionStmt { name, params, body })
         } else {
             Err(anyhow!("Expected function name!"))

@@ -1,7 +1,5 @@
 use std::slice::Iter;
 
-use derive_more::Display;
-
 use crate::bytecode::{Opcode, Value};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd)]

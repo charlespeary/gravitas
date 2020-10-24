@@ -84,11 +84,30 @@ version = "3.0.0-beta.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb51c9e75b94452505acd21d929323f5a5c6c4735a852adbd39ef5fb1b014f30"
 dependencies = [
- "heck",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
+    "heck",
+    "proc-macro-error",
+    "proc-macro2",
+    "quote",
+    "syn",
+]
+
+[[package]]
+name = "codespan"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ebaf6bb6a863ad6aa3a18729e9710c53d75df03306714d9cc1f7357a00cd789"
+dependencies = [
+    "codespan-reporting",
+]
+
+[[package]]
+name = "codespan-reporting"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e0762455306b1ed42bc651ef6a2197aabda5e1d4a43c34d5eab5c1a3634e81d"
+dependencies = [
+    "termcolor",
+    "unicode-width",
 ]
 
 [[package]]
@@ -512,6 +531,7 @@ version = "0.1.0"
 dependencies = [
     "anyhow",
     "clap",
+    "codespan",
     "colored",
     "derive_more",
     "enum-as-inner",

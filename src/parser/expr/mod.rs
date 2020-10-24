@@ -7,7 +7,7 @@ pub use crate::parser::{
         atom::Atom,
         binary::Binary,
         block::Block,
-        call::Call,
+        call::{Call, Return},
         conditional::If,
         grouping::Grouping,
         identifier::Identifier,
@@ -32,6 +32,7 @@ pub enum Expr {
     Affix(Affix),
     Binary(Binary),
     Call(Call),
+    Return(Return),
     Identifier(Identifier),
     Grouping(Grouping),
     Block(Block),
@@ -77,6 +78,7 @@ impl Parser {
             Token::OpenBrace => try_expr!(self.parse_block()),
             Token::If => try_expr!(self.parse_if()),
             Token::Identifier(_) => try_expr!(self.parse_identifier()),
+            Token::Return => try_expr!(self.parse_return()),
             _ => try_expr!(self.parse_atom()),
         };
 

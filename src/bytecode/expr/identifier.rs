@@ -1,17 +1,23 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, PATCH},
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, Value, PATCH},
     parser::expr::Identifier,
 };
 
 impl BytecodeFrom<Identifier> for BytecodeGenerator {
     fn generate(&mut self, identifier: &Identifier) -> GenerationResult {
         let Identifier { is_ref, value } = identifier;
-        let local = self.find_local(value)?;
-        let opcode = match *is_ref {
-            true => Opcode::VarRef(local),
-            false => Opcode::Var(local),
-        };
-        self.emit_code(opcode);
+        let address = self.find(value)?;
+
+        self.add_constant(Value::Address(address));
+
+        // If identifier is used in an assignment operation
+        // then we don't emit opcode to get value from that address
+        // and push it onto the stack
+
+        if !is_ref {
+            self.emit_code(Opcode::Get);
+        }
+
         Ok(())
     }
 }
@@ -34,7 +40,7 @@ mod test {
     {
         let mut bg = BytecodeGenerator::new();
         if should_declare {
-            bg.add_local(VARIABLE_NAME.to_owned());
+            bg.declare(VARIABLE_NAME.to_owned());
         }
         bg.generate(&ast)
             .with_context(|| "Couldn't generate chunk from given ast")?;
@@ -57,7 +63,7 @@ mod test {
         };
 
         let (_, bytecode) = generate_bytecode_with_var(ast, DECLARE_VAR)?;
-        assert_eq!(bytecode, vec![Opcode::Var(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::Get]);
 
         // Variables that evaluate to reference
         let ast = Identifier {
@@ -66,7 +72,7 @@ mod test {
         };
 
         let (_, bytecode) = generate_bytecode_with_var(ast, DECLARE_VAR)?;
-        assert_eq!(bytecode, vec![Opcode::VarRef(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
 
         // Bytecode generator will throw an error if variable referenced by Expr::Var hasn't been declared
         // and isn't stored in the locals vector.

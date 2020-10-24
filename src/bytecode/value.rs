@@ -1,21 +1,55 @@
-use std::ops::{Add, Neg};
+use std::{
+    fmt,
+    ops::{Add, Neg},
+};
 
 use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
-use crate::bytecode::stmt::function::Function;
+use crate::{bytecode::stmt::function::Function, std::NativeFunction};
 
 pub type Number = f64;
-pub type Address = usize;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
+pub enum Address {
+    Local(usize),
+    Global(String),
+}
+
+#[derive(Clone, PartialEq, PartialOrd, EnumAsInner)]
+pub enum Callable {
+    Function(Function),
+    NativeFunction(NativeFunction),
+}
+
+impl fmt::Debug for Callable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Callable::Function(func) => f.write_fmt(format_args!("<fn {}>", func.name)),
+            Callable::NativeFunction(_) => f.write_fmt(format_args!("<native fn>")),
+        }
+    }
+}
+
+impl Into<Value> for Callable {
+    fn into(self) -> Value {
+        Value::Callable(self)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Value {
+    // Plain f64 number
     Number(Number),
+    // Plain boolean value
     Bool(bool),
+    // Plain String Value
     String(String),
-    Variable(String),
-    Reference(Address),
-    Function(Function),
+    // Address, number that points to place on the stack (usize) or global variable (string)
+    Address(Address),
+    // Variant holding callable values
+    Callable(Callable),
+    // Null value, might be changed to Option in future
     Null,
 }
 
@@ -117,8 +151,10 @@ mod test {
         assert!(Value::Bool(false).neg().is_err());
         assert!(Value::Bool(true).neg().is_err());
         assert!(Value::Null.neg().is_err());
-        assert!(Value::Variable(String::from("var")).neg().is_err());
-        assert!(Value::Reference(0).neg().is_err());
+        assert!(Value::Address(Address::Global(String::from("var")))
+            .neg()
+            .is_err());
+        assert!(Value::Address(Address::Local(0)).neg().is_err());
     }
 
     // Value can be turned into bool. This acts as a helper to determine whether value is falsey or not.

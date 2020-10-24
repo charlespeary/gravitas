@@ -27,6 +27,10 @@ impl Operator {
         Ok(match self {
             Operator::Plus | Operator::Minus => (1, 2),
             Operator::Multiply | Operator::Divide => (3, 4),
+            Operator::Less | Operator::LessEqual | Operator::Greater | Operator::GreaterEqual => {
+                (5, 6)
+            }
+            Operator::Compare => (7, 8),
             Operator::Dot => (8, 7),
             Operator::Assign => (10, 11),
             _ => return Err(anyhow!("{:?} can't be used as an infix operator!", self)),
