@@ -14,7 +14,9 @@ use utils::initialize;
 
 pub use crate::{bytecode::BytecodeGenerator, parser::Parser, vm::VM};
 
+mod analyzer;
 mod bytecode;
+mod error;
 mod parser;
 mod settings;
 mod std;

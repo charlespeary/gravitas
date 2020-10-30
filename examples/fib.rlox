@@ -11,6 +11,6 @@ fn fib(n) {
 }
 
 var start = clock();
-print fib(25);
+print(fib(25));
 var end = clock();
-print (end - start) / 1000;
+print((end - start) / 1000);

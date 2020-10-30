@@ -147,6 +147,7 @@ mod test {
         )
     }
 
+    #[test]
     fn parse_return_without_expr() {
         let mut parser = Parser::new(vec![Token::Return]);
 

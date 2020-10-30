@@ -62,7 +62,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr, Operator,
             },
-            stmt::{print::PrintStmt, var::VarStmt, Stmt},
+            stmt::{expr::ExprStmt, var::VarStmt, Stmt},
         },
     };
 
@@ -77,8 +77,8 @@ mod test {
                 rhs: Box::new(Expr::Atom(Atom::Number(20.0))),
             })),
             body: Block {
-                body: vec![Stmt::Print(PrintStmt {
-                    expr: Expr::Atom(Atom::Text(String::from("while loop"))),
+                body: vec![Stmt::Expr(ExprStmt {
+                    expr: Expr::Atom(Atom::Null),
                 })],
                 final_expr: None,
             },
@@ -93,8 +93,8 @@ mod test {
                 Opcode::Constant(1),
                 Opcode::Less,
                 Opcode::JumpIfFalse(5),
-                Opcode::Constant(2),
-                Opcode::Print,
+                Opcode::Null,
+                Opcode::PopN(1),
                 Opcode::Null,
                 Opcode::PopN(1),
                 Opcode::JumpBack(7),

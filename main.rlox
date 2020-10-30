@@ -1,16 +1,6 @@
-fn fib(n) {
-    if n <= 0 {
-        return 0;
-    };
-
-    if n == 1 {
-        return 1;
-    };
-
-    return fib(n - 1) + fib(n - 2);
+fn foo(a, b) {
+    print(foo);
+    return a + b;
 }
 
-var start = clock();
-print fib(25);
-var end = clock();
-print (end - start) / 1000;
+print(foo(10,15));

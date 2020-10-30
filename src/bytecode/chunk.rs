@@ -5,7 +5,7 @@ use crate::bytecode::{Opcode, Value};
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub code: Vec<Opcode>,
-    constants: Vec<Value>,
+    pub(crate) constants: Vec<Value>,
 }
 
 impl Chunk {

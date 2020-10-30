@@ -40,7 +40,7 @@ impl Into<Expr> for Break {
 
 impl Parser {
     pub fn parse_optional_expr(&mut self) -> Result<Option<Expr>> {
-        if !self.peek_eq(Token::Semicolon) {
+        if !self.peek_eq(Token::Semicolon) & !self.at_end() {
             Ok(Some(self.parse_expr()?))
         } else {
             Ok(None)

@@ -50,7 +50,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr, Operator,
             },
-            stmt::{print::PrintStmt, var::VarStmt, Stmt},
+            stmt::{var::VarStmt, Stmt},
         },
     };
 

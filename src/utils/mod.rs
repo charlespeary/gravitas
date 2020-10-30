@@ -103,11 +103,15 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
     log::title_success("PARSED");
     log::body(&ast);
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
-    log::title_success("GENERATED");
+    log::title_success("OPCODES");
     log::body(&chunk.code);
+    log::title_success("CONSTANTS");
+    log::body(&chunk.constants);
+
     log::title_success("INTERPRETATION");
     let mut vm = VM::from(settings.clone());
-    let _ = vm.interpret(chunk);
+    let result = vm.interpret(chunk);
+    dbg!(result);
     Ok(())
 }
 

@@ -25,6 +25,7 @@ pub enum Operator {
 impl Operator {
     pub fn infix_bp(self) -> Result<(u8, u8)> {
         Ok(match self {
+            Operator::Assign => (0, 1),
             Operator::Plus | Operator::Minus => (1, 2),
             Operator::Multiply | Operator::Divide => (3, 4),
             Operator::Less | Operator::LessEqual | Operator::Greater | Operator::GreaterEqual => {
@@ -32,7 +33,6 @@ impl Operator {
             }
             Operator::Compare => (7, 8),
             Operator::Dot => (8, 7),
-            Operator::Assign => (10, 11),
             _ => return Err(anyhow!("{:?} can't be used as an infix operator!", self)),
         })
     }

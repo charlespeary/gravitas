@@ -6,6 +6,7 @@ use crate::{
 impl BytecodeFrom<ExprStmt> for BytecodeGenerator {
     fn generate(&mut self, expr: &ExprStmt) -> GenerationResult {
         self.generate(&expr.expr)?;
+        self.emit_code(Opcode::PopN(1));
         Ok(())
     }
 }
@@ -33,7 +34,7 @@ mod test {
 
         let (chunk, bytecode) = generate_bytecode(ast);
 
-        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::PopN(1)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
     }
 }

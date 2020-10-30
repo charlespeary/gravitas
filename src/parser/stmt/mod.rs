@@ -1,13 +1,12 @@
 use anyhow::Result;
 
 use crate::parser::{
-    stmt::{expr::ExprStmt, function::FunctionStmt, print::PrintStmt, var::VarStmt},
+    stmt::{expr::ExprStmt, function::FunctionStmt, var::VarStmt},
     Parser, Token,
 };
 
 pub mod expr;
 pub mod function;
-pub mod print;
 pub mod var;
 
 /// Statements are used to perform side effects, such as kicking off the expression's evaluation or
@@ -16,7 +15,6 @@ pub mod var;
 pub enum Stmt {
     Expr(ExprStmt),
     Var(VarStmt),
-    Print(PrintStmt),
     Function(FunctionStmt),
 }
 
@@ -40,7 +38,6 @@ impl Parser {
         Ok(match self.peek_token()? {
             Token::Var => try_stmt!(self.parse_var_stmt()),
             Token::Function => try_stmt!(self.parse_function_stmt()),
-            Token::Print => try_stmt!(self.parse_print_stmt()),
             _ => try_stmt!(self.parse_expr_stmt()),
         })
     }

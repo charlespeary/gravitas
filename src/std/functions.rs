@@ -10,3 +10,10 @@ pub fn clock(_: Args) -> Value {
             .as_millis() as f64,
     )
 }
+
+pub fn print(args: Args) -> Value {
+    for arg in args {
+        println!("{:?}", arg);
+    }
+    Value::Null
+}

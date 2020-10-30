@@ -69,8 +69,6 @@ pub enum Token {
     This,
     #[token("null")]
     Null,
-    #[token("print")]
-    Print,
     #[token("=>")]
     Arrow,
     #[regex("-?[0-9]*\\.?[0-9]+", | lex | lex.slice().parse())]
@@ -87,10 +85,7 @@ pub enum Token {
 impl Token {
     /// Helper to determine whether token is associated with parsing the statements
     pub fn is_stmt(&self) -> bool {
-        matches!(
-            self,
-            Token::Var | Token::Print | Token::Class | Token::Function
-        )
+        matches!(self, Token::Var | Token::Class | Token::Function)
     }
 }
 
@@ -102,7 +97,6 @@ mod test {
     #[test]
     fn is_stmt() {
         assert!(Token::Var.is_stmt());
-        assert!(Token::Print.is_stmt());
         assert!(Token::Function.is_stmt());
         assert!(Token::Class.is_stmt());
     }

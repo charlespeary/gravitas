@@ -32,8 +32,7 @@ pub enum Opcode {
     Break(usize),
     // Block holds number of variables declared inside to drop
     Block(usize),
-    // Side effects
-    Print,
+    // Memory management
     PopN(usize),
     // Get resource
     Get,

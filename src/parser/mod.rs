@@ -1,4 +1,4 @@
-use std::vec::IntoIter;
+use std::{mem::discriminant, vec::IntoIter};
 
 use anyhow::{anyhow, Context, Error, Result};
 
@@ -10,7 +10,6 @@ pub use crate::{
     },
 };
 
-mod error;
 pub mod expr;
 pub mod operator;
 pub mod stmt;
@@ -38,11 +37,23 @@ impl Parser {
             .with_context(|| anyhow!("Expected {} but got unexpected end of input", expected))?
             .clone();
 
-        if next == expected {
+        if discriminant(&next) == discriminant(&expected) {
             self.next_token();
             Ok(next)
         } else {
             Err(anyhow!("Expected {} but got {:#?}", expected, next))
+        }
+    }
+
+    pub fn expect_identifier(&mut self) -> Result<String> {
+        if let Ok(ident) = self.peek_token()?.clone().into_identifier() {
+            self.next_token();
+            Ok(ident)
+        } else {
+            Err(anyhow!(
+                "Expected identifier but got {:#?}",
+                self.peek_token()
+            ))
         }
     }
 
@@ -76,7 +87,11 @@ impl Parser {
     }
 
     fn peek_eq(&mut self, expected: Token) -> bool {
-        self.tokens.peek().map_or(false, |t| t == &expected)
+        self.peek_next().map_or(false, |t| t == &expected)
+    }
+
+    fn at_end(&mut self) -> bool {
+        self.peek_next().is_none()
     }
 
     fn peek_eq_many(&mut self, expected: &[Token]) -> bool {
