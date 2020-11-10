@@ -1,10 +1,9 @@
+use anyhow::{anyhow, Context, Result};
 use std::collections::HashMap;
 use std::ops::Neg;
 
-use anyhow::{anyhow, Context, Result};
-
 use crate::{
-    bytecode::{stmt::function::Function, Address, Callable, Chunk, Number, Opcode, Value},
+    bytecode::{Address, Callable, Chunk, expr::closure::Closure, Number, Opcode, stmt::function::Function, Value},
     settings::Settings,
     std::GLOBALS,
     utils::log,
@@ -72,6 +71,17 @@ impl VM {
         Ok(values)
     }
 
+    pub fn new_frame(&mut self, chunk: Chunk, arity: usize) {
+        self.call_stack.push(CallFrame {
+            chunk,
+            // Function should have access to its arguments (arity)
+            // in order to allow recursive calls
+            stack_start: self.stack.len() - arity,
+            // +1 so we skip the opcode that caused call
+            return_address: self.ip + 1,
+        });
+    }
+
     pub fn call(&mut self, callable: Callable) -> Result<()> {
         match callable.clone() {
             Callable::Function(function) => {
@@ -79,14 +89,7 @@ impl VM {
                 if self.settings.debug {
                     log::vm_subtitle("CALL BODY", &chunk);
                 }
-                self.call_stack.push(CallFrame {
-                    chunk,
-                    // Function should have access to its arguments (arity)
-                    // in order to allow recursive calls
-                    stack_start: self.stack.len() - arity,
-                    // +1 so we skip the opcode that caused call
-                    return_address: self.ip + 1,
-                });
+                self.new_frame(chunk, arity);
                 self.stack.push(callable.into());
                 self.ip = 0;
                 Ok(())
@@ -97,6 +100,13 @@ impl VM {
                 self.stack.push(value);
                 // skip the call
                 self.ip += 1;
+                Ok(())
+            }
+            Callable::Closure(closure) => {
+                let Closure { chunk, arity } = closure;
+                self.new_frame(chunk, arity);
+                self.stack.push(callable.into());
+                self.ip = 0;
                 Ok(())
             }
         }
@@ -219,6 +229,7 @@ impl VM {
                         let address = self.pop_address()?;
                         let value = match address {
                             Address::Local(index) => self.stack[frame.stack_start + index].clone(),
+                            Address::Upvalue(index) => self.stack[index].clone(),
                             Address::Global(name) => GLOBALS
                                 .get(name.as_str())
                                 .cloned()

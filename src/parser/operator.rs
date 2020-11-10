@@ -53,7 +53,6 @@ impl Operator {
 
 pub fn lex_operator(lex: &mut Lexer<Token>) -> Option<Operator> {
     let slice: String = lex.slice().parse().ok()?;
-    println!("{}", slice);
     Some(match slice.as_str() {
         "+" => Operator::Plus,
         "-" => Operator::Minus,

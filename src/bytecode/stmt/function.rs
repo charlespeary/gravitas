@@ -58,8 +58,8 @@ impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
 #[cfg(test)]
 mod test {
     use crate::bytecode::{
-        stmt::function::Function, test::generate_bytecode, Address, BytecodeFrom,
-        BytecodeGenerator, Chunk, Opcode, Value,
+        Address, BytecodeFrom, BytecodeGenerator, Chunk,
+        Opcode, stmt::function::Function, test::generate_bytecode, Value,
     };
     use crate::parser::{
         expr::{Atom, Binary, Block, Expr, Identifier, Return},
@@ -80,8 +80,8 @@ mod test {
     }
 
     fn generate_function<I>(ast: I) -> Function
-    where
-        BytecodeGenerator: BytecodeFrom<I>,
+        where
+            BytecodeGenerator: BytecodeFrom<I>,
     {
         let (chunk, code) = generate_bytecode(ast);
         into_function(chunk.read_constant(0).clone())

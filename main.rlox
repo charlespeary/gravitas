@@ -1,6 +1,7 @@
-fn foo(a, b) {
-    print(foo);
-    return a + b;
-}
+var closure = || => {
+    var x = 5;
+    return || => x * 10;
+};
 
-print(foo(10,15));
+var y = closure();
+print(y());

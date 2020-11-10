@@ -1,8 +1,8 @@
-use std::{fs::read_to_string, io::stdin};
-
 use anyhow::{Context, Error, Result};
 use enum_as_inner::EnumAsInner;
 use logos::Logos;
+
+use std::{fs::read_to_string, io::stdin};
 
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator},
@@ -15,9 +15,9 @@ use crate::{
 pub mod iter;
 
 pub mod log {
-    use std::fmt::Debug;
-
     use colored::Colorize;
+
+    use std::fmt::Debug;
 
     use crate::bytecode::{Opcode, Value};
 
@@ -96,22 +96,26 @@ pub fn initialize(settings: Settings) -> Compiled {
 
 pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(code).collect();
-    log::title_success("LEXED");
-    log::body(&tokens);
+    if settings.debug {
+        log::title_success("LEXED");
+        log::body(&tokens);
+    }
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(Either::Right)?;
-    log::title_success("PARSED");
-    log::body(&ast);
+    if settings.debug {
+        log::title_success("PARSED");
+        log::body(&ast);
+    }
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
-    log::title_success("OPCODES");
-    log::body(&chunk.code);
-    log::title_success("CONSTANTS");
-    log::body(&chunk.constants);
-
-    log::title_success("INTERPRETATION");
+    if settings.debug {
+        log::title_success("OPCODES");
+        log::body(&chunk.code);
+        log::title_success("CONSTANTS");
+        log::body(&chunk.constants);
+        log::title_success("INTERPRETATION");
+    }
     let mut vm = VM::from(settings.clone());
     let result = vm.interpret(chunk);
-    dbg!(result);
     Ok(())
 }
 

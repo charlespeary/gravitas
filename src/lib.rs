@@ -1,4 +1,3 @@
-#![feature(bool_to_option)]
 extern crate derive_more;
 #[cfg(test)]
 extern crate quickcheck;
@@ -14,9 +13,7 @@ use utils::initialize;
 
 pub use crate::{bytecode::BytecodeGenerator, parser::Parser, vm::VM};
 
-mod analyzer;
 mod bytecode;
-mod error;
 mod parser;
 mod settings;
 mod std;

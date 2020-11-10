@@ -1,12 +1,11 @@
-use std::{mem::discriminant, vec::IntoIter};
-
 use anyhow::{anyhow, Context, Error, Result};
+use std::{mem::discriminant, vec::IntoIter};
 
 pub use crate::{
     parser::{expr::Expr, stmt::Stmt, token::Token},
     utils::{
-        iter::{peek_nth, PeekNth},
         Either,
+        iter::{peek_nth, PeekNth},
     },
 };
 

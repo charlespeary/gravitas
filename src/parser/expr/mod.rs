@@ -1,5 +1,6 @@
-use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
+
+use anyhow::{anyhow, Result};
 
 pub use crate::parser::{
     expr::{
@@ -8,6 +9,7 @@ pub use crate::parser::{
         binary::Binary,
         block::Block,
         call::{Call, Return},
+        closure::Closure,
         conditional::If,
         grouping::Grouping,
         identifier::Identifier,
@@ -26,6 +28,7 @@ pub mod conditional;
 pub mod grouping;
 pub mod identifier;
 pub mod loops;
+pub mod closure;
 
 #[derive(Debug, Clone, PartialEq, EnumAsInner)]
 pub enum Expr {
@@ -41,6 +44,7 @@ pub enum Expr {
     Break(Break),
     Continue(Continue),
     Atom(Atom),
+    Closure(Closure),
 }
 
 #[macro_export]
@@ -79,6 +83,7 @@ impl Parser {
             Token::If => try_expr!(self.parse_if()),
             Token::Identifier(_) => try_expr!(self.parse_identifier()),
             Token::Return => try_expr!(self.parse_return()),
+            Token::Bar => try_expr!(self.parse_closure()),
             _ => try_expr!(self.parse_atom()),
         };
 

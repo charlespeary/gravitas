@@ -16,7 +16,13 @@ impl BytecodeGenerator {
         self.locals
             .iter()
             .rposition(|l| l == name)
-            .map(|local| Address::Local(local))
+            .map(|local| {
+                if self.state.in_closure {
+                    Address::Upvalue(local)
+                } else {
+                    Address::Local(local)
+                }
+            })
             .or_else(|| GLOBALS.get(name).map(|_| Address::Global(name.to_owned())))
             .with_context(|| format!("{} doesn't exist", name))
     }
@@ -39,8 +45,8 @@ mod test {
 
     use crate::{
         bytecode::{
-            test::{into_bytecode, DECLARE_VAR, OMIT_VAR, VARIABLE_NAME},
-            Opcode, Value,
+            Opcode,
+            test::{DECLARE_VAR, into_bytecode, OMIT_VAR, VARIABLE_NAME}, Value,
         },
         parser::{
             expr::{
@@ -50,7 +56,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr, Operator,
             },
-            stmt::{var::VarStmt, Stmt},
+            stmt::{Stmt, var::VarStmt},
         },
     };
 

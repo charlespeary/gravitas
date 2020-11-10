@@ -1,9 +1,8 @@
-use std::hash::Hash;
-
 use anyhow::Result;
 
 pub use chunk::Chunk;
 pub use opcode::Opcode;
+use std::hash::Hash;
 pub use value::{Address, Callable, Number, Value};
 
 use crate::parser::Ast;
@@ -24,6 +23,7 @@ pub trait BytecodeFrom<T> {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct GeneratorState {
     pub function_returned: bool,
+    pub in_closure: bool,
 }
 
 /// State of the scope / block
@@ -78,8 +78,8 @@ impl BytecodeGenerator {
     }
 
     pub fn compile<I>(ast: &I) -> Result<Chunk>
-    where
-        Self: BytecodeFrom<I>,
+        where
+            Self: BytecodeFrom<I>,
     {
         let mut emitter = BytecodeGenerator::new();
         emitter.generate(ast)?;
@@ -201,8 +201,8 @@ mod test {
     }
 
     pub fn generate_bytecode<I>(ast: I) -> (Chunk, Vec<Opcode>)
-    where
-        BytecodeGenerator: BytecodeFrom<I>,
+        where
+            BytecodeGenerator: BytecodeFrom<I>,
     {
         let chunk =
             BytecodeGenerator::compile(&ast).expect("Couldn't generate chunk from given ast");
