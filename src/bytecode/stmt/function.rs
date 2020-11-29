@@ -1,3 +1,4 @@
+use crate::bytecode::state::ScopeType;
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator, Callable, Chunk, GenerationResult, Opcode, Value},
     parser::stmt::function::FunctionStmt,
@@ -19,37 +20,45 @@ impl Into<Value> for Function {
 impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
     fn generate(&mut self, fnc: &FunctionStmt) -> GenerationResult {
         let FunctionStmt { name, params, body } = fnc;
-        let mut emitter = self.child();
+        self.state.enter_scope(ScopeType::Function);
 
+        // TODO: separate it
+        self.fn_chunks.push(Chunk::default());
         // Declare parameters, so they are visible in the body scope
         for param in params.clone() {
-            emitter.declare(param.val);
+            self.state.declare_var(&param.val);
         }
 
         // Declare function, so we can allow recursive calls.
         // It happens after the parameters, because arguments are evaluated first, then comes the caller value onto the stack.
-        emitter.declare(name.clone());
+        self.state.declare_var(name);
 
         // We don't want to evaluate block expression, only its items
         for item in &body.body {
-            emitter.generate(item)?;
+            self.generate(item)?;
         }
 
         // Add explicit return with null if user didn't
-        if !emitter.state.function_returned {
-            emitter.emit_code(Opcode::Null);
-            emitter.emit_code(Opcode::Return);
+        if !self.state.did_return() {
+            self.close_scope_variables();
+            self.emit_code(Opcode::Null);
+            self.emit_code(Opcode::Return);
         }
 
-        let function_chunk = emitter.chunk;
+        self.state.leave_scope();
+
         let function = Value::Callable(Callable::Function(Function {
             arity: params.len(),
-            chunk: function_chunk,
+            chunk: self
+                .fn_chunks
+                .pop()
+                .expect("Tried to pop function's chunk that doesn't exist."),
             name: name.clone(),
         }));
 
         self.add_constant(function);
-        self.declare(name.clone());
+
+        self.state.declare_var(name);
 
         Ok(())
     }
@@ -58,8 +67,8 @@ impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
 #[cfg(test)]
 mod test {
     use crate::bytecode::{
-        Address, BytecodeFrom, BytecodeGenerator, Chunk,
-        Opcode, stmt::function::Function, test::generate_bytecode, Value,
+        stmt::function::Function, test::generate_bytecode, Address, BytecodeFrom,
+        BytecodeGenerator, Chunk, Opcode, Value,
     };
     use crate::parser::{
         expr::{Atom, Binary, Block, Expr, Identifier, Return},
@@ -80,8 +89,8 @@ mod test {
     }
 
     fn generate_function<I>(ast: I) -> Function
-        where
-            BytecodeGenerator: BytecodeFrom<I>,
+    where
+        BytecodeGenerator: BytecodeFrom<I>,
     {
         let (chunk, code) = generate_bytecode(ast);
         into_function(chunk.read_constant(0).clone())

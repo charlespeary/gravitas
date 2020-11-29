@@ -1,4 +1,4 @@
-use crate::{parser::operator::Operator, parser::Expr};
+use crate::{parser::Expr, parser::operator::Operator};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Binary {
@@ -91,7 +91,7 @@ mod test {
                     })),
                     operator: Operator::Multiply,
                     rhs: Box::new(Expr::Atom(Atom::Number(3.0))),
-                }),),
+                }), ),
                 operator: Operator::Minus,
                 rhs: Box::new(Expr::Atom(Atom::Number(-4.0))),
             })

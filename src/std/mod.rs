@@ -1,7 +1,12 @@
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-use crate::{bytecode::{Callable, Value}, hashmap, std::functions::{clock, print}};
+use lazy_static::lazy_static;
+
+use crate::{
+    bytecode::{Callable, Value},
+    hashmap,
+    std::functions::{clock, print},
+};
 
 mod functions;
 

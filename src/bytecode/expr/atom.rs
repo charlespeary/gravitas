@@ -1,14 +1,14 @@
-use crate::bytecode::GenerationResult;
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator, Opcode, Value},
     parser::expr::Atom,
 };
+use crate::bytecode::GenerationResult;
 
 impl BytecodeFrom<Atom> for BytecodeGenerator {
     fn generate(&mut self, atom: &Atom) -> GenerationResult {
         match atom {
             Atom::Number(num) => {
-                self.chunk.add_constant(Value::Number(*num));
+                self.add_constant(Value::Number(*num));
             }
             Atom::Bool(bool) => {
                 self.emit_code((*bool).into());
@@ -17,7 +17,7 @@ impl BytecodeFrom<Atom> for BytecodeGenerator {
                 self.emit_code(Opcode::Null);
             }
             Atom::Text(string) => {
-                self.chunk.add_constant(Value::String(string.clone()));
+                self.add_constant(Value::String(string.clone()));
             }
         }
         Ok(())

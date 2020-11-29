@@ -16,7 +16,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        bytecode::{test::generate_bytecode, Opcode, Value},
+        bytecode::{Opcode, test::generate_bytecode, Value},
         parser::{
             expr::{atom::Atom, Expr},
             stmt::Stmt,

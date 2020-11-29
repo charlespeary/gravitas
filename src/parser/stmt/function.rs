@@ -2,8 +2,8 @@ use anyhow::{anyhow, Result};
 
 use crate::parser::{
     expr::{Atom, Block, Expr},
-    stmt::var::VarStmt,
-    Parser, Stmt, Token,
+    Parser,
+    Stmt, stmt::var::VarStmt, Token,
 };
 
 #[derive(Debug, Clone, PartialEq)]

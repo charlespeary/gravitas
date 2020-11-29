@@ -23,13 +23,14 @@ impl BytecodeFrom<Call> for BytecodeGenerator {
 
 impl BytecodeFrom<Return> for BytecodeGenerator {
     fn generate(&mut self, ret: &Return) -> GenerationResult {
-        self.state.function_returned = true;
+        self.state.set_returned();
         let Return { expr } = ret;
         if let Some(expr) = expr {
             self.generate(expr)?;
         } else {
             self.emit_code(Opcode::Null);
         }
+        self.close_scope_variables();
         self.emit_code(Opcode::Return);
         Ok(())
     }

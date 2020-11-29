@@ -1,6 +1,5 @@
-use enum_as_inner::EnumAsInner;
-
 use anyhow::{anyhow, Result};
+use enum_as_inner::EnumAsInner;
 
 pub use crate::parser::{
     expr::{

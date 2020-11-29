@@ -22,9 +22,9 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        bytecode::{test::generate_bytecode, Opcode, Value},
+        bytecode::{Opcode, test::generate_bytecode, Value},
         parser::{
-            expr::{binary::Binary, Atom, Expr},
+            expr::{Atom, binary::Binary, Expr},
             operator::Operator,
         },
     };
@@ -69,7 +69,7 @@ mod test {
         };
 
         let (_, bytecode) = generate_bytecode(ast);
-        assert_eq!(bytecode, vec![Opcode::True, Opcode::Not,]);
+        assert_eq!(bytecode, vec![Opcode::True, Opcode::Not, ]);
 
         let ast = Affix {
             expr: Box::new(Expr::Binary(Binary {

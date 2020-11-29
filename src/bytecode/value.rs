@@ -1,12 +1,16 @@
-use enum_as_inner::EnumAsInner;
-
-use anyhow::{anyhow, Result};
 use std::{
     fmt,
     ops::{Add, Neg},
 };
 
-use crate::{bytecode::expr::closure::Closure, bytecode::stmt::function::Function, std::NativeFunction};
+use anyhow::{anyhow, Result};
+use enum_as_inner::EnumAsInner;
+
+use crate::{
+    bytecode::expr::closure::{Closure, ClosureAddress},
+    bytecode::stmt::function::Function,
+    std::NativeFunction,
+};
 
 pub type Number = f64;
 
@@ -15,14 +19,19 @@ pub enum Address {
     // Local variables, e.g defined inside block or a function.
     // This value is added to the function's stack offset.
     Local(usize),
-    // Upvalue address. It works similarly to the Local address, but
-    // this instead of being added to the function's stack offset is just an absolute index on the stack.
-    Upvalue(usize),
+    // Upvalue address
+    Upvalue(usize, usize),
     // Global variable refereed by a string key.
     // The value is extracted from a HashMap of globals.
     // Note: all of the variables and functions defined in vtas are "local" per se.
     // Only the std functions are global.
     Global(String),
+}
+
+impl Into<Value> for Address {
+    fn into(self) -> Value {
+        Value::Address(self)
+    }
 }
 
 #[derive(Clone, PartialEq, PartialOrd, EnumAsInner)]
@@ -37,7 +46,7 @@ impl fmt::Debug for Callable {
         match self {
             Callable::Function(func) => f.write_fmt(format_args!("<fn {}>", func.name)),
             Callable::NativeFunction(_) => f.write_fmt(format_args!("<native fn>")),
-            Callable::Closure(_) => f.write_fmt(format_args!("<closure fn>"))
+            Callable::Closure(_) => f.write_fmt(format_args!("<closure fn>")),
         }
     }
 }
@@ -60,6 +69,8 @@ pub enum Value {
     Address(Address),
     // Variant holding callable values
     Callable(Callable),
+    // Array
+    Array(Vec<Value>),
     // Null value, might be changed to Option in future
     Null,
 }

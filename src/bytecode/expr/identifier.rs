@@ -6,8 +6,7 @@ use crate::{
 impl BytecodeFrom<Identifier> for BytecodeGenerator {
     fn generate(&mut self, identifier: &Identifier) -> GenerationResult {
         let Identifier { is_ref, value } = identifier;
-        let address = self.find(value)?;
-
+        let address = self.find_var(value)?;
         self.add_constant(Value::Address(address));
 
         // If identifier is used in an assignment operation

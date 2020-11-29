@@ -3,9 +3,9 @@ use std::iter::Fuse;
 
 // I got inspired by the peek_nth from the iterator in itertools
 pub struct PeekNth<I>
-where
-    I: Iterator,
-    I::Item: Clone,
+    where
+        I: Iterator,
+        I::Item: Clone,
 {
     iter: Fuse<I>,
     buf: VecDeque<I::Item>,
@@ -13,9 +13,9 @@ where
 }
 
 pub fn peek_nth<I>(iterable: I) -> PeekNth<I::IntoIter>
-where
-    I: IntoIterator,
-    I::Item: Clone,
+    where
+        I: IntoIterator,
+        I::Item: Clone,
 {
     PeekNth {
         iter: iterable.into_iter().fuse(),
@@ -25,9 +25,9 @@ where
 }
 
 impl<I> PeekNth<I>
-where
-    I: Iterator,
-    I::Item: Clone,
+    where
+        I: Iterator,
+        I::Item: Clone,
 {
     pub fn peek_nth(&mut self, n: usize) -> Option<&I::Item> {
         let items_to_buffer = (n + 1).saturating_sub(self.buf.len());
@@ -41,9 +41,9 @@ where
 }
 
 impl<I> Iterator for PeekNth<I>
-where
-    I: Iterator,
-    I::Item: Clone,
+    where
+        I: Iterator,
+        I::Item: Clone,
 {
     type Item = I::Item;
 

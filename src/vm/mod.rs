@@ -1,9 +1,11 @@
-use anyhow::{anyhow, Context, Result};
 use std::collections::HashMap;
 use std::ops::Neg;
 
+use anyhow::{anyhow, Context, Result};
+
+use crate::vm::call_frame::Environments;
 use crate::{
-    bytecode::{Address, Callable, Chunk, expr::closure::Closure, Number, Opcode, stmt::function::Function, Value},
+    bytecode::{Address, Callable, Chunk, Opcode, Value},
     settings::Settings,
     std::GLOBALS,
     utils::log,
@@ -15,8 +17,13 @@ mod call_frame;
 #[derive(Debug, Default)]
 pub struct VM {
     settings: Settings,
+    // Stack of local values
     stack: Vec<Value>,
+    // Struct managing environments
+    environments: Environments,
+    // Stack of function calls
     call_stack: Vec<CallFrame>,
+    // Hashmap of global variables, e.g global functions
     globals: HashMap<String, Value>,
     ip: usize,
 }
@@ -71,7 +78,7 @@ impl VM {
         Ok(values)
     }
 
-    pub fn new_frame(&mut self, chunk: Chunk, arity: usize) {
+    pub fn new_frame(&mut self, chunk: Chunk, arity: usize, caller_name: String, env_key: usize) {
         self.call_stack.push(CallFrame {
             chunk,
             // Function should have access to its arguments (arity)
@@ -79,22 +86,40 @@ impl VM {
             stack_start: self.stack.len() - arity,
             // +1 so we skip the opcode that caused call
             return_address: self.ip + 1,
+            env_key,
+            caller_name,
         });
     }
 
+    fn lookup_call_frame(&self, depth: usize) -> &CallFrame {
+        self.call_stack
+            .get(self.call_stack.len() - 1 - depth)
+            .expect("Tried to lookup call frame above the call stack")
+    }
+
     pub fn call(&mut self, callable: Callable) -> Result<()> {
-        match callable.clone() {
+        let current_env = self.lookup_call_frame(0).env_key;
+        match callable {
             Callable::Function(function) => {
-                let Function { chunk, arity, .. } = function;
                 if self.settings.debug {
-                    log::vm_subtitle("CALL BODY", &chunk);
+                    log::vm_subtitle("FN CALL", &function.chunk);
                 }
-                self.new_frame(chunk, arity);
-                self.stack.push(callable.into());
+                let env_key = self.environments.create_env(current_env);
+                self.new_frame(
+                    function.chunk.clone(),
+                    function.arity,
+                    function.name.clone(),
+                    // TODO: Functions should work like closures
+                    env_key,
+                );
+                self.stack.push(Callable::Function(function).into());
                 self.ip = 0;
                 Ok(())
             }
             Callable::NativeFunction(function) => {
+                if self.settings.debug {
+                    log::vm_subtitle("NATIVE FN CALL", &function.function);
+                }
                 let args = self.pop_n(function.arity)?;
                 let value = (function.function)(args);
                 self.stack.push(value);
@@ -103,9 +128,24 @@ impl VM {
                 Ok(())
             }
             Callable::Closure(closure) => {
-                let Closure { chunk, arity } = closure;
-                self.new_frame(chunk, arity);
-                self.stack.push(callable.into());
+                if self.settings.debug {
+                    log::vm_subtitle("CLOSURE CALL", &closure.chunk);
+                }
+                // Create new environment to hold closed values in
+                let env = self.environments.create_env(
+                    closure
+                        .enclosing_env_key
+                        .expect("Closure must be enclosed at least by the global env"),
+                );
+                self.new_frame(
+                    closure.chunk.clone(),
+                    closure.arity,
+                    String::from("lambda"),
+                    env,
+                );
+
+                self.stack
+                    .push(Callable::Closure(closure.with_env(env)).into());
                 self.ip = 0;
                 Ok(())
             }
@@ -126,6 +166,8 @@ impl VM {
             chunk,
             stack_start: self.stack.len(),
             return_address: self.ip,
+            caller_name: String::from("main"),
+            env_key: 0,
         });
         self.run()
     }
@@ -150,7 +192,7 @@ impl VM {
         }
 
         // We can safely unwrap, because there will always be at least one call frame on the stack
-        'frames: while let Some(frame) = self.call_stack.last().cloned() {
+        'frames: while let Some(frame) = self.call_stack.last_mut().cloned() {
             while let Some(opcode) = frame.chunk.code.get(self.ip) {
                 if self.settings.debug {
                     log::vm_title("OPCODE", opcode);
@@ -186,11 +228,28 @@ impl VM {
                     Opcode::GreaterEqual => bin_op!(>=, 'l'),
                     Opcode::Assign => {
                         let value = self.pop_stack()?;
-                        let address = self
-                            .pop_address()?
-                            .into_local()
-                            .map_err(|_| anyhow!("Cannot reassign global resource!"))?;
-                        self.stack[frame.stack_start + address] = value;
+
+                        match self.pop_address()? {
+                            Address::Local(address) => {
+                                self.stack[frame.stack_start + address] = value;
+                            }
+                            Address::Upvalue(index, depth) => {
+                                match self.environments.get_value_mut(frame.env_key, index, depth) {
+                                    Some(old_value) => {
+                                        let _ = std::mem::replace(old_value, value);
+                                    }
+                                    // If it wasn't yet closed then it must live on the stack
+                                    None => {
+                                        let address =
+                                            self.lookup_call_frame(depth).stack_start + index;
+                                        self.stack[address] = value;
+                                    }
+                                }
+                            }
+                            Address::Global(_) => {
+                                return Err(anyhow!("Cannot reassign global resource!"));
+                            }
+                        };
                         self.push_stack(Value::Null);
                     }
                     Opcode::PopN(amount) => {
@@ -214,6 +273,25 @@ impl VM {
                         self.pop_n(*declared)?;
                         self.push_stack(result);
                     }
+                    Opcode::CloseValue => {
+                        let address = self
+                            .pop_address()?
+                            .into_local()
+                            .map_err(|_| anyhow!("ds"))?;
+                        let value = self.stack[frame.stack_start + address].clone();
+                        self.environments.close_value(value, frame.env_key);
+                    }
+                    Opcode::CreateClosure => {
+                        let current_env = self.lookup_call_frame(0).env_key;
+                        // let env_key = self.environments.create_env(current_env);
+                        // println!("Created closure with env_key: {}", env_key);
+                        let closure = self
+                            .pop_callable()?
+                            .into_closure()
+                            .map_err(|_| anyhow!("Popped callable that wasn't a closure."))?;
+
+                        self.push_stack(closure.with_enclosing_env(current_env).into());
+                    }
                     Opcode::Break(jump) => {
                         let value = self.pop_stack()?;
                         self.ip += *jump;
@@ -229,7 +307,17 @@ impl VM {
                         let address = self.pop_address()?;
                         let value = match address {
                             Address::Local(index) => self.stack[frame.stack_start + index].clone(),
-                            Address::Upvalue(index) => self.stack[index].clone(),
+                            Address::Upvalue(index, depth) => {
+                                match self.environments.get_value(frame.env_key, index, depth) {
+                                    Some(value) => value,
+                                    // If it wasn't yet closed then it must live on the stack
+                                    None => {
+                                        let address =
+                                            self.lookup_call_frame(depth).stack_start + index;
+                                        self.stack[address].clone()
+                                    }
+                                }
+                            }
                             Address::Global(name) => GLOBALS
                                 .get(name.as_str())
                                 .cloned()

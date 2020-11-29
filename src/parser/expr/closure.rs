@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::{parser::{Parser, Expr, stmt::function::Param, Token}};
+use crate::parser::{Expr, Parser, stmt::function::Param, Token};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Closure {
@@ -22,9 +22,6 @@ impl Parser {
         self.expect(Token::Arrow)?;
         let body = Box::new(self.parse_expr()?);
 
-        Ok(Closure {
-            params,
-            body,
-        })
+        Ok(Closure { params, body })
     }
 }

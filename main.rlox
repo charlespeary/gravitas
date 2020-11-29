@@ -1,7 +1,26 @@
-var closure = || => {
-    var x = 5;
-    return || => x * 10;
+var increment = null;
+var decrement = null;
+
+var bar = || => {
+    var x = 15;
+    var add = || => {
+        x = x + 1;
+        print(x);
+    };
+    var sub = || => {
+        x  = x - 1;
+        print(x);
+    };
+    increment = add;
+    decrement = sub;
 };
 
-var y = closure();
-print(y());
+bar();
+increment();
+increment();
+decrement();
+decrement();
+decrement();
+decrement();
+bar();
+increment();

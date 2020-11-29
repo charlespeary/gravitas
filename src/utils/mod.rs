@@ -1,23 +1,24 @@
+use std::{fs::read_to_string, io::stdin};
+
 use anyhow::{Context, Error, Result};
 use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
-use std::{fs::read_to_string, io::stdin};
-
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator},
+    bytecode::BytecodeGenerator,
     parser::{Parser, Token},
     settings::Settings,
     utils::iter::{peek_nth, PeekNth},
     vm::VM,
 };
 
+pub mod graph;
 pub mod iter;
 
 pub mod log {
-    use colored::Colorize;
-
     use std::fmt::Debug;
+
+    use colored::Colorize;
 
     use crate::bytecode::{Opcode, Value};
 
@@ -115,7 +116,7 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
         log::title_success("INTERPRETATION");
     }
     let mut vm = VM::from(settings.clone());
-    let result = vm.interpret(chunk);
+    let _ = vm.interpret(chunk);
     Ok(())
 }
 

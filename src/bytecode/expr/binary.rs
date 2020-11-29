@@ -1,4 +1,3 @@
-use crate::bytecode::GenerationResult;
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator, Opcode, Value},
     parser::{
@@ -6,6 +5,7 @@ use crate::{
         operator::Operator,
     },
 };
+use crate::bytecode::GenerationResult;
 
 fn bin_op_to_opcode(operator: Operator) -> Opcode {
     match operator {

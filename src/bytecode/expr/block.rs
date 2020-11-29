@@ -1,12 +1,12 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode},
+    bytecode::{state::ScopeType, BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode},
     parser::expr::Block,
 };
 
 impl BytecodeFrom<Block> for BytecodeGenerator {
     fn generate(&mut self, block: &Block) -> GenerationResult {
         let Block { body, final_expr } = block;
-        self.begin_scope();
+        self.state.enter_scope(ScopeType::Block);
 
         for item in body {
             self.generate(item)?;
@@ -20,7 +20,13 @@ impl BytecodeFrom<Block> for BytecodeGenerator {
                 self.emit_code(Opcode::Null);
             }
         }
-        self.end_scope();
+
+        let declared = self.state.declared();
+
+        self.emit_code(Opcode::Block(declared));
+
+        self.state.leave_scope();
+
         Ok(())
     }
 }

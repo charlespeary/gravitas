@@ -6,25 +6,72 @@ use crate::{
     std::GLOBALS,
 };
 
-impl BytecodeGenerator {
-    pub fn declare(&mut self, name: String) {
-        self.locals.push(name);
-        self.current_scope().declared += 1;
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub struct Variable {
+    pub name: String,
+    pub depth: usize,
+    // Calculated index on the stack
+    pub index: usize,
+    // Flag to determine whether variable is used inside a closure and needs to be closed
+    // in order to be available after it should go off the stack.
+    pub closed: bool,
+}
 
-    pub fn find(&self, name: &str) -> Result<Address> {
-        self.locals
-            .iter()
-            .rposition(|l| l == name)
-            .map(|local| {
-                if self.state.in_closure {
-                    Address::Upvalue(local)
+#[derive(Default, Debug, Clone, PartialOrd, PartialEq)]
+pub struct Upvalue {
+    pub scopes_above: usize,
+    pub index: usize,
+}
+
+impl BytecodeGenerator {
+    // pub fn declare(&mut self, name: String) {
+    //     self.state.declare_var(Variable {
+    //         name,
+    //         closed: false,
+    //     })
+    // }
+    //
+    // pub fn create_upvalue(&mut self, index: usize, depth: usize) -> Address {
+    //     let upvalue_index = self.current_scope().upvalues.len();
+    //     self.current_scope_mut()
+    //         .upvalues
+    //         .push(Upvalue { index, depth });
+    //     Address::Upvalue(upvalue_index)
+    // }
+
+    pub fn find_var(&mut self, name: &str) -> Result<Address> {
+        let current_depth = self.state.depth();
+        self.state
+            .find_var(name)
+            .map(|var| {
+                if var.closed {
+                    Address::Upvalue(var.index, current_depth - var.depth)
                 } else {
-                    Address::Local(local)
+                    Address::Local(var.index)
                 }
             })
             .or_else(|| GLOBALS.get(name).map(|_| Address::Global(name.to_owned())))
             .with_context(|| format!("{} doesn't exist", name))
+        // We start by looking for a variable in local variables
+        // self.declared
+        //     .iter()
+        //     .rposition(|v| v.name == name)
+        //     .map(|i| {
+        //         let var = self
+        //             .declared
+        //             .get_mut(i)
+        //             .expect("We just found this variable");
+        //         let depth = self.state.depth();
+        //         if self.state.is_in_closure() && depth != var.depth {
+        //             var.closed = true;
+        //             self.create_upvalue(i, var.depth)
+        //         } else {
+        //             Address::Local(i)
+        //         }
+        //     })
+        //     // in the end we fallback to globals values
+        //     .or_else(|| GLOBALS.get(name).map(|_| Address::Global(name.to_owned())))
+        //     .with_context(|| format!("{} doesn't exist", name))
     }
 }
 
@@ -32,9 +79,7 @@ impl BytecodeFrom<VarStmt> for BytecodeGenerator {
     fn generate(&mut self, var: &VarStmt) -> GenerationResult {
         let VarStmt { expr, identifier } = var;
         self.generate(expr)?;
-
-        let identifier = identifier.clone();
-        self.declare(identifier);
+        self.state.declare_var(identifier);
         Ok(())
     }
 }
@@ -45,8 +90,8 @@ mod test {
 
     use crate::{
         bytecode::{
-            Opcode,
-            test::{DECLARE_VAR, into_bytecode, OMIT_VAR, VARIABLE_NAME}, Value,
+            test::{into_bytecode, OMIT_VAR, VARIABLE_NAME},
+            Opcode, Value,
         },
         parser::{
             expr::{
@@ -56,7 +101,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr, Operator,
             },
-            stmt::{Stmt, var::VarStmt},
+            stmt::{var::VarStmt, Stmt},
         },
     };
 

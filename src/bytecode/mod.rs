@@ -1,15 +1,19 @@
+use std::hash::Hash;
+
 use anyhow::Result;
 
 pub use chunk::Chunk;
 pub use opcode::Opcode;
-use std::hash::Hash;
 pub use value::{Address, Callable, Number, Value};
 
+use crate::bytecode::state::{GeneratorState, Scope};
+use crate::bytecode::stmt::var::{Upvalue, Variable};
 use crate::parser::Ast;
 
 pub mod chunk;
 pub mod expr;
 pub mod opcode;
+pub mod state;
 pub mod stmt;
 pub mod value;
 
@@ -17,21 +21,6 @@ pub type GenerationResult = Result<()>;
 
 pub trait BytecodeFrom<T> {
     fn generate(&mut self, data: &T) -> GenerationResult;
-}
-
-/// State of the generator
-#[derive(Debug, Default, Clone, Copy)]
-pub struct GeneratorState {
-    pub function_returned: bool,
-    pub in_closure: bool,
-}
-
-/// State of the scope / block
-#[derive(Default, Debug, Copy, Clone)]
-pub struct Scope {
-    pub global: bool,
-    /// Amount of declared variables in the given scope.
-    pub declared: usize,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -50,9 +39,11 @@ pub struct Patch {
 
 #[derive(Default)]
 pub struct BytecodeGenerator {
+    // Chunk with the whole program code
     chunk: Chunk,
-    locals: Vec<String>,
-    scopes: Vec<Scope>,
+    // Vec of chunks used to store functions code
+    fn_chunks: Vec<Chunk>,
+    // Vector of declared variables
     loops: Vec<Loop>,
     state: GeneratorState,
 }
@@ -60,26 +51,14 @@ pub struct BytecodeGenerator {
 impl BytecodeGenerator {
     pub fn new() -> Self {
         Self {
-            scopes: vec![Scope {
-                global: true,
-                declared: 0,
-            }],
-            ..Default::default()
-        }
-    }
-
-    pub fn child(&self) -> Self {
-        Self {
-            scopes: self.scopes.clone(),
-            locals: self.locals.clone(),
-            loops: self.loops.clone(),
+            state: GeneratorState::new(),
             ..Default::default()
         }
     }
 
     pub fn compile<I>(ast: &I) -> Result<Chunk>
-        where
-            Self: BytecodeFrom<I>,
+    where
+        Self: BytecodeFrom<I>,
     {
         let mut emitter = BytecodeGenerator::new();
         emitter.generate(ast)?;
@@ -97,8 +76,22 @@ impl BytecodeGenerator {
         }
     }
 
+    pub fn current_chunk(&mut self) -> &mut Chunk {
+        self.fn_chunks.last_mut().unwrap_or(&mut self.chunk)
+    }
+
+    pub fn emit_codes(&mut self, opcodes: Vec<Opcode>) -> usize {
+        let length = opcodes.len();
+
+        for opcode in opcodes {
+            self.emit_code(opcode);
+        }
+
+        length
+    }
+
     pub fn emit_code(&mut self, opcode: Opcode) -> usize {
-        self.chunk.grow(opcode)
+        self.current_chunk().grow(opcode)
     }
 
     // OPCODE PATCHING
@@ -111,7 +104,7 @@ impl BytecodeGenerator {
         let current_index = self.curr_index();
 
         let opcode = self
-            .chunk
+            .current_chunk()
             .code
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
@@ -126,30 +119,23 @@ impl BytecodeGenerator {
         }
     }
 
-    pub fn begin_scope(&mut self) {
-        self.scopes.push(Scope::default())
-    }
+    pub fn close_scope_variables(&mut self) {
+        let variables = self.state.scope_variables();
+        let closed_values: Vec<(Address, Opcode)> = variables
+            .iter()
+            .filter(|var| var.closed)
+            .map(|var| (Address::Local(var.index), Opcode::CloseValue))
+            .collect();
 
-    pub fn end_scope(&mut self) {
-        let scope = self
-            .scopes
-            .pop()
-            .expect("Tried to pop scope that doesn't exist");
-        // Pop locals from given scope
-        for _ in 0..scope.declared {
-            self.locals.pop();
-        }
-        if scope.declared > 0 {
-            self.emit_code(Opcode::Block(scope.declared));
+        for (address, opcode) in closed_values {
+            self.add_constant(address.into());
+            self.emit_code(opcode);
         }
     }
 
-    pub fn current_scope(&mut self) -> &mut Scope {
-        self.scopes.last_mut().unwrap()
-    }
-
-    pub fn in_global_scope(&self) -> bool {
-        self.scopes.last().expect("Global scope is required").global
+    pub fn pop_scope_variables(&mut self) {
+        let variables_len = self.state.scope_variables().len();
+        self.emit_code(Opcode::PopN(variables_len));
     }
 
     pub fn begin_loop(&mut self) -> usize {
@@ -175,7 +161,7 @@ impl BytecodeGenerator {
     }
 
     pub fn add_constant(&mut self, value: Value) -> usize {
-        self.chunk.add_constant(value)
+        self.current_chunk().add_constant(value)
     }
 }
 
@@ -201,8 +187,8 @@ mod test {
     }
 
     pub fn generate_bytecode<I>(ast: I) -> (Chunk, Vec<Opcode>)
-        where
-            BytecodeGenerator: BytecodeFrom<I>,
+    where
+        BytecodeGenerator: BytecodeFrom<I>,
     {
         let chunk =
             BytecodeGenerator::compile(&ast).expect("Couldn't generate chunk from given ast");

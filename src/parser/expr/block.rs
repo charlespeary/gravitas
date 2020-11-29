@@ -2,8 +2,8 @@ use anyhow::{anyhow, Result};
 
 use crate::parser::{
     expr::Expr,
-    stmt::{expr::ExprStmt, Stmt},
-    Parser, Token,
+    Parser,
+    stmt::{expr::ExprStmt, Stmt}, Token,
 };
 use crate::utils::Either;
 
@@ -76,7 +76,7 @@ impl Parser {
 mod test {
     use pretty_assertions::{assert_eq, assert_ne};
 
-    use crate::parser::{expr::Atom, operator::Operator, stmt::var::VarStmt, Stmt};
+    use crate::parser::{expr::Atom, operator::Operator, Stmt, stmt::var::VarStmt};
 
     use super::*;
 

@@ -45,7 +45,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr,
             },
-            stmt::{var::VarStmt, Stmt},
+            stmt::{Stmt, var::VarStmt},
         },
     };
 

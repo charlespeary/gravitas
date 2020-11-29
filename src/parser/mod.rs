@@ -1,5 +1,6 @@
-use anyhow::{anyhow, Context, Error, Result};
 use std::{mem::discriminant, vec::IntoIter};
+
+use anyhow::{anyhow, Context, Error, Result};
 
 pub use crate::{
     parser::{expr::Expr, stmt::Stmt, token::Token},
