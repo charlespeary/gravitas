@@ -1,5 +1,5 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, Value, PATCH},
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Value},
     parser::expr::Identifier,
 };
 

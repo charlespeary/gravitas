@@ -1,10 +1,6 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{
-    expr::{Atom, Block, Expr},
-    Parser,
-    Stmt, stmt::var::VarStmt, Token,
-};
+use crate::parser::{expr::Block, Parser, Stmt, Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Param {

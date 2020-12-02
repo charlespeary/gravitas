@@ -7,7 +7,6 @@ pub use opcode::Opcode;
 pub use value::{Address, Callable, Number, Value};
 
 use crate::bytecode::state::GeneratorState;
-use crate::bytecode::stmt::var::Variable;
 use crate::parser::Ast;
 
 pub mod chunk;

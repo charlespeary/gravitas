@@ -1,11 +1,8 @@
-use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, Opcode, Value},
-    parser::{
-        expr::{Atom, Binary},
-        operator::Operator,
-    },
-};
 use crate::bytecode::GenerationResult;
+use crate::{
+    bytecode::{BytecodeFrom, BytecodeGenerator, Opcode},
+    parser::{expr::Binary, operator::Operator},
+};
 
 fn bin_op_to_opcode(operator: Operator) -> Opcode {
     match operator {

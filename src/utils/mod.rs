@@ -8,7 +8,6 @@ use crate::{
     bytecode::BytecodeGenerator,
     parser::{Parser, Token},
     settings::Settings,
-    utils::iter::{peek_nth, PeekNth},
     vm::VM,
 };
 
@@ -19,8 +18,6 @@ pub mod log {
     use std::fmt::Debug;
 
     use colored::Colorize;
-
-    use crate::bytecode::{Opcode, Value};
 
     pub fn title_error(t: &str) {
         let text = format!("========= {} =========", t);

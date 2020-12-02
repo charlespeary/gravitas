@@ -1,5 +1,5 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, PATCH},
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, PATCH},
     parser::expr::{Break, Continue, WhileLoop},
 };
 

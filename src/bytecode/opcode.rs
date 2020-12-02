@@ -70,8 +70,4 @@ impl From<bool> for Opcode {
 }
 
 #[cfg(test)]
-mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
-
-    use super::*;
-}
+mod test {}

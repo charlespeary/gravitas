@@ -45,9 +45,7 @@ impl Operator {
     }
 
     pub fn postfix_bp(self) -> Result<(u8, ())> {
-        Ok(match self {
-            _ => return Err(anyhow!("{:?} can't be used as a postfix operator!", self)),
-        })
+        Err(anyhow!("{:?} can't be used as a postfix operator!", self))
     }
 }
 

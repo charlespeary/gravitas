@@ -51,12 +51,6 @@ impl VM {
         value.with_context(|| "Tried to pop value from an empty stack")
     }
 
-    fn pop_string(&mut self) -> Result<String> {
-        self.pop_stack()?
-            .into_string()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a string."))
-    }
-
     fn pop_address(&mut self) -> Result<Address> {
         self.pop_stack()?
             .into_address()

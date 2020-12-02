@@ -7,9 +7,7 @@ use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
 use crate::{
-    bytecode::expr::closure::{Closure, ClosureAddress},
-    bytecode::stmt::function::Function,
-    std::NativeFunction,
+    bytecode::expr::closure::Closure, bytecode::stmt::function::Function, std::NativeFunction,
 };
 
 pub type Number = f64;
@@ -144,7 +142,7 @@ impl Into<bool> for Value {
 #[cfg(test)]
 mod test {
     use anyhow::Result;
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use super::*;
 

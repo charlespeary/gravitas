@@ -92,7 +92,7 @@ mod test {
     where
         BytecodeGenerator: BytecodeFrom<I>,
     {
-        let (chunk, code) = generate_bytecode(ast);
+        let (chunk, _code) = generate_bytecode(ast);
         into_function(chunk.read_constant(0).clone())
     }
 

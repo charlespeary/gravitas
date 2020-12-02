@@ -1,6 +1,5 @@
 use crate::parser::{
     expr::{Expr, Operator},
-    Parser,
 };
 
 #[derive(Debug, Clone, PartialEq)]
