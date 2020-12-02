@@ -1,6 +1,5 @@
 use crate::{
     bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult},
-    parser::expr::{Expr, Grouping},
     parser::stmt::Stmt,
 };
 

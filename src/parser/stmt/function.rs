@@ -1,10 +1,6 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{
-    expr::{Atom, Block, Expr},
-    stmt::var::VarStmt,
-    Parser, Stmt, Token,
-};
+use crate::parser::{expr::Block, Parser, Stmt, Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Param {
@@ -31,7 +27,7 @@ impl Parser {
     pub fn parse_params(&mut self) -> Result<Vec<Param>> {
         let mut params: Vec<Param> = vec![];
 
-        while !self.peek_eq_many(&[Token::CloseParenthesis, Token::CloseBrace])
+        while !self.peek_eq_many(&[Token::CloseParenthesis, Token::Bar])
             && self.peek_token().is_ok()
         {
             if let Ok(val) = self.next_token().into_identifier() {

@@ -1,12 +1,12 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode},
+    bytecode::{state::ScopeType, BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode},
     parser::expr::Block,
 };
 
 impl BytecodeFrom<Block> for BytecodeGenerator {
     fn generate(&mut self, block: &Block) -> GenerationResult {
         let Block { body, final_expr } = block;
-        self.begin_scope();
+        self.state.enter_scope(ScopeType::Block);
 
         for item in body {
             self.generate(item)?;
@@ -20,7 +20,13 @@ impl BytecodeFrom<Block> for BytecodeGenerator {
                 self.emit_code(Opcode::Null);
             }
         }
-        self.end_scope();
+
+        let declared = self.state.declared();
+
+        self.emit_code(Opcode::Block(declared));
+
+        self.state.leave_scope();
+
         Ok(())
     }
 }
@@ -69,7 +75,7 @@ mod test {
 
         // When no variables are created inside the block, then no Opcode::Block is added
         // because there are no variables to drop
-        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::Block(0)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
 
         let ast = Block {
@@ -81,7 +87,6 @@ mod test {
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
-
         // Opcode::Block is added whenever we declare variables inside the block, so they are dropped
         // at the end of the block.
         assert_eq!(

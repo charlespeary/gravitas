@@ -1,5 +1,8 @@
 use vtas::run;
 
 fn main() {
-    run();
+    match run() {
+        Ok(_) => {}
+        Err(_) => {}
+    }
 }

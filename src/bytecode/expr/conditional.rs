@@ -37,7 +37,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        bytecode::{test::generate_bytecode, Value},
+        bytecode::{test::generate_bytecode},
         parser::{
             expr::{
                 atom::Atom,
@@ -45,7 +45,7 @@ mod test {
                 conditional::{BranchType, If, IfBranch},
                 Expr,
             },
-            stmt::{var::VarStmt, Stmt},
+            stmt::{Stmt, var::VarStmt},
         },
     };
 

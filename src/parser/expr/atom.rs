@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use derive_more::Display;
 
 use crate::parser::{expr::Expr, Parser, Token};
 
@@ -35,7 +34,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use super::*;
 

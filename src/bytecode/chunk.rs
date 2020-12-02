@@ -88,7 +88,6 @@ mod tests {
     }
 
     /// For now this function should panic when we access the wrong constant.
-    ///
     #[test]
     #[should_panic]
     fn read_invalid_constant() {

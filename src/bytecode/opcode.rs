@@ -34,6 +34,11 @@ pub enum Opcode {
     Block(usize),
     // Memory management
     PopN(usize),
+    // Close value at given address (relative)
+    // It expects two addresses to be present on the stack
+    CloseValue,
+    // Opcode to feed closure object with upvalues and push it onto the stack
+    CreateClosure,
     // Get resource
     Get,
     // Assign value to a given resource
@@ -65,8 +70,4 @@ impl From<bool> for Opcode {
 }
 
 #[cfg(test)]
-mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
-
-    use super::*;
-}
+mod test {}

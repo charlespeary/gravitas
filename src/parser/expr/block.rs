@@ -74,7 +74,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use crate::parser::{expr::Atom, operator::Operator, stmt::var::VarStmt, Stmt};
 

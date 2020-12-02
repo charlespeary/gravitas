@@ -1,13 +1,12 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, Value, PATCH},
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Value},
     parser::expr::Identifier,
 };
 
 impl BytecodeFrom<Identifier> for BytecodeGenerator {
     fn generate(&mut self, identifier: &Identifier) -> GenerationResult {
         let Identifier { is_ref, value } = identifier;
-        let address = self.find(value)?;
-
+        let address = self.state.find_var(value)?;
         self.add_constant(Value::Address(address));
 
         // If identifier is used in an assignment operation
@@ -40,7 +39,7 @@ mod test {
     {
         let mut bg = BytecodeGenerator::new();
         if should_declare {
-            bg.declare(VARIABLE_NAME.to_owned());
+            bg.state.declare_var(VARIABLE_NAME);
         }
         bg.generate(&ast)
             .with_context(|| "Couldn't generate chunk from given ast")?;

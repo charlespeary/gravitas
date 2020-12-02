@@ -1,9 +1,6 @@
 use anyhow::Result;
 
-use crate::parser::{
-    expr::{Affix, Expr},
-    Parser, Token,
-};
+use crate::parser::{expr::Expr, Parser, Token};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Grouping {
@@ -30,7 +27,7 @@ impl Parser {
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use crate::parser::expr::Atom;
 

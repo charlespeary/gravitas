@@ -5,8 +5,8 @@ use anyhow::{anyhow, Context, Error, Result};
 pub use crate::{
     parser::{expr::Expr, stmt::Stmt, token::Token},
     utils::{
-        iter::{peek_nth, PeekNth},
         Either,
+        iter::{peek_nth, PeekNth},
     },
 };
 
@@ -191,7 +191,7 @@ mod test {
     // parse() should return the AST from given tokens
     #[test]
     fn parse() {
-        let mut parser = Parser::new(vec![
+        let parser = Parser::new(vec![
             Token::Var,
             Token::Identifier(String::from("foo")),
             Token::Operator(Operator::Assign),
@@ -213,7 +213,7 @@ mod test {
     // and starts parsing it in order to find as many errors as possible.
     #[test]
     fn parse_error() {
-        let mut parser = Parser::new(vec![Token::Var]);
+        let parser = Parser::new(vec![Token::Var]);
         let result = parser.parse();
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().len(), 1);
@@ -221,7 +221,7 @@ mod test {
 
     #[test]
     fn parse_error_many() {
-        let mut parser = Parser::new(vec![Token::Var, Token::Var, Token::Var]);
+        let parser = Parser::new(vec![Token::Var, Token::Var, Token::Var]);
         let result = parser.parse();
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().len(), 3);

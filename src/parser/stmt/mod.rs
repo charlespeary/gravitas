@@ -1,8 +1,8 @@
 use anyhow::Result;
 
 use crate::parser::{
-    stmt::{expr::ExprStmt, function::FunctionStmt, var::VarStmt},
-    Parser, Token,
+    Parser,
+    stmt::{expr::ExprStmt, function::FunctionStmt, var::VarStmt}, Token,
 };
 
 pub mod expr;

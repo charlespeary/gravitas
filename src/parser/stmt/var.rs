@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 
-use crate::parser::{operator::Operator, Expr, Parser, Stmt, Token};
+use crate::parser::{Expr, operator::Operator, Parser, Stmt, Token};
 
 ///
 #[derive(Debug, Clone, PartialEq)]
@@ -50,8 +50,8 @@ mod test {
                 Token::Number(10.0),
                 Token::Semicolon,
             ])
-            .parse_var_stmt()
-            .unwrap(),
+                .parse_var_stmt()
+                .unwrap(),
             VarStmt {
                 identifier: String::from("variable"),
                 expr: Expr::Atom(Atom::Number(10.0)),

@@ -5,21 +5,19 @@ use enum_as_inner::EnumAsInner;
 use logos::Logos;
 
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator},
+    bytecode::BytecodeGenerator,
     parser::{Parser, Token},
     settings::Settings,
-    utils::iter::{peek_nth, PeekNth},
     vm::VM,
 };
 
+pub mod graph;
 pub mod iter;
 
 pub mod log {
     use std::fmt::Debug;
 
     use colored::Colorize;
-
-    use crate::bytecode::{Opcode, Value};
 
     pub fn title_error(t: &str) {
         let text = format!("========= {} =========", t);
@@ -96,22 +94,26 @@ pub fn initialize(settings: Settings) -> Compiled {
 
 pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(code).collect();
-    log::title_success("LEXED");
-    log::body(&tokens);
+    if settings.debug {
+        log::title_success("LEXED");
+        log::body(&tokens);
+    }
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(Either::Right)?;
-    log::title_success("PARSED");
-    log::body(&ast);
+    if settings.debug {
+        log::title_success("PARSED");
+        log::body(&ast);
+    }
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
-    log::title_success("OPCODES");
-    log::body(&chunk.code);
-    log::title_success("CONSTANTS");
-    log::body(&chunk.constants);
-
-    log::title_success("INTERPRETATION");
+    if settings.debug {
+        log::title_success("OPCODES");
+        log::body(&chunk.code);
+        log::title_success("CONSTANTS");
+        log::body(&chunk.constants);
+        log::title_success("INTERPRETATION");
+    }
     let mut vm = VM::from(settings.clone());
-    let result = vm.interpret(chunk);
-    dbg!(result);
+    let _ = vm.interpret(chunk);
     Ok(())
 }
 

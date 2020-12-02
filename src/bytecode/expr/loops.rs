@@ -1,5 +1,5 @@
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Patch, PATCH},
+    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, PATCH},
     parser::expr::{Break, Continue, WhileLoop},
 };
 
@@ -13,7 +13,6 @@ impl BytecodeFrom<WhileLoop> for BytecodeGenerator {
         let jif = self.emit_patch(Opcode::JumpIfFalse(PATCH));
         self.generate(body)?;
 
-        self.emit_code(Opcode::PopN(1));
         let end = self.curr_index();
         self.emit_code(Opcode::JumpBack(end - start));
         self.patch(&jif);
@@ -96,7 +95,7 @@ mod test {
                 Opcode::Null,
                 Opcode::PopN(1),
                 Opcode::Null,
-                Opcode::PopN(1),
+                Opcode::Block(0),
                 Opcode::JumpBack(7),
                 Opcode::Null,
             ]

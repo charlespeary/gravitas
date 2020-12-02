@@ -6,20 +6,39 @@ use std::{
 use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
-use crate::{bytecode::stmt::function::Function, std::NativeFunction};
+use crate::{
+    bytecode::expr::closure::Closure, bytecode::stmt::function::Function, std::NativeFunction,
+};
 
 pub type Number = f64;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Address {
+    // Local variables, e.g defined inside block or a function.
+    // This value is added to the function's stack offset.
     Local(usize),
+    // Upvalue address
+    // First value points to the stack index that starts at index
+    // defined by callstack n (second value) jumps above.
+    Upvalue(usize, usize),
+    // Global variable refereed by a string key.
+    // The value is extracted from a HashMap of globals.
+    // Note: all of the variables and functions defined in vtas are "local" per se.
+    // Only the std functions are global.
     Global(String),
+}
+
+impl Into<Value> for Address {
+    fn into(self) -> Value {
+        Value::Address(self)
+    }
 }
 
 #[derive(Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Callable {
     Function(Function),
     NativeFunction(NativeFunction),
+    Closure(Closure),
 }
 
 impl fmt::Debug for Callable {
@@ -27,6 +46,7 @@ impl fmt::Debug for Callable {
         match self {
             Callable::Function(func) => f.write_fmt(format_args!("<fn {}>", func.name)),
             Callable::NativeFunction(_) => f.write_fmt(format_args!("<native fn>")),
+            Callable::Closure(_) => f.write_fmt(format_args!("<closure fn>")),
         }
     }
 }
@@ -49,6 +69,8 @@ pub enum Value {
     Address(Address),
     // Variant holding callable values
     Callable(Callable),
+    // Array
+    Array(Vec<Value>),
     // Null value, might be changed to Option in future
     Null,
 }
@@ -74,7 +96,7 @@ impl Add for Value {
             _ => {
                 return Err(anyhow!(
                     "Tried to add values that doesn't implement addition."
-                ))
+                ));
             }
         })
     }
@@ -120,7 +142,7 @@ impl Into<bool> for Value {
 #[cfg(test)]
 mod test {
     use anyhow::Result;
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
 
     use super::*;
 

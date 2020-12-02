@@ -1,6 +1,3 @@
-fn foo(a, b) {
-    print(foo);
-    return a + b;
-}
-
-print(foo(10,15));
+{
+    var foo = 10;
+};
