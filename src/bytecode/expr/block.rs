@@ -75,7 +75,7 @@ mod test {
 
         // When no variables are created inside the block, then no Opcode::Block is added
         // because there are no variables to drop
-        assert_eq!(bytecode, vec![Opcode::Constant(0)]);
+        assert_eq!(bytecode, vec![Opcode::Constant(0), Opcode::Block(0)]);
         assert_eq!(chunk.read_constant(0), &Value::Number(10.0));
 
         let ast = Block {
@@ -87,7 +87,6 @@ mod test {
         };
 
         let (chunk, bytecode) = generate_bytecode(ast);
-
         // Opcode::Block is added whenever we declare variables inside the block, so they are dropped
         // at the end of the block.
         assert_eq!(

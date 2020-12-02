@@ -1,26 +1,3 @@
-var increment = null;
-var decrement = null;
-
-var bar = || => {
-    var x = 15;
-    var add = || => {
-        x = x + 1;
-        print(x);
-    };
-    var sub = || => {
-        x  = x - 1;
-        print(x);
-    };
-    increment = add;
-    decrement = sub;
+{
+    var foo = 10;
 };
-
-bar();
-increment();
-increment();
-decrement();
-decrement();
-decrement();
-decrement();
-bar();
-increment();

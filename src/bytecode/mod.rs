@@ -6,8 +6,8 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::{Address, Callable, Number, Value};
 
-use crate::bytecode::state::{GeneratorState, Scope};
-use crate::bytecode::stmt::var::{Upvalue, Variable};
+use crate::bytecode::state::GeneratorState;
+use crate::bytecode::stmt::var::Variable;
 use crate::parser::Ast;
 
 pub mod chunk;
@@ -134,7 +134,7 @@ impl BytecodeGenerator {
     }
 
     pub fn pop_scope_variables(&mut self) {
-        let variables_len = self.state.scope_variables().len();
+        let variables_len = self.state.declared();
         self.emit_code(Opcode::PopN(variables_len));
     }
 

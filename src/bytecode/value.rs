@@ -20,6 +20,8 @@ pub enum Address {
     // This value is added to the function's stack offset.
     Local(usize),
     // Upvalue address
+    // First value points to the stack index that starts at index
+    // defined by callstack n (second value) jumps above.
     Upvalue(usize, usize),
     // Global variable refereed by a string key.
     // The value is extracted from a HashMap of globals.
