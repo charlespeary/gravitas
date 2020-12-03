@@ -43,9 +43,7 @@ impl Closure {
 impl BytecodeFrom<ClosureExpr> for BytecodeGenerator {
     fn generate(&mut self, closure: &ClosureExpr) -> GenerationResult {
         let ClosureExpr { body, params } = closure;
-        self.state.enter_scope(ScopeType::Closure);
-        // TODO: separate it
-        self.fn_chunks.push(Chunk::default());
+        self.enter_callable(ScopeType::Closure);
 
         for param in params.clone() {
             self.state.declare_var(&param.val);
@@ -59,21 +57,13 @@ impl BytecodeFrom<ClosureExpr> for BytecodeGenerator {
                 for item in &block.body {
                     self.generate(item)?;
                 }
-
-                if !self.state.did_return() {
-                    self.close_scope_variables();
-                    self.emit_code(Opcode::Null);
-                    self.emit_code(Opcode::Return);
-                }
             }
             body => {
                 self.generate(&body)?;
-                self.close_scope_variables();
-                self.emit_code(Opcode::Return);
             }
         }
 
-        self.state.leave_scope();
+        self.emit_return();
 
         let lambda = Closure {
             arity: params.len(),

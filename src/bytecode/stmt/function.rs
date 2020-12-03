@@ -20,10 +20,9 @@ impl Into<Value> for Function {
 impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
     fn generate(&mut self, fnc: &FunctionStmt) -> GenerationResult {
         let FunctionStmt { name, params, body } = fnc;
-        self.state.enter_scope(ScopeType::Function);
 
-        // TODO: separate it
-        self.fn_chunks.push(Chunk::default());
+        self.enter_callable(ScopeType::Function);
+
         // Declare parameters, so they are visible in the body scope
         for param in params.clone() {
             self.state.declare_var(&param.val);
@@ -38,14 +37,7 @@ impl BytecodeFrom<FunctionStmt> for BytecodeGenerator {
             self.generate(item)?;
         }
 
-        // Add explicit return with null if user didn't
-        if !self.state.did_return() {
-            self.close_scope_variables();
-            self.emit_code(Opcode::Null);
-            self.emit_code(Opcode::Return);
-        }
-
-        self.state.leave_scope();
+        self.emit_return();
 
         let function = Value::Callable(Callable::Function(Function {
             arity: params.len(),

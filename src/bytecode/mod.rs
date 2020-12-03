@@ -6,7 +6,7 @@ pub use chunk::Chunk;
 pub use opcode::Opcode;
 pub use value::{Address, Callable, Number, Value};
 
-use crate::bytecode::state::GeneratorState;
+use crate::bytecode::state::{GeneratorState, ScopeType};
 use crate::parser::Ast;
 
 pub mod chunk;
@@ -161,6 +161,20 @@ impl BytecodeGenerator {
 
     pub fn add_constant(&mut self, value: Value) -> usize {
         self.current_chunk().add_constant(value)
+    }
+
+    pub fn enter_callable(&mut self, scope_type: ScopeType) {
+        self.state.enter_scope(scope_type);
+        self.fn_chunks.push(Chunk::default());
+    }
+
+    pub fn emit_return(&mut self) {
+        if !self.state.did_return() {
+            self.close_scope_variables();
+            self.emit_code(Opcode::Null);
+            self.emit_code(Opcode::Return);
+        }
+        self.state.leave_scope();
     }
 }
 

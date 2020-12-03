@@ -103,7 +103,6 @@ impl VM {
                     function.chunk.clone(),
                     function.arity,
                     function.name.clone(),
-                    // TODO: Functions should work like closures
                     env_key,
                 );
                 self.stack.push(Callable::Function(function).into());
