@@ -17,3 +17,7 @@ pub fn print(args: Args) -> Value {
     }
     Value::Null
 }
+
+pub fn assert_eq(args: Args) -> Value {
+    unimplemented!()
+}

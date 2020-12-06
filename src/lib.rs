@@ -8,26 +8,24 @@ extern crate quickcheck_macros;
 use anyhow::Result;
 use clap::Clap;
 
-use settings::Settings;
-use utils::initialize;
-
-pub use crate::{bytecode::BytecodeGenerator, parser::Parser, vm::VM};
+pub use crate::{
+    bytecode::BytecodeGenerator,
+    cli::{exec_commands, Settings, Subcommand},
+    parser::Parser,
+    vm::VM,
+};
 
 mod bytecode;
+mod cli;
 mod parser;
-mod settings;
 mod std;
 mod utils;
 mod vm;
 
 pub fn run() -> Result<()> {
-    let settings = Settings::parse();
-    match initialize(settings) {
-        Ok(_) => {}
-        Err(e) => {
-            utils::log::title_error("ERROR");
-            utils::log::body(&e);
-        }
-    }
+    let settings: Settings = Settings::parse();
+
+    exec_commands(settings)?;
+
     Ok(())
 }

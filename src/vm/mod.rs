@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use crate::vm::call_frame::Environments;
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
-    settings::Settings,
+    cli::{commands::Compile, Settings},
     std::GLOBALS,
     utils::log,
     vm::call_frame::CallFrame,
@@ -16,7 +16,7 @@ mod call_frame;
 
 #[derive(Debug, Default)]
 pub struct VM {
-    settings: Settings,
+    settings: Compile,
     // Stack of local values
     stack: Vec<Value>,
     // Struct managing environments
@@ -334,8 +334,8 @@ impl VM {
     }
 }
 
-impl From<Settings> for VM {
-    fn from(settings: Settings) -> Self {
+impl From<Compile> for VM {
+    fn from(settings: Compile) -> Self {
         VM {
             settings,
             ..Default::default()
