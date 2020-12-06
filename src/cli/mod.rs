@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Clap;
 
-pub use commands::Subcommand;
+use crate::cli::commands::{compile::run_compile, test::run_test, Subcommand};
 
 pub mod commands;
 
@@ -16,8 +16,12 @@ pub struct Settings {
 
 pub fn exec_commands(settings: Settings) -> Result<()> {
     match settings.subcmd {
-        Subcommand::Compile(compile) => {}
-        Subcommand::Test(test) => {}
+        Subcommand::Compile(compile) => {
+            run_compile(compile);
+        }
+        Subcommand::Test(test) => {
+            run_test(test);
+        }
     }
     Ok(())
 }

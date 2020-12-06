@@ -1,7 +1,9 @@
 use clap::Clap;
 
-mod compile;
-mod test;
+pub use crate::cli::commands::{compile::Compile, test::Test};
+
+pub mod compile;
+pub mod test;
 
 #[derive(Clap, Debug, Clone)]
 pub enum Subcommand {
@@ -16,16 +18,4 @@ impl Default for Subcommand {
             debug: false,
         })
     }
-}
-
-#[derive(Clap, Default, Debug, Clone)]
-pub struct Test {}
-
-#[derive(Clap, Default, Debug, Clone)]
-pub struct Compile {
-    /// Path to the file we want to interpret
-    #[clap(short, default_value = "main.rlox")]
-    pub file_path: String,
-    #[clap(short)]
-    pub debug: bool,
 }

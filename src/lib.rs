@@ -10,7 +10,7 @@ use clap::Clap;
 
 pub use crate::{
     bytecode::BytecodeGenerator,
-    cli::{exec_commands, Settings, Subcommand},
+    cli::{exec_commands, Settings},
     parser::Parser,
     vm::VM,
 };

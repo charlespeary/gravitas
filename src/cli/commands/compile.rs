@@ -1,20 +1,29 @@
 use std::{fs::read_to_string, io::stdin};
 
 use anyhow::{Context, Error, Result};
+use clap::Clap;
 use logos::Logos;
 
 use crate::{
     bytecode::BytecodeGenerator,
-    cli::commands::Compile,
     parser::{Parser, Token},
     utils::log,
     utils::Either,
     vm::VM,
 };
 
+#[derive(Clap, Default, Debug, Clone)]
+pub struct Compile {
+    /// Path to the file we want to interpret
+    #[clap(short, default_value = "main.rlox")]
+    pub file_path: String,
+    #[clap(short)]
+    pub debug: bool,
+}
+
 type Compiled = Result<(), Either<Error, Vec<Error>>>;
 
-pub fn compile(settings: Compile) -> Compiled {
+pub fn run_compile(settings: Compile) -> Compiled {
     let code = read_to_string(&settings.file_path)
         .with_context(|| "Given input file doesn't exist.")
         .map_err(Either::Left)?;
