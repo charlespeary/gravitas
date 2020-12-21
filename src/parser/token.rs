@@ -75,7 +75,7 @@ pub enum Token {
     Number(f64),
     #[regex("\"[^\"]*\"", lex_text)]
     Text(String),
-    #[regex("[a-zA-Z]+", | lex | lex.slice().parse())]
+    #[regex("([a-zA-Z]+_[a-zA-Z]+)|([a-zA-Z]+)", | lex | lex.slice().parse())]
     Identifier(String),
     #[error]
     #[regex(r"[ \t\n\f]+", logos::skip)]

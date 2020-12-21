@@ -8,14 +8,16 @@ pub mod log {
 
     use colored::Colorize;
 
-    pub fn title_error(t: &str) {
-        let text = format!("========= {} =========", t);
-        println!("\n{}\n", text.red().bold());
+    pub fn info(t: &str) {
+        println!("{}", t.cyan().bold());
     }
 
-    pub fn title_success(t: &str) {
-        let text = format!("========= {} =========", t);
-        println!("\n{}\n ", text.green().bold());
+    pub fn error(t: &str) {
+        println!("{}", t.red().bold());
+    }
+
+    pub fn success(t: &str) {
+        println!("{} ", t.green().bold());
     }
 
     pub fn body<T: Debug>(i: &T) {

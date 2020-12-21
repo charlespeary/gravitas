@@ -1,3 +1,4 @@
+use std::fmt::Formatter;
 use std::{
     fmt,
     ops::{Add, Neg},
@@ -73,6 +74,20 @@ pub enum Value {
     Array(Vec<Value>),
     // Null value, might be changed to Option in future
     Null,
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Number(num) => write!(f, "{}", num),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::String(str) => write!(f, "{}", str),
+            Value::Address(address) => write!(f, "{:?}", address),
+            Value::Callable(fun) => write!(f, "{:?}", fun),
+            Value::Array(arr) => write!(f, "{:?}", arr),
+            Value::Null => write!(f, "null"),
+        }
+    }
 }
 
 impl Neg for Value {

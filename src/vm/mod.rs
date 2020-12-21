@@ -3,20 +3,21 @@ use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::vm::call_frame::Environments;
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
-    cli::{commands::Compile, Settings},
+    cli::Settings,
+    compiler::ProgramOutput,
     std::GLOBALS,
     utils::log,
-    vm::call_frame::CallFrame,
+    vm::call_frame::{CallFrame, Environments},
 };
 
 mod call_frame;
 
 #[derive(Debug, Default)]
 pub struct VM {
-    settings: Compile,
+    // Global settings
+    settings: Settings,
     // Stack of local values
     stack: Vec<Value>,
     // Struct managing environments
@@ -165,7 +166,7 @@ impl VM {
         self.run()
     }
 
-    pub fn run(&mut self) -> Result<Value> {
+    pub fn run(&mut self) -> ProgramOutput {
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
@@ -334,8 +335,8 @@ impl VM {
     }
 }
 
-impl From<Compile> for VM {
-    fn from(settings: Compile) -> Self {
+impl From<Settings> for VM {
+    fn from(settings: Settings) -> Self {
         VM {
             settings,
             ..Default::default()

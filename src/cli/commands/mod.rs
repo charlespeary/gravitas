@@ -1,6 +1,12 @@
 use clap::Clap;
 
-pub use crate::cli::commands::{compile::Compile, test::Test};
+pub use crate::{
+    cli::commands::{
+        compile::{Compile, run_compile},
+        test::{run_test, Test},
+    },
+    Settings,
+};
 
 pub mod compile;
 pub mod test;
@@ -15,7 +21,13 @@ impl Default for Subcommand {
     fn default() -> Self {
         Subcommand::Compile(Compile {
             file_path: String::from("main.rlox"),
-            debug: false,
         })
     }
+}
+
+pub fn exec_commands(settings: Settings) {
+    let result = match &settings.subcmd {
+        Subcommand::Compile(compile) => run_compile(&settings, compile),
+        Subcommand::Test(test) => run_test(&settings, test),
+    };
 }
