@@ -2,7 +2,7 @@ use clap::Clap;
 
 pub use crate::{
     cli::commands::{
-        compile::{Compile, run_compile},
+        compile::{run_compile, Compile},
         test::{run_test, Test},
     },
     Settings,
@@ -26,8 +26,12 @@ impl Default for Subcommand {
 }
 
 pub fn exec_commands(settings: Settings) {
-    let result = match &settings.subcmd {
-        Subcommand::Compile(compile) => run_compile(&settings, compile),
-        Subcommand::Test(test) => run_test(&settings, test),
+    match &settings.subcmd {
+        Subcommand::Compile(compile) => {
+            run_compile(&settings, compile);
+        }
+        Subcommand::Test(test) => {
+            run_test(&settings, test);
+        }
     };
 }

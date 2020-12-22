@@ -3,19 +3,25 @@ use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
 
+use crate::cli::commands::test::TestRunner;
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
     cli::Settings,
     compiler::ProgramOutput,
     std::GLOBALS,
     utils::log,
-    vm::call_frame::{CallFrame, Environments},
+    vm::{
+        call_frame::{CallFrame, Environments},
+        injections::Injections,
+    },
 };
 
 mod call_frame;
+pub mod injections;
 
 #[derive(Debug, Default)]
-pub struct VM {
+pub struct VM<'a> {
+    pub injections: Injections<'a>,
     // Global settings
     settings: Settings,
     // Stack of local values
@@ -29,7 +35,7 @@ pub struct VM {
     ip: usize,
 }
 
-impl VM {
+impl<'a> VM<'a> {
     fn push_stack(&mut self, value: Value) {
         if self.settings.debug {
             log::vm_subtitle("PUSH STACK", &value);
@@ -111,11 +117,8 @@ impl VM {
                 Ok(())
             }
             Callable::NativeFunction(function) => {
-                if self.settings.debug {
-                    log::vm_subtitle("NATIVE FN CALL", &function.function);
-                }
                 let args = self.pop_n(function.arity)?;
-                let value = (function.function)(args);
+                let value = (function.function)(args, self);
                 self.stack.push(value);
                 // skip the call
                 self.ip += 1;
@@ -156,6 +159,12 @@ impl VM {
     }
 
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
+        // Reset structs values in case if we would like to rerun some code on VM
+        self.ip = 0;
+        self.environments = Environments::default();
+        self.globals = HashMap::default();
+        self.call_stack = vec![];
+
         self.call_stack.push(CallFrame {
             chunk,
             stack_start: self.stack.len(),
@@ -335,10 +344,19 @@ impl VM {
     }
 }
 
-impl From<Settings> for VM {
+impl<'a> From<Settings> for VM<'a> {
     fn from(settings: Settings) -> Self {
         VM {
             settings,
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a> From<Injections<'a>> for VM<'a> {
+    fn from(injections: Injections<'a>) -> Self {
+        VM {
+            injections,
             ..Default::default()
         }
     }
