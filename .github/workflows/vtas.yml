@@ -10,12 +10,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  vtas_tests:
+  tests:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
     - name: Run vtas language tests
-      run: cargo build \
-          ./target/debug/vtas test
+      run: cargo build && ./target/debug/vtas test
