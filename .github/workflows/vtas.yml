@@ -1,4 +1,4 @@
-name: Language
+name: Vtas language tests
 
 on:
   push:
@@ -17,5 +17,5 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run vtas language tests
-      run: python3 utils.py test
-
+      run: cargo build \
+          ./target/debug/vtas test
