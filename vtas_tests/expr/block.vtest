@@ -1,1 +1,1 @@
-aint a valid program
+assert_eq(1,1);
