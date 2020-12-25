@@ -59,7 +59,7 @@ pub fn run_test(global_settings: &Settings, cmd_settings: &Test) {
         .collect();
 
     let mut test_runner = TestRunner::default();
-    let vm_injections = Injections::from(&mut test_runner);
+    let vm_injections = Injections::default().with_test_runner(&mut test_runner);
     let mut vm = VM::default().with_injections(vm_injections).with_settings(global_settings.clone());
 
     log::title(format!("Going to test {} files:", test_files.len()).as_str());

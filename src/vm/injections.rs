@@ -7,17 +7,8 @@ pub struct Injections<'a> {
 }
 
 impl<'a> Injections<'a> {
-    pub fn get_test_runner(&mut self) -> &mut TestRunner {
-        self.test_runner
-            .as_deref_mut()
-            .expect("Tried to access test runner in an environment where it's not injected")
-    }
-}
-
-impl<'a> From<&'a mut TestRunner> for Injections<'a> {
-    fn from(test_runner: &'a mut TestRunner) -> Self {
-        Self {
-            test_runner: Some(test_runner),
-        }
+    pub fn with_test_runner(mut self, test_runner: &'a mut TestRunner) -> Self {
+        self.test_runner = Some(test_runner);
+        self
     }
 }
