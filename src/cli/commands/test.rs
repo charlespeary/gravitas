@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Clap;
 use walkdir::WalkDir;
 
-use crate::{compiler::compile_path, utils::log, vm::injections::Injections, Settings, VM};
+use crate::{compiler::compile_path, Settings, utils::log, VM, vm::injections::Injections};
 
 static TEST_EXTENSION: &str = "vtest";
 
@@ -60,7 +60,7 @@ pub fn run_test(global_settings: &Settings, cmd_settings: &Test) {
 
     let mut test_runner = TestRunner::default();
     let vm_injections = Injections::from(&mut test_runner);
-    let mut vm = VM::from(vm_injections);
+    let mut vm = VM::default().with_injections(vm_injections).with_settings(global_settings.clone());
 
     log::title(format!("Going to test {} files:", test_files.len()).as_str());
     // Run code in all of the matched files

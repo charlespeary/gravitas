@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use crate::{
     bytecode::{Callable, Value},
     hashmap,
-    std::functions::{assert_eq, clock, print},
+    std::functions::{assert_eq, clock, print, it},
     VM,
 };
 
@@ -42,6 +42,7 @@ lazy_static! {
     pub static ref GLOBALS: HashMap<&'static str, NativeFunction> = hashmap! (
         "clock" => NativeFunction { arity: 0, function: clock },
         "print" => NativeFunction { arity: 1, function: print },
-        "assert_eq" => NativeFunction { arity: 2, function: assert_eq }
+        "assert_eq" => NativeFunction { arity: 2, function: assert_eq },
+        "it" => NativeFunction { arity: 2, function: it }
     );
 }

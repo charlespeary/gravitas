@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{bytecode::Value, std::Args, utils::log, VM};
+use crate::{bytecode::{Value, Callable},  std::Args, utils::log, VM};
 
 pub fn clock(_: Args, _: &mut VM) -> Value {
     Value::Number(
@@ -35,5 +35,12 @@ pub fn assert_eq(args: Args, vm: &mut VM) -> Value {
         log::error_indent(&message, 1);
         test_runner.failure();
     }
+    Value::Null
+}
+
+pub fn it(args: Args, vm:&mut VM) -> Value {
+    log::title_indent(format!("{}", args[1]).as_str(), 1);
+    let callback = args[0].clone().into_callable().unwrap();
+    vm.callback(callback);
     Value::Null
 }

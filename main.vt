@@ -1,0 +1,5 @@
+it("might work or not", || => {
+    print("Callback");
+});
+
+print("after");

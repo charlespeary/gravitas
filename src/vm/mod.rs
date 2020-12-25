@@ -3,7 +3,6 @@ use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::cli::commands::test::TestRunner;
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
     cli::Settings,
@@ -15,6 +14,7 @@ use crate::{
         injections::Injections,
     },
 };
+use crate::cli::commands::test::TestRunner;
 
 mod call_frame;
 pub mod injections;
@@ -98,6 +98,19 @@ impl<'a> VM<'a> {
             .expect("Tried to lookup call frame above the call stack")
     }
 
+    pub fn callback(&mut self, callable: Callable) -> Result<()> {
+        match &callable {
+            Callable::NativeFunction(_) => {
+                self.call(callable);
+            }
+            _ => {
+                self.call(callable);
+                self.evaluate_last_frame();
+            }
+        }
+        Ok(())
+    }
+
     pub fn call(&mut self, callable: Callable) -> Result<()> {
         let current_env = self.lookup_call_frame(0).env_key;
         match callable {
@@ -149,7 +162,7 @@ impl<'a> VM<'a> {
         }
     }
 
-    pub fn end_call(&mut self) {
+    pub fn close_frame(&mut self) {
         let frame = self
             .call_stack
             .pop()
@@ -175,7 +188,12 @@ impl<'a> VM<'a> {
         self.run()
     }
 
-    pub fn run(&mut self) -> ProgramOutput {
+    pub fn evaluate_last_frame(&mut self) -> Result<()> {
+        let frame = self.call_stack.last().cloned().expect("Tried to pop from empty callstack.");
+        self.evaluate_frame(frame)
+    }
+
+    pub fn evaluate_frame(&mut self, frame: CallFrame) -> Result<()> {
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
@@ -194,173 +212,170 @@ impl<'a> VM<'a> {
             }};
         }
 
-        // We can safely unwrap, because there will always be at least one call frame on the stack
-        'frames: while let Some(frame) = self.call_stack.last_mut().cloned() {
-            while let Some(opcode) = frame.chunk.code.get(self.ip) {
-                if self.settings.debug {
-                    log::vm_title("OPCODE", opcode);
-                    log::vm_subtitle("IP", &self.ip);
-                    log::vm_subtitle("STACK", &self.stack);
-                }
-
-                match opcode {
-                    Opcode::Constant(index) => {
-                        self.push_stack(frame.chunk.read_constant(*index).clone())
-                    }
-                    Opcode::True => self.push_stack(Value::Bool(true)),
-                    Opcode::False => self.push_stack(Value::Bool(false)),
-                    Opcode::Null => self.push_stack(Value::Null),
-                    Opcode::Negate => {
-                        let value = self.pop_stack()?;
-                        let negated = value.neg()?;
-                        self.push_stack(negated);
-                    }
-                    Opcode::Not => {
-                        let value: bool = self.pop_stack()?.into();
-                        self.push_stack(Value::Bool(value));
-                    }
-                    Opcode::Add => bin_op!(+, 'm'),
-                    Opcode::Subtract => bin_op!(-, 'm'),
-                    Opcode::Divide => bin_op!(/, 'm'),
-                    Opcode::Multiply => bin_op!(*, 'm'),
-                    Opcode::BangEqual => bin_op!(!=, 'l'),
-                    Opcode::Compare => bin_op!(==, 'l'),
-                    Opcode::Less => bin_op!(<, 'l'),
-                    Opcode::LessEqual => bin_op!(<=, 'l'),
-                    Opcode::Greater => bin_op!(>, 'l'),
-                    Opcode::GreaterEqual => bin_op!(>=, 'l'),
-                    Opcode::Assign => {
-                        let value = self.pop_stack()?;
-
-                        match self.pop_address()? {
-                            Address::Local(address) => {
-                                self.stack[frame.stack_start + address] = value;
-                            }
-                            Address::Upvalue(index, depth) => {
-                                match self.environments.get_value_mut(frame.env_key, index, depth) {
-                                    Some(old_value) => {
-                                        let _ = std::mem::replace(old_value, value);
-                                    }
-                                    // If it wasn't yet closed then it must live on the stack
-                                    None => {
-                                        let address =
-                                            self.lookup_call_frame(depth).stack_start + index;
-                                        self.stack[address] = value;
-                                    }
-                                }
-                            }
-                            Address::Global(_) => {
-                                return Err(anyhow!("Cannot reassign global resource!"));
-                            }
-                        };
-                        self.push_stack(Value::Null);
-                    }
-                    Opcode::PopN(amount) => {
-                        self.pop_n(*amount)?;
-                    }
-                    Opcode::JumpIfFalse(jump) => {
-                        let value: bool = self.pop_stack()?.into();
-                        if !value {
-                            self.ip += *jump;
-                        }
-                    }
-                    Opcode::JumpForward(jump) => {
-                        self.ip += *jump;
-                    }
-                    Opcode::JumpBack(jump) => {
-                        self.ip -= *jump;
-                        continue;
-                    }
-                    Opcode::Block(declared) => {
-                        let result = self.pop_stack()?;
-                        self.pop_n(*declared)?;
-                        self.push_stack(result);
-                    }
-                    Opcode::CloseValue => {
-                        let address = self
-                            .pop_address()?
-                            .into_local()
-                            .map_err(|_| anyhow!("ds"))?;
-                        let value = self.stack[frame.stack_start + address].clone();
-                        self.environments.close_value(value, frame.env_key);
-                    }
-                    Opcode::CreateClosure => {
-                        let current_env = self.lookup_call_frame(0).env_key;
-                        // let env_key = self.environments.create_env(current_env);
-                        // println!("Created closure with env_key: {}", env_key);
-                        let closure = self
-                            .pop_callable()?
-                            .into_closure()
-                            .map_err(|_| anyhow!("Popped callable that wasn't a closure."))?;
-
-                        self.push_stack(closure.with_enclosing_env(current_env).into());
-                    }
-                    Opcode::Break(jump) => {
-                        let value = self.pop_stack()?;
-                        self.ip += *jump;
-                        self.push_stack(value);
-                    }
-                    Opcode::Return => {
-                        let result_value = self.pop_stack()?;
-                        self.end_call();
-                        self.push_stack(result_value);
-                        continue 'frames;
-                    }
-                    Opcode::Get => {
-                        let address = self.pop_address()?;
-                        let value = match address {
-                            Address::Local(index) => self.stack[frame.stack_start + index].clone(),
-                            Address::Upvalue(index, depth) => {
-                                match self.environments.get_value(frame.env_key, index, depth) {
-                                    Some(value) => value,
-                                    // If it wasn't yet closed then it must live on the stack
-                                    None => {
-                                        let address =
-                                            self.lookup_call_frame(depth).stack_start + index;
-                                        self.stack[address].clone()
-                                    }
-                                }
-                            }
-                            Address::Global(name) => GLOBALS
-                                .get(name.as_str())
-                                .cloned()
-                                .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
-                                .into(),
-                        };
-                        self.push_stack(value);
-                    }
-                    Opcode::Call => {
-                        let caller = self.pop_callable()?;
-                        self.call(caller)?;
-                        continue 'frames;
-                    }
-                }
-                self.ip += 1;
+        while let Some(opcode) = frame.chunk.code.get(self.ip) {
+            if self.settings.debug {
+                log::vm_title("OPCODE", opcode);
+                log::vm_subtitle("IP", &self.ip);
+                log::vm_subtitle("STACK", &self.stack);
             }
-            self.end_call();
+
+            match opcode {
+                Opcode::Constant(index) => {
+                    self.push_stack(frame.chunk.read_constant(*index).clone())
+                }
+                Opcode::True => self.push_stack(Value::Bool(true)),
+                Opcode::False => self.push_stack(Value::Bool(false)),
+                Opcode::Null => self.push_stack(Value::Null),
+                Opcode::Negate => {
+                    let value = self.pop_stack()?;
+                    let negated = value.neg()?;
+                    self.push_stack(negated);
+                }
+                Opcode::Not => {
+                    let value: bool = self.pop_stack()?.into();
+                    self.push_stack(Value::Bool(value));
+                }
+                Opcode::Add => bin_op!(+, 'm'),
+                Opcode::Subtract => bin_op!(-, 'm'),
+                Opcode::Divide => bin_op!(/, 'm'),
+                Opcode::Multiply => bin_op!(*, 'm'),
+                Opcode::BangEqual => bin_op!(!=, 'l'),
+                Opcode::Compare => bin_op!(==, 'l'),
+                Opcode::Less => bin_op!(<, 'l'),
+                Opcode::LessEqual => bin_op!(<=, 'l'),
+                Opcode::Greater => bin_op!(>, 'l'),
+                Opcode::GreaterEqual => bin_op!(>=, 'l'),
+                Opcode::Assign => {
+                    let value = self.pop_stack()?;
+
+                    match self.pop_address()? {
+                        Address::Local(address) => {
+                            self.stack[frame.stack_start + address] = value;
+                        }
+                        Address::Upvalue(index, depth) => {
+                            match self.environments.get_value_mut(frame.env_key, index, depth) {
+                                Some(old_value) => {
+                                    let _ = std::mem::replace(old_value, value);
+                                }
+                                // If it wasn't yet closed then it must live on the stack
+                                None => {
+                                    let address =
+                                        self.lookup_call_frame(depth).stack_start + index;
+                                    self.stack[address] = value;
+                                }
+                            }
+                        }
+                        Address::Global(_) => {
+                            return Err(anyhow!("Cannot reassign global resource!"));
+                        }
+                    };
+                    self.push_stack(Value::Null);
+                }
+                Opcode::PopN(amount) => {
+                    self.pop_n(*amount)?;
+                }
+                Opcode::JumpIfFalse(jump) => {
+                    let value: bool = self.pop_stack()?.into();
+                    if !value {
+                        self.ip += *jump;
+                    }
+                }
+                Opcode::JumpForward(jump) => {
+                    self.ip += *jump;
+                }
+                Opcode::JumpBack(jump) => {
+                    self.ip -= *jump;
+                    continue;
+                }
+                Opcode::Block(declared) => {
+                    let result = self.pop_stack()?;
+                    self.pop_n(*declared)?;
+                    self.push_stack(result);
+                }
+                Opcode::CloseValue => {
+                    let address = self
+                        .pop_address()?
+                        .into_local()
+                        .map_err(|_| anyhow!("ds"))?;
+                    let value = self.stack[frame.stack_start + address].clone();
+                    self.environments.close_value(value, frame.env_key);
+                }
+                Opcode::CreateClosure => {
+                    let current_env = self.lookup_call_frame(0).env_key;
+                    let closure = self
+                        .pop_callable()?
+                        .into_closure()
+                        .map_err(|_| anyhow!("Popped callable that wasn't a closure."))?;
+
+                    self.push_stack(closure.with_enclosing_env(current_env).into());
+                }
+                Opcode::Break(jump) => {
+                    let value = self.pop_stack()?;
+                    self.ip += *jump;
+                    self.push_stack(value);
+                }
+                Opcode::Return => {
+                    let result_value = self.pop_stack()?;
+                    self.close_frame();
+                    self.push_stack(result_value);
+                    return Ok(());
+                }
+                Opcode::Get => {
+                    let address = self.pop_address()?;
+                    let value = match address {
+                        Address::Local(index) => self.stack[frame.stack_start + index].clone(),
+                        Address::Upvalue(index, depth) => {
+                            match self.environments.get_value(frame.env_key, index, depth) {
+                                Some(value) => value,
+                                // If it wasn't yet closed then it must live on the stack
+                                None => {
+                                    let address =
+                                        self.lookup_call_frame(depth).stack_start + index;
+                                    self.stack[address].clone()
+                                }
+                            }
+                        }
+                        Address::Global(name) => GLOBALS
+                            .get(name.as_str())
+                            .cloned()
+                            .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
+                            .into(),
+                    };
+                    self.push_stack(value);
+                }
+                Opcode::Call => {
+                    let caller = self.pop_callable()?;
+                    self.call(caller)?;
+                    return Ok(());
+                }
+            }
+            self.ip += 1;
         }
-        // Reset ip so it points to the beginning of new chunk
+
+        self.close_frame();
+
+        Ok(())
+    }
+
+    pub fn run(&mut self) -> ProgramOutput {
+        'frames: while let Some(frame) = self.call_stack.last_mut().cloned() {
+            self.evaluate_frame(frame);
+        }
+
         Ok(Value::Null)
     }
-}
 
-impl<'a> From<Settings> for VM<'a> {
-    fn from(settings: Settings) -> Self {
-        VM {
-            settings,
-            ..Default::default()
-        }
+    pub fn with_settings(mut self, settings: Settings) -> Self {
+        self.settings = settings;
+        self
+    }
+
+    pub fn with_injections(mut self, injections: Injections<'a>) -> Self {
+        self.injections = injections;
+        self
     }
 }
 
-impl<'a> From<Injections<'a>> for VM<'a> {
-    fn from(injections: Injections<'a>) -> Self {
-        VM {
-            injections,
-            ..Default::default()
-        }
-    }
-}
 
 #[cfg(test)]
 mod test {}

@@ -15,8 +15,8 @@ use crate::{
 #[derive(Clap, Default, Debug, Clone)]
 pub struct Compile {
     /// Path to the file we want to interpret
-    #[clap(short, default_value = "main.vtas")]
-    pub file_path: String,
+    #[clap(short, default_value = "main.vt")]
+    pub path: String,
 }
 
 type Compiled = Result<(), Either<Error, Vec<Error>>>;
@@ -24,8 +24,8 @@ type Compiled = Result<(), Either<Error, Vec<Error>>>;
 pub fn run_compile(global_settings: &Settings, cmd_settings: &Compile) -> CommandOutput {
     // Pretty print the compilation errors
     let program =
-        compile_path(&cmd_settings.file_path, global_settings).expect("Compilation error");
-    let mut vm = VM::from(global_settings.clone());
+        compile_path(&cmd_settings.path, global_settings).expect("Compilation error");
+    let mut vm = VM::default().with_settings(global_settings.clone());
     let result = vm.interpret(program);
 
     Ok(())

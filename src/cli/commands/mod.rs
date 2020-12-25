@@ -20,7 +20,7 @@ pub enum Subcommand {
 impl Default for Subcommand {
     fn default() -> Self {
         Subcommand::Compile(Compile {
-            file_path: String::from("main.rlox"),
+            path: String::from("main.vt"),
         })
     }
 }
