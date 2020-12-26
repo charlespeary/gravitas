@@ -5,25 +5,22 @@ use anyhow::{anyhow, Context, Result};
 
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
-    cli::Settings,
+    cli::{commands::test::TestRunner, Settings},
     compiler::ProgramOutput,
     std::GLOBALS,
-    utils::log,
+    utils::logger,
     vm::{
         call_frame::{CallFrame, Environments},
-        injections::Injections,
+        utilities::Utilities,
     },
 };
-use crate::cli::commands::test::TestRunner;
 
 mod call_frame;
-pub mod injections;
+pub mod utilities;
 
 #[derive(Debug, Default)]
 pub struct VM<'a> {
-    pub injections: Injections<'a>,
-    // Global settings
-    settings: Settings,
+    pub utilities: Option<&'a mut Utilities<'a>>,
     // Stack of local values
     stack: Vec<Value>,
     // Struct managing environments
@@ -37,24 +34,15 @@ pub struct VM<'a> {
 
 impl<'a> VM<'a> {
     fn push_stack(&mut self, value: Value) {
-        if self.settings.debug {
-            log::vm_subtitle("PUSH STACK", &value);
-        }
         self.stack.push(value)
     }
 
     fn truncate_stack(&mut self, to: usize) {
-        if self.settings.debug {
-            log::vm_subtitle("TRUNCATE STACK", &to);
-        }
         self.stack.truncate(to);
     }
 
     fn pop_stack(&mut self) -> Result<Value> {
         let value = self.stack.pop();
-        if self.settings.debug {
-            log::vm_subtitle("POP STACK", &value);
-        }
         value.with_context(|| "Tried to pop value from an empty stack")
     }
 
@@ -115,9 +103,6 @@ impl<'a> VM<'a> {
         let current_env = self.lookup_call_frame(0).env_key;
         match callable {
             Callable::Function(function) => {
-                if self.settings.debug {
-                    log::vm_subtitle("FN CALL", &function.chunk);
-                }
                 let env_key = self.environments.create_env(current_env);
                 self.new_frame(
                     function.chunk.clone(),
@@ -138,9 +123,6 @@ impl<'a> VM<'a> {
                 Ok(())
             }
             Callable::Closure(closure) => {
-                if self.settings.debug {
-                    log::vm_subtitle("CLOSURE CALL", &closure.chunk);
-                }
                 // Create new environment to hold closed values in
                 let env = self.environments.create_env(
                     closure
@@ -213,12 +195,6 @@ impl<'a> VM<'a> {
         }
 
         while let Some(opcode) = frame.chunk.code.get(self.ip) {
-            if self.settings.debug {
-                log::vm_title("OPCODE", opcode);
-                log::vm_subtitle("IP", &self.ip);
-                log::vm_subtitle("STACK", &self.stack);
-            }
-
             match opcode {
                 Opcode::Constant(index) => {
                     self.push_stack(frame.chunk.read_constant(*index).clone())
@@ -365,13 +341,8 @@ impl<'a> VM<'a> {
         Ok(Value::Null)
     }
 
-    pub fn with_settings(mut self, settings: Settings) -> Self {
-        self.settings = settings;
-        self
-    }
-
-    pub fn with_injections(mut self, injections: Injections<'a>) -> Self {
-        self.injections = injections;
+    pub fn with_utilities(mut self, utilities: &'a mut Utilities<'a>) -> Self {
+        self.utilities = Some(utilities);
         self
     }
 }

@@ -4,13 +4,12 @@ use anyhow::{Context, Error, Result};
 use logos::Logos;
 
 use crate::{
-    bytecode::BytecodeGenerator,
+    bytecode::{BytecodeGenerator, Chunk, Value},
     parser::{Parser, Token},
     Settings,
-    utils::Either,
-    utils::log, VM,
+    utils::{Either, logger},
+    VM,
 };
-use crate::bytecode::{Chunk, Value};
 
 pub type ProgramOutput = Result<Value>;
 
@@ -27,24 +26,8 @@ pub fn compile_path<P: AsRef<Path>>(path: P, settings: &Settings) -> Compiled {
 
 pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(&code).collect();
-    if settings.debug {
-        log::success("LEXED");
-        log::body(&tokens);
-    }
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(Either::Right)?;
-    if settings.debug {
-        log::success("PARSED");
-        log::body(&ast);
-    }
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
-    if settings.debug {
-        log::success("OPCODES");
-        log::body(&chunk.code);
-        log::success("CONSTANTS");
-        log::body(&chunk.constants);
-        log::success("INTERPRETATION");
-    }
-
     Ok(chunk.into())
 }
