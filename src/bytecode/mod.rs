@@ -101,14 +101,12 @@ impl BytecodeGenerator {
 
     pub fn patch(&mut self, patch: &Patch) {
         let current_index = self.curr_index();
-
         let opcode = self
             .current_chunk()
             .code
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
-
-        let patched_opcode = opcode.patch(current_index - patch.index);
+        let patched_opcode = opcode.patch((current_index as f32 - patch.index as f32).abs() as usize);
         let _ = std::mem::replace(opcode, patched_opcode);
     }
 
