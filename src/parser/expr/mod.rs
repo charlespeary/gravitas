@@ -83,6 +83,7 @@ impl Parser {
             Token::Identifier(_) => try_expr!(self.parse_identifier()),
             Token::Return => try_expr!(self.parse_return()),
             Token::Bar => try_expr!(self.parse_closure()),
+            Token::Break => try_expr!(self.parse_break()),
             _ => try_expr!(self.parse_atom()),
         };
 
