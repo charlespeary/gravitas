@@ -67,7 +67,7 @@ impl BytecodeGenerator {
     }
 
     pub fn curr_index(&mut self) -> usize {
-        let size = self.chunk.size();
+        let size = self.current_chunk().size();
         if size == 0 {
             0
         } else {
