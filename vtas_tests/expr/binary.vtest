@@ -1,0 +1,13 @@
+it("Supports addition", || => {
+    assert_eq(0 + 0, 0);
+    assert_eq(1 + 1, 2);
+});
+
+it("Supports subtraction", || => {
+    assert_eq(0 - 0, 0);
+    assert_eq(1 - 1, 0);
+});
+
+it("Supports multiplication", || => {
+
+});

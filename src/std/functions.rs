@@ -50,7 +50,7 @@ pub fn assert_eq(args: Args, vm: &mut VM) -> Value {
 }
 
 pub fn it(args: Args, vm: &mut VM) -> Value {
-    log(format!("{}", args[1]).as_str()).indent(2);
+    log(format!("> {}", args[1]).as_str()).indent(2);
     let callback = args[0].clone().into_callable().unwrap();
     vm.callback(callback);
     Value::Null
