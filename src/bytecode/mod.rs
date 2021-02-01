@@ -106,7 +106,8 @@ impl BytecodeGenerator {
             .code
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
-        let patched_opcode = opcode.patch((current_index as f32 - patch.index as f32).abs() as usize);
+        let patched_opcode =
+            opcode.patch((current_index as f32 - patch.index as f32).abs() as usize);
         let _ = std::mem::replace(opcode, patched_opcode);
     }
 
@@ -117,10 +118,10 @@ impl BytecodeGenerator {
     }
 
     pub fn close_scope_variables(&mut self) {
-        let variables = self.state.scope_variables();
-        let closed_values: Vec<(Address, Opcode)> = variables
+        let closed_values: Vec<(Address, Opcode)> = self
+            .state
+            .scope_closed_variables()
             .iter()
-            .filter(|var| var.closed)
             .map(|var| (Address::Local(var.index), Opcode::CloseValue))
             .collect();
 

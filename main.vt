@@ -1,5 +1,15 @@
-it("might work or not", || => {
-    print("Callback");
-});
+fn foo() {
+    var zoo = 5;
+    return || => {
+        return || => {
+            zoo = zoo + 1;
+            print(zoo);
+          };
+    };
+}
 
-print("after");
+{
+    var a = foo();
+    var b = a();
+    b();
+};

@@ -16,6 +16,7 @@ pub enum ScopeType {
 pub struct Scope {
     pub scope_type: ScopeType,
     pub declared: Vec<Variable>,
+    pub closed: Vec<Variable>,
     pub returned: bool,
 }
 
@@ -24,6 +25,7 @@ impl Scope {
         Self {
             scope_type,
             declared: vec![],
+            closed: vec![],
             returned: false,
         }
     }
@@ -148,6 +150,14 @@ impl GeneratorState {
 
     pub fn scope_variables(&self) -> &Vec<Variable> {
         &self.current_scope().declared
+    }
+
+    pub fn scope_closed_variables(&self) -> Vec<&Variable> {
+        self.current_scope()
+            .declared
+            .iter()
+            .filter(|v| v.closed)
+            .collect()
     }
 }
 

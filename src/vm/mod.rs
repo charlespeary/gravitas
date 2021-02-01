@@ -5,10 +5,8 @@ use anyhow::{anyhow, Context, Result};
 
 use crate::{
     bytecode::{Address, Callable, Chunk, Opcode, Value},
-    cli::{commands::test::TestRunner, Settings},
     compiler::ProgramOutput,
     std::GLOBALS,
-    utils::logger,
     vm::{
         call_frame::{CallFrame, Environments},
         utilities::Utilities,
@@ -43,6 +41,7 @@ impl<'a> VM<'a> {
 
     fn pop_stack(&mut self) -> Result<Value> {
         let value = self.stack.pop();
+
         value.with_context(|| "Tried to pop value from an empty stack")
     }
 
@@ -80,6 +79,8 @@ impl<'a> VM<'a> {
         });
     }
 
+    fn collect_memory(&mut self) {}
+
     fn lookup_call_frame(&self, depth: usize) -> &CallFrame {
         self.call_stack
             .get(self.call_stack.len() - 1 - depth)
@@ -103,7 +104,7 @@ impl<'a> VM<'a> {
         let current_env = self.lookup_call_frame(0).env_key;
         match callable {
             Callable::Function(function) => {
-                let env_key = self.environments.create_env(current_env);
+                let env_key = self.environments.create_env(current_env, vec![]);
                 self.new_frame(
                     function.chunk.clone(),
                     function.arity,
@@ -128,6 +129,7 @@ impl<'a> VM<'a> {
                     closure
                         .enclosing_env_key
                         .expect("Closure must be enclosed at least by the global env"),
+                    closure.referenced_environments.clone(),
                 );
                 self.new_frame(
                     closure.chunk.clone(),
@@ -149,6 +151,7 @@ impl<'a> VM<'a> {
             .call_stack
             .pop()
             .expect("Tried to end call, but there were no call frames available.");
+        self.environments.decrement_rc(frame.env_key);
         self.ip = frame.return_address;
         self.truncate_stack(frame.stack_start);
     }
@@ -156,7 +159,7 @@ impl<'a> VM<'a> {
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
         // Reset structs values in case if we would like to rerun some code on VM
         self.ip = 0;
-        self.environments = Environments::default();
+        self.environments = Environments::new();
         self.globals = HashMap::default();
         self.call_stack = vec![];
 
@@ -171,7 +174,11 @@ impl<'a> VM<'a> {
     }
 
     pub fn evaluate_last_frame(&mut self) -> Result<()> {
-        let frame = self.call_stack.last().cloned().expect("Tried to pop from empty callstack.");
+        let frame = self
+            .call_stack
+            .last()
+            .cloned()
+            .expect("Tried to pop from empty callstack.");
         self.evaluate_frame(frame)
     }
 
@@ -235,8 +242,7 @@ impl<'a> VM<'a> {
                                 }
                                 // If it wasn't yet closed then it must live on the stack
                                 None => {
-                                    let address =
-                                        self.lookup_call_frame(depth).stack_start + index;
+                                    let address = self.lookup_call_frame(depth).stack_start + index;
                                     self.stack[address] = value;
                                 }
                             }
@@ -305,8 +311,7 @@ impl<'a> VM<'a> {
                                 Some(value) => value,
                                 // If it wasn't yet closed then it must live on the stack
                                 None => {
-                                    let address =
-                                        self.lookup_call_frame(depth).stack_start + index;
+                                    let address = self.lookup_call_frame(depth).stack_start + index;
                                     self.stack[address].clone()
                                 }
                             }
@@ -334,7 +339,7 @@ impl<'a> VM<'a> {
     }
 
     pub fn run(&mut self) -> ProgramOutput {
-        'frames: while let Some(frame) = self.call_stack.last_mut().cloned() {
+        while let Some(frame) = self.call_stack.last_mut().cloned() {
             self.evaluate_frame(frame);
         }
 
@@ -346,7 +351,6 @@ impl<'a> VM<'a> {
         self
     }
 }
-
 
 #[cfg(test)]
 mod test {}

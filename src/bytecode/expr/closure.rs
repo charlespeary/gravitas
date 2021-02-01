@@ -20,6 +20,7 @@ pub struct Closure {
     pub arity: usize,
     pub env_key: Option<usize>,
     pub enclosing_env_key: Option<usize>,
+    pub referenced_environments: Vec<usize>,
 }
 
 impl Into<Value> for Closure {
@@ -63,6 +64,14 @@ impl BytecodeFrom<ClosureExpr> for BytecodeGenerator {
             }
         }
 
+        // Vector of environments above that contain values referenced by this closure
+        let referenced_environments: Vec<usize> = self
+            .state
+            .scope_closed_variables()
+            .iter()
+            .map(|v| v.depth)
+            .collect();
+
         self.emit_return();
 
         let lambda = Closure {
@@ -71,6 +80,7 @@ impl BytecodeFrom<ClosureExpr> for BytecodeGenerator {
                 .fn_chunks
                 .pop()
                 .expect("Tried to pop function's chunk that doesn't exist."),
+            referenced_environments,
             env_key: None,
             enclosing_env_key: None,
         };
