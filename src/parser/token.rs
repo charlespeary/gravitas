@@ -23,7 +23,9 @@ pub enum Token {
     CloseBrace,
     #[token(",")]
     Coma,
-    #[regex(r"\+|\-|\*|/|>|>=|<=|<|!|!=|=|==|\\.", lex_operator, priority = 4)]
+    #[token(".")]
+    Dot,
+    #[regex(r"\+|\-|\*|/|>|>=|<=|<|!|!=|=|==|\\.", lex_operator, priority = 3)]
     Operator(Operator),
     #[token(";")]
     Semicolon,
@@ -67,8 +69,6 @@ pub enum Token {
     Super,
     #[token(":")]
     Inherit,
-    #[token("this")]
-    This,
     #[token("null")]
     Null,
     #[token("=>")]
@@ -77,7 +77,7 @@ pub enum Token {
     Number(f64),
     #[regex("\"[^\"]*\"", lex_text)]
     Text(String),
-    #[regex(r"([^\s]+[a-zA-Z_])", | lex | lex.slice().parse())]
+    #[regex("([a-zA-Z]+_[a-zA-Z]+)|([a-zA-Z]+)", | lex | lex.slice().parse())]
     Identifier(String),
     #[error]
     #[regex(r"[ \t\n\f]+", logos::skip)]

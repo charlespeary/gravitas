@@ -5,8 +5,8 @@ use anyhow::{anyhow, Context, Error, Result};
 pub use crate::{
     parser::{expr::Expr, stmt::Stmt, token::Token},
     utils::{
-        Either,
         iter::{peek_nth, PeekNth},
+        Either,
     },
 };
 
@@ -83,6 +83,15 @@ impl Parser {
             Ok(Ast(stmts))
         } else {
             Err(self.errors)
+        }
+    }
+
+    fn peek_eq_consume(&mut self, expected: Token) -> bool {
+        if self.peek_eq(expected) {
+            self.next_token();
+            true
+        } else {
+            false
         }
     }
 

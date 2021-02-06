@@ -5,7 +5,11 @@ use crate::{
 
 impl BytecodeFrom<Identifier> for BytecodeGenerator {
     fn generate(&mut self, identifier: &Identifier) -> GenerationResult {
-        let Identifier { is_ref, value } = identifier;
+        let Identifier {
+            is_ref,
+            value,
+            properties,
+        } = identifier;
         let address = self.state.find_var(value)?;
         self.add_constant(Value::Address(address));
 

@@ -6,13 +6,11 @@ use colored::{ColoredString, Colorize};
 static INDENT: &str = "   ";
 
 pub fn indentation(indentation_level: usize) -> String {
-    std::iter::repeat(INDENT)
-        .take(indentation_level)
-        .collect()
+    std::iter::repeat(INDENT).take(indentation_level).collect()
 }
 
 pub struct Log {
-    msg: ColoredString
+    msg: ColoredString,
 }
 
 impl Log {
@@ -47,6 +45,12 @@ impl Log {
 
 pub fn log<M: Into<String>>(msg: M) -> Log {
     Log {
-        msg: msg.into().as_str().normal()
+        msg: msg.into().as_str().normal(),
+    }
+}
+
+pub fn dbg<I: Debug>(item: I) -> Log {
+    Log {
+        msg: format!("{:#?}", item).as_str().normal(),
     }
 }
