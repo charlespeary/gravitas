@@ -3,7 +3,6 @@ use std::path::Path;
 use anyhow::{Context, Error, Result};
 use logos::Logos;
 
-use crate::utils::logger::log;
 use crate::{
     bytecode::{BytecodeGenerator, Chunk, Value},
     parser::{Parser, Token},
@@ -41,5 +40,5 @@ pub fn compile(code: &str, settings: &Settings) -> Compiled {
         logger::log("BYTECODE:").title().log();
         logger::dbg(&chunk).indent(1);
     }
-    Ok(chunk.into())
+    Ok(chunk)
 }

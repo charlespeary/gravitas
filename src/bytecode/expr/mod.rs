@@ -8,10 +8,11 @@ mod atom;
 mod binary;
 mod block;
 mod call;
+mod class;
+pub mod closure;
 mod conditional;
 mod identifier;
 mod loops;
-pub mod closure;
 
 impl BytecodeFrom<Box<Expr>> for BytecodeGenerator {
     fn generate(&mut self, expr: &Box<Expr>) -> GenerationResult {
@@ -35,7 +36,8 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             Expr::Call(call) => self.generate(call),
             Expr::Return(ret) => self.generate(ret),
             Expr::Binary(binary) => self.generate(binary),
-            Expr::Closure(closure) => self.generate(closure)
+            Expr::Closure(closure) => self.generate(closure),
+            Expr::StructInitializer(struct_initializer) => self.generate(struct_initializer),
         }?;
         Ok(())
     }
@@ -53,7 +55,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use crate::{
-        bytecode::{Opcode, test::generate_bytecode},
+        bytecode::{test::generate_bytecode, Opcode},
         parser::expr::Atom,
     };
 

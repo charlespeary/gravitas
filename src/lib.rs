@@ -1,4 +1,6 @@
 extern crate derive_more;
+#[macro_use]
+extern crate prettytable;
 #[cfg(test)]
 extern crate quickcheck;
 #[cfg(test)]

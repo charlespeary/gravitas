@@ -65,6 +65,8 @@ pub enum Token {
     Return,
     #[token("class")]
     Class,
+    #[token("This")]
+    StructInitializer,
     #[token("super")]
     Super,
     #[token(":")]

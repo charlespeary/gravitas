@@ -10,6 +10,7 @@ pub enum ScopeType {
     Closure,
     Block,
     Global,
+    Class,
 }
 
 #[derive(Debug, Clone, PartialEq)]

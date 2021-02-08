@@ -3,6 +3,7 @@ use crate::{
     parser::stmt::Stmt,
 };
 
+pub mod class;
 pub mod expr;
 pub mod function;
 pub mod var;
@@ -13,6 +14,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             Stmt::Function(fnc) => self.generate(fnc),
             Stmt::Var(var) => self.generate(var),
             Stmt::Expr(expr) => self.generate(expr),
+            Stmt::ClassStmt(class) => self.generate(class),
         }?;
         Ok(())
     }

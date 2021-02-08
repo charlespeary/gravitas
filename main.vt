@@ -1,15 +1,14 @@
-fn foo() {
-    var zoo = 5;
-    return || => {
-        return || => {
-            zoo = zoo + 1;
-            print(zoo);
-          };
-    };
-}
+class Foo : Bar {
+    bar_foo = "bar_foo"
+    foo_bar = 10
 
-{
-    var a = foo();
-    var b = a();
-    b();
+    fn normal_method(this) {
+        print(this);
+    }
 };
+
+var instance = Foo {
+    bar_foo = 20
+    foo_bar = 15
+};
+print(instance);

@@ -1,14 +1,16 @@
+use std::cmp::{Ordering, PartialOrd};
 use std::fmt::Formatter;
-use std::{
-    fmt,
-    ops::{Add, Neg},
-};
+use std::ops::{Add, Div, Mul, Sub};
+use std::{fmt, ops::Neg};
 
 use anyhow::{anyhow, Result};
 use enum_as_inner::EnumAsInner;
 
+use crate::bytecode::stmt::class::ObjectInstance;
 use crate::{
-    bytecode::expr::closure::Closure, bytecode::stmt::function::Function, std::NativeFunction,
+    bytecode::expr::closure::Closure,
+    bytecode::stmt::{class::Class, function::Function},
+    std::NativeFunction,
 };
 
 pub type Number = f64;
@@ -40,6 +42,7 @@ pub enum Callable {
     Function(Function),
     NativeFunction(NativeFunction),
     Closure(Closure),
+    Class(Class),
 }
 
 impl fmt::Debug for Callable {
@@ -48,6 +51,7 @@ impl fmt::Debug for Callable {
             Callable::Function(func) => f.write_fmt(format_args!("<fn {}>", func.name)),
             Callable::NativeFunction(_) => f.write_fmt(format_args!("<native fn>")),
             Callable::Closure(_) => f.write_fmt(format_args!("<closure fn>")),
+            Callable::Class(class) => f.write_fmt(format_args!("<class {}>", class.name)),
         }
     }
 }
@@ -58,7 +62,7 @@ impl Into<Value> for Callable {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
+#[derive(Debug, Clone, PartialEq, EnumAsInner)]
 pub enum Value {
     // Plain f64 number
     Number(Number),
@@ -74,6 +78,8 @@ pub enum Value {
     Array(Vec<Value>),
     // Null value, might be changed to Option in future
     Null,
+    // Class instance
+    Object(ObjectInstance),
 }
 
 impl std::fmt::Display for Value {
@@ -86,6 +92,7 @@ impl std::fmt::Display for Value {
             Value::Callable(fun) => write!(f, "{:?}", fun),
             Value::Array(arr) => write!(f, "{:?}", arr),
             Value::Null => write!(f, "null"),
+            Value::Object(obj) => write!(f, "<instance {}>", obj.class.name),
         }
     }
 }
@@ -101,26 +108,10 @@ impl Neg for Value {
     }
 }
 
-impl Add for Value {
-    type Output = Result<Value>;
-
-    fn add(self, other: Self) -> Self::Output {
-        Ok(match (self, other) {
-            (Value::Number(a), Value::Number(b)) => Value::Number(a + b),
-            (Value::String(a), Value::String(b)) => Value::String(format!("{}{}", a, b)),
-            _ => {
-                return Err(anyhow!(
-                    "Tried to add values that doesn't implement addition."
-                ));
-            }
-        })
-    }
-}
-
 macro_rules! implement_operations_for_value (
     ($($trait:ident $fn_name: ident,) *) => {
         $(
-            impl std::ops::$trait for Value {
+            impl $trait for Value {
                  type Output = Result<Value>;
 
                 fn $fn_name(self, other: Self) -> Self::Output {
@@ -142,7 +133,18 @@ implement_operations_for_value!(
     Sub sub,
     Mul mul,
     Div div,
+    Add add,
+
 );
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => a.partial_cmp(b),
+            _ => None,
+        }
+    }
+}
 
 impl Into<bool> for Value {
     fn into(self) -> bool {

@@ -126,7 +126,6 @@ impl Environments {
                 closure.reference_count += 1;
             }
         };
-        dbg!(&self.closures);
     }
 
     pub fn increment_rc(&mut self, env_key: usize) {

@@ -1,6 +1,9 @@
 use std::slice::Iter;
 
-use crate::bytecode::{Opcode, Value};
+use crate::{
+    bytecode::{Opcode, Value},
+    utils::logger,
+};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd)]
 pub struct Chunk {
@@ -28,6 +31,10 @@ impl Chunk {
 
     pub fn read_constant(&self, index: usize) -> &Value {
         self.constants.get(index).expect("Chunk in wrong state!")
+    }
+
+    pub fn table(&self) {
+        ptable!([cbH2 => "CHUNK"], ["CONSTANTS", "OPCODES"], [logger::dbg(&self.constants), logger::dbg(&self.code)]);
     }
 }
 

@@ -99,6 +99,13 @@ impl Parser {
         self.peek_next().map_or(false, |t| t == &expected)
     }
 
+    fn peek_nth_eq(&mut self, n: usize, expected: Token) -> bool {
+        self.tokens
+            .peek_nth(n)
+            .map(|t| t == &expected)
+            .unwrap_or(false)
+    }
+
     fn at_end(&mut self) -> bool {
         self.peek_next().is_none()
     }

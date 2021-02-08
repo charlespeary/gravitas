@@ -1,10 +1,11 @@
 use anyhow::Result;
 
 use crate::parser::{
-    Parser,
-    stmt::{expr::ExprStmt, function::FunctionStmt, var::VarStmt}, Token,
+    stmt::{class::ClassStmt, expr::ExprStmt, function::FunctionStmt, var::VarStmt},
+    Parser, Token,
 };
 
+pub mod class;
 pub mod expr;
 pub mod function;
 pub mod var;
@@ -16,6 +17,7 @@ pub enum Stmt {
     Expr(ExprStmt),
     Var(VarStmt),
     Function(FunctionStmt),
+    ClassStmt(ClassStmt),
 }
 
 #[macro_export]
@@ -38,6 +40,7 @@ impl Parser {
         Ok(match self.peek_token()? {
             Token::Var => try_stmt!(self.parse_var_stmt()),
             Token::Function => try_stmt!(self.parse_function_stmt()),
+            Token::Class => try_stmt!(self.parse_class_stmt()),
             _ => try_stmt!(self.parse_expr_stmt()),
         })
     }

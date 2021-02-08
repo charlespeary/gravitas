@@ -8,6 +8,7 @@ pub use crate::parser::{
         binary::Binary,
         block::Block,
         call::{Call, Return},
+        class::StructInitializer,
         closure::Closure,
         conditional::If,
         grouping::Grouping,
@@ -23,11 +24,12 @@ pub mod atom;
 pub mod binary;
 pub mod block;
 pub mod call;
+pub mod class;
+pub mod closure;
 pub mod conditional;
 pub mod grouping;
 pub mod identifier;
 pub mod loops;
-pub mod closure;
 
 #[derive(Debug, Clone, PartialEq, EnumAsInner)]
 pub enum Expr {
@@ -44,6 +46,7 @@ pub enum Expr {
     Continue(Continue),
     Atom(Atom),
     Closure(Closure),
+    StructInitializer(StructInitializer),
 }
 
 #[macro_export]
@@ -80,7 +83,10 @@ impl Parser {
             Token::OpenParenthesis => try_expr!(self.parse_grouping()),
             Token::OpenBrace => try_expr!(self.parse_block()),
             Token::If => try_expr!(self.parse_if()),
-            Token::Identifier(_) => try_expr!(self.parse_identifier()),
+            Token::Identifier(_) => match self.peek_nth_eq(1, Token::OpenBrace) {
+                true => try_expr!(self.parse_struct_initializer()),
+                false => try_expr!(self.parse_identifier()),
+            },
             Token::Return => try_expr!(self.parse_return()),
             Token::Bar => try_expr!(self.parse_closure()),
             Token::Break => try_expr!(self.parse_break()),

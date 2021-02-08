@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
+use prettytable::{Cell, Row, Table};
 
 use crate::{
-    bytecode::{Address, Callable, Chunk, Opcode, Value},
+    bytecode::{Address, Callable, Chunk, Number, Opcode, Value},
     compiler::ProgramOutput,
     std::GLOBALS,
+    utils::logger,
     vm::{
         call_frame::{CallFrame, Environments},
         utilities::Utilities,
@@ -43,6 +45,12 @@ impl<'a> VM<'a> {
         let value = self.stack.pop();
 
         value.with_context(|| "Tried to pop value from an empty stack")
+    }
+
+    fn pop_number(&mut self) -> Result<Number> {
+        self.pop_stack()?
+            .into_number()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a number."))
     }
 
     fn pop_address(&mut self) -> Result<Address> {
@@ -143,7 +151,23 @@ impl<'a> VM<'a> {
                 self.ip = 0;
                 Ok(())
             }
+            Callable::Class(class) => {
+                // Number of properties provided to this struct initializer
+                let to_pop = self.pop_number()? as usize;
+                let args = self.pop_n(to_pop)?;
+                self.stack.push(class.new_instance(args).into());
+                self.ip += 1;
+                Ok(())
+            }
         }
+    }
+
+    pub fn in_debug(&self) -> bool {
+        self.utilities
+            .as_ref()
+            .map(|u| u.settings.map(|s| s.debug))
+            .flatten()
+            .unwrap_or(false)
     }
 
     pub fn close_frame(&mut self) {
@@ -157,6 +181,9 @@ impl<'a> VM<'a> {
     }
 
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
+        if self.in_debug() {
+            chunk.table();
+        }
         // Reset structs values in case if we would like to rerun some code on VM
         self.ip = 0;
         self.environments = Environments::new();
@@ -183,6 +210,18 @@ impl<'a> VM<'a> {
     }
 
     pub fn evaluate_frame(&mut self, frame: CallFrame) -> Result<()> {
+        if self.in_debug() {
+            ptable!(
+                [ cbH4 => "CALL FRAME"],
+                ["CALLER", "STACK START", "RETURN ADDRESS", "ENVIRONMENT KEY"],
+                [
+                    &frame.caller_name,
+                    &frame.stack_start,
+                    &frame.return_address,
+                    &frame.env_key
+                ]
+            );
+        }
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
