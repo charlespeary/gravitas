@@ -25,12 +25,12 @@ impl Into<Value> for ObjectInstance {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Class {
     pub name: String,
-    pub methods: Vec<Function>,
+    // pub methods: Vec<Function>,
     // pub superclass: Option<&'a Class<'a>>
-    // pub properties: HashMap<String, Value>,
+    pub properties: HashMap<String, Value>,
 }
 
 impl Class {
@@ -39,7 +39,6 @@ impl Class {
             .chunks(2)
             .map(|values| {
                 // TODO: This clone here probably can be avoided and we can operate directly on owned value
-
                 let value = values.get(0).expect("Value needs to be present").clone();
                 let key = values.get(1).expect("Key needs to be present").clone();
                 (
@@ -49,6 +48,7 @@ impl Class {
                 )
             })
             .collect();
+
         ObjectInstance {
             // TODO: Temporary class clone
             class: self.clone(),
@@ -71,9 +71,9 @@ impl BytecodeFrom<ClassStmt> for BytecodeGenerator {
 
         let class = Class {
             name: name.clone(),
-            methods: vec![],
+            // methods: vec![],
             // methods: methods.iter().map(|),
-            // properties: HashMap::new(),
+            properties: HashMap::new(),
         };
 
         self.fn_chunks.pop();

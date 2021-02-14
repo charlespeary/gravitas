@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use anyhow::{Context, Result};
 pub use enum_as_inner::EnumAsInner;
 
+use crate::bytecode::stmt::class::Class;
 use crate::bytecode::stmt::var::Variable;
 use crate::{bytecode::Address, std::GLOBALS};
 
@@ -36,6 +39,7 @@ impl Scope {
 #[derive(Debug, Default, Clone)]
 pub struct GeneratorState {
     pub scopes: Vec<Scope>,
+    pub classes: HashMap<String, Class>,
 }
 
 impl GeneratorState {
@@ -43,6 +47,7 @@ impl GeneratorState {
         Self {
             // Initialize State with global scope
             scopes: vec![Scope::new(ScopeType::Global)],
+            ..Default::default()
         }
     }
 

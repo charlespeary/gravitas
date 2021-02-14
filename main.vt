@@ -1,14 +1,16 @@
 class Foo : Bar {
-    bar_foo = "bar_foo"
-    foo_bar = 10
-
-    fn normal_method(this) {
-        print(this);
-    }
+    foo = "bar_foo"
+    bar = 10
 };
 
 var instance = Foo {
-    bar_foo = 20
-    foo_bar = 15
+    foo = Foo {
+        foo = 20
+        bar = 15
+    }
+    bar = 20
 };
-print(instance);
+
+instance.foo.bar = 10;
+print(instance.foo);
+print(instance.foo.bar);

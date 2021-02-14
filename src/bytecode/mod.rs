@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::hash::Hash;
 
 use anyhow::Result;
@@ -7,6 +8,7 @@ pub use opcode::Opcode;
 pub use value::{Address, Callable, Number, Value};
 
 use crate::bytecode::state::{GeneratorState, ScopeType};
+use crate::bytecode::stmt::class::Class;
 use crate::parser::Ast;
 
 pub mod chunk;

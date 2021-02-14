@@ -1,5 +1,6 @@
+use crate::bytecode::value::PropertyAddress;
 use crate::{
-    bytecode::{BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Value},
+    bytecode::{Address, BytecodeFrom, BytecodeGenerator, GenerationResult, Opcode, Value},
     parser::expr::Identifier,
 };
 
@@ -10,14 +11,23 @@ impl BytecodeFrom<Identifier> for BytecodeGenerator {
             value,
             properties,
         } = identifier;
-        let address = self.state.find_var(value)?;
-        self.add_constant(Value::Address(address));
 
-        // If identifier is used in an assignment operation
-        // then we don't emit opcode to get value from that address
-        // and push it onto the stack
+        let var_address = self.state.find_var(value)?;
 
-        if !is_ref {
+        let address = if properties.is_empty() {
+            var_address
+        } else {
+            PropertyAddress {
+                top_parent_address: Box::new(var_address),
+                properties: properties.clone(),
+            }
+            .into()
+        };
+
+        self.add_constant(address.into());
+
+        // We evaluate the address if it's not used in an assignment context
+        if !*is_ref {
             self.emit_code(Opcode::Get);
         }
 

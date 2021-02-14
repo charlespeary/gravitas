@@ -4,6 +4,7 @@ use std::ops::Neg;
 use anyhow::{anyhow, Context, Result};
 use prettytable::{Cell, Row, Table};
 
+use crate::bytecode::stmt::class::ObjectInstance;
 use crate::{
     bytecode::{Address, Callable, Chunk, Number, Opcode, Value},
     compiler::ProgramOutput,
@@ -27,6 +28,8 @@ pub struct VM<'a> {
     environments: Environments,
     // Stack of function calls
     call_stack: Vec<CallFrame>,
+    // Current call frame
+    current_frame: Option<CallFrame>,
     // Hashmap of global variables, e.g global functions
     globals: HashMap<String, Value>,
     ip: usize,
@@ -45,6 +48,18 @@ impl<'a> VM<'a> {
         let value = self.stack.pop();
 
         value.with_context(|| "Tried to pop value from an empty stack")
+    }
+
+    fn pop_string(&mut self) -> Result<String> {
+        self.pop_stack()?
+            .into_string()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a string."))
+    }
+
+    fn pop_object(&mut self) -> Result<ObjectInstance> {
+        self.pop_stack()?
+            .into_object()
+            .map_err(|_| anyhow!("Accessed value from the stack that wasn't an object instance."))
     }
 
     fn pop_number(&mut self) -> Result<Number> {
@@ -86,8 +101,6 @@ impl<'a> VM<'a> {
             caller_name,
         });
     }
-
-    fn collect_memory(&mut self) {}
 
     fn lookup_call_frame(&self, depth: usize) -> &CallFrame {
         self.call_stack
@@ -209,19 +222,114 @@ impl<'a> VM<'a> {
         self.evaluate_frame(frame)
     }
 
+    fn assign_at_address(&mut self, address: Address, value: Value) -> Result<()> {
+        let frame = self
+            .current_frame
+            .as_ref()
+            .expect("Tried to access current frame while there was none");
+
+        match address {
+            Address::Property(property) => {
+                let mut object = self.get_from_address(*property.top_parent_address.clone())?;
+                dbg!("BEFORE", &object);
+
+                let mut traverse_object = &mut object;
+                for property in property.properties {
+                    traverse_object = traverse_object
+                        .as_object_mut()
+                        .with_context(|| "Tried to set property on a value that isn't an object!")?
+                        .properties
+                        .get_mut(&property)
+                        .with_context(|| {
+                            format!(
+                                "Tried to set value inside {} which doesn't exist!",
+                                property
+                            )
+                        })?;
+                }
+                std::mem::replace(traverse_object, value);
+                dbg!("AFTER", &object);
+
+                self.assign_at_address(*property.top_parent_address, object)?;
+            }
+            Address::Local(address) => {
+                self.stack[frame.stack_start + address] = value;
+            }
+            Address::Upvalue(index, depth) => {
+                match self.environments.get_value_mut(frame.env_key, index, depth) {
+                    Some(old_value) => {
+                        let _ = std::mem::replace(old_value, value);
+                    }
+                    // If it wasn't yet closed then it must live on the stack
+                    None => {
+                        let address = self.lookup_call_frame(depth).stack_start + index;
+                        self.stack[address] = value;
+                    }
+                }
+            }
+            Address::Global(_) => {
+                return Err(anyhow!("Cannot reassign global resource!"));
+            }
+        };
+        self.push_stack(Value::Null);
+        Ok(())
+    }
+
+    fn get_from_address(&mut self, address: Address) -> Result<Value> {
+        let frame = self
+            .current_frame
+            .as_ref()
+            .expect("Tried to access current frame while there was none");
+
+        Ok(match address {
+            Address::Property(property_address) => {
+                let mut object = self.get_from_address(*property_address.top_parent_address)?;
+
+                for property in property_address.properties {
+                    object = object
+                        .into_object()
+                        .map_err(|_| anyhow!("This value doesn't contain any properties!"))?
+                        .properties
+                        .get(&property)
+                        .with_context(|| anyhow!("{} doesn't exist", property))?
+                        .clone()
+                }
+                object
+            }
+            Address::Local(index) => self.stack[frame.stack_start + index].clone(),
+            Address::Upvalue(index, depth) => {
+                match self.environments.get_value(frame.env_key, index, depth) {
+                    Some(value) => value,
+                    // If it wasn't yet closed then it must live on the stack
+                    None => {
+                        let address = self.lookup_call_frame(depth).stack_start + index;
+                        self.stack[address].clone()
+                    }
+                }
+            }
+            Address::Global(name) => GLOBALS
+                .get(name.as_str())
+                .cloned()
+                .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
+                .into(),
+        })
+    }
+
     pub fn evaluate_frame(&mut self, frame: CallFrame) -> Result<()> {
-        if self.in_debug() {
-            ptable!(
-                [ cbH4 => "CALL FRAME"],
-                ["CALLER", "STACK START", "RETURN ADDRESS", "ENVIRONMENT KEY"],
-                [
-                    &frame.caller_name,
-                    &frame.stack_start,
-                    &frame.return_address,
-                    &frame.env_key
-                ]
-            );
-        }
+        // TODO: Temporary clone
+        self.current_frame = Some(frame.clone());
+        // if self.in_debug() {
+        //     ptable!(
+        //         [ cbH4 => "CALL FRAME"],
+        //         ["CALLER", "STACK START", "RETURN ADDRESS", "ENVIRONMENT KEY"],
+        //         [
+        //             &frame.caller_name,
+        //             &frame.stack_start,
+        //             &frame.return_address,
+        //             &frame.env_key
+        //         ]
+        //     );
+        // }
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
@@ -269,28 +377,8 @@ impl<'a> VM<'a> {
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
                 Opcode::Assign => {
                     let value = self.pop_stack()?;
-
-                    match self.pop_address()? {
-                        Address::Local(address) => {
-                            self.stack[frame.stack_start + address] = value;
-                        }
-                        Address::Upvalue(index, depth) => {
-                            match self.environments.get_value_mut(frame.env_key, index, depth) {
-                                Some(old_value) => {
-                                    let _ = std::mem::replace(old_value, value);
-                                }
-                                // If it wasn't yet closed then it must live on the stack
-                                None => {
-                                    let address = self.lookup_call_frame(depth).stack_start + index;
-                                    self.stack[address] = value;
-                                }
-                            }
-                        }
-                        Address::Global(_) => {
-                            return Err(anyhow!("Cannot reassign global resource!"));
-                        }
-                    };
-                    self.push_stack(Value::Null);
+                    let address = self.pop_address()?;
+                    self.assign_at_address(address, value)?;
                 }
                 Opcode::PopN(amount) => {
                     self.pop_n(*amount)?;
@@ -343,24 +431,7 @@ impl<'a> VM<'a> {
                 }
                 Opcode::Get => {
                     let address = self.pop_address()?;
-                    let value = match address {
-                        Address::Local(index) => self.stack[frame.stack_start + index].clone(),
-                        Address::Upvalue(index, depth) => {
-                            match self.environments.get_value(frame.env_key, index, depth) {
-                                Some(value) => value,
-                                // If it wasn't yet closed then it must live on the stack
-                                None => {
-                                    let address = self.lookup_call_frame(depth).stack_start + index;
-                                    self.stack[address].clone()
-                                }
-                            }
-                        }
-                        Address::Global(name) => GLOBALS
-                            .get(name.as_str())
-                            .cloned()
-                            .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
-                            .into(),
-                    };
+                    let value = self.get_from_address(address)?;
                     self.push_stack(value);
                 }
                 Opcode::Call => {

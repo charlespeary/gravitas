@@ -15,6 +15,25 @@ use crate::{
 
 pub type Number = f64;
 
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct PropertyAddress {
+    // Local stack address of the top innermost parent object
+    // e.g if the property address would point to the property foo inside
+    // property bar of the object foo_bar (foo_bar.bar.foo)
+    // then the top parent would be the foo_bar
+    pub top_parent_address: Box<Address>,
+    // Vector of which property inside an object to access.
+    // This is recursive, so it supports accessing nested fields of nested objects
+    // e.g foo.bar.zoo.doo
+    pub properties: Vec<String>,
+}
+
+impl Into<Address> for PropertyAddress {
+    fn into(self) -> Address {
+        Address::Property(self)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, EnumAsInner)]
 pub enum Address {
     // Local variables, e.g defined inside block or a function.
@@ -29,6 +48,8 @@ pub enum Address {
     // Note: all of the variables and functions defined in vtas are "local" per se.
     // Only the std functions are global.
     Global(String),
+    // Property of an object
+    Property(PropertyAddress),
 }
 
 impl Into<Value> for Address {
@@ -37,7 +58,7 @@ impl Into<Value> for Address {
     }
 }
 
-#[derive(Clone, PartialEq, PartialOrd, EnumAsInner)]
+#[derive(Clone, PartialEq, EnumAsInner)]
 pub enum Callable {
     Function(Function),
     NativeFunction(NativeFunction),

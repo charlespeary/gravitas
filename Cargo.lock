@@ -121,14 +121,14 @@ dependencies = [
     "atty",
     "bitflags",
     "clap_derive",
- "indexmap",
- "lazy_static",
- "os_str_bytes",
- "strsim",
- "termcolor",
- "textwrap",
- "unicode-width",
- "vec_map",
+    "indexmap",
+    "lazy_static",
+    "os_str_bytes",
+    "strsim",
+    "termcolor",
+    "textwrap",
+    "unicode-width",
+    "vec_map",
 ]
 
 [[package]]
@@ -229,7 +229,7 @@ version = "0.99.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "298998b1cf6b5b2c8a7b023dfd45821825ce3ba8a8af55c921a0e734e4653f76"
 dependencies = [
- "proc-macro2",
+    "proc-macro2",
     "quote",
     "syn",
 ]
@@ -266,7 +266,7 @@ dependencies = [
     "heck",
     "proc-macro2",
     "quote",
- "syn",
+    "syn",
 ]
 
 [[package]]
@@ -446,8 +446,8 @@ dependencies = [
     "proc-macro-error-attr",
     "proc-macro2",
     "quote",
- "syn",
- "version_check",
+    "syn",
+    "version_check",
 ]
 
 [[package]]
