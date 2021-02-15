@@ -1,7 +1,10 @@
 use std::collections::HashMap;
-use std::marker::PhantomData;
+use std::fmt;
 
-use crate::bytecode::{Chunk, Value};
+use crate::{
+    bytecode::{Chunk, Value},
+    utils::logger::LOGGER,
+};
 
 pub enum RcOperation {
     Increment,
@@ -158,6 +161,16 @@ pub struct CallFrame {
     pub env_key: usize,
 }
 
+impl fmt::Display for CallFrame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Env key: {}, Stack start: {}, Return address: {}, Caller: {}",
+            self.env_key, self.stack_start, self.return_address, self.caller_name
+        )
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Callstack {
     pub stack: Vec<CallFrame>,
@@ -166,11 +179,13 @@ pub struct Callstack {
 
 impl Callstack {
     pub fn push(&mut self, frame: CallFrame) {
+        LOGGER.log_dsp("CALLSTACK / PUSH", &frame);
         self.stack.push(frame);
     }
 
     pub fn next(&mut self) -> Option<CallFrame> {
         self.current_frame = self.stack.pop();
+        LOGGER.log_title("CALLSTACK / POP");
         self.current_frame.clone()
     }
 

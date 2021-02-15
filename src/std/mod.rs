@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use crate::{
     bytecode::{Callable, Value},
     hashmap,
-    std::functions::{assert_eq, clock, print, it},
+    std::functions::{assert_eq, clock, it, print},
     VM,
 };
 
@@ -16,6 +16,7 @@ pub type Args = Vec<Value>;
 
 #[derive(Clone)]
 pub struct NativeFunction {
+    pub name: &'static str,
     pub arity: usize,
     pub function: fn(Args, &mut VM) -> Value,
 }
@@ -40,9 +41,9 @@ impl Into<Value> for NativeFunction {
 
 lazy_static! {
     pub static ref GLOBALS: HashMap<&'static str, NativeFunction> = hashmap! (
-        "clock" => NativeFunction { arity: 0, function: clock },
-        "print" => NativeFunction { arity: 1, function: print },
-        "assert_eq" => NativeFunction { arity: 2, function: assert_eq },
-        "it" => NativeFunction { arity: 2, function: it }
+        "clock" => NativeFunction { arity: 0, function: clock, name: "clock" },
+        "print" => NativeFunction { arity: 1, function: print, name: "print" },
+        "assert_eq" => NativeFunction { arity: 2, function: assert_eq, name: "assert_eq" },
+        "it" => NativeFunction { arity: 2, function: it, name: "it" }
     );
 }

@@ -6,7 +6,7 @@ use logos::Logos;
 use crate::{
     bytecode::{BytecodeGenerator, Chunk, Value},
     parser::{Parser, Token},
-    utils::{logger, Either},
+    utils::{logger::LOGGER, Either},
     Settings, VM,
 };
 
@@ -25,20 +25,11 @@ pub fn compile_path<P: AsRef<Path>>(path: P, settings: &Settings) -> Compiled {
 
 pub fn compile(code: &str, settings: &Settings) -> Compiled {
     let tokens: Vec<Token> = Token::lexer(&code).collect();
-    if settings.debug {
-        logger::log("TOKENS:").title().log();
-        logger::dbg(&tokens).indent(1);
-    }
+    LOGGER.log_pdbg("TOKENS", &tokens);
     let parser = Parser::new(tokens);
     let ast = parser.parse().map_err(Either::Right)?;
-    if settings.debug {
-        logger::log("SYNTAX TREE:").title().log();
-        logger::dbg(&ast).indent(1);
-    }
+    LOGGER.log_pdbg("SYNTAX TREE", &ast);
     let chunk = BytecodeGenerator::compile(&ast).map_err(Either::Left)?;
-    if settings.debug {
-        logger::log("BYTECODE:").title().log();
-        logger::dbg(&chunk).indent(1);
-    }
+    LOGGER.log_pdbg("GENERATED CHUNK", &chunk);
     Ok(chunk)
 }

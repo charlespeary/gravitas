@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
-use prettytable::{Row, Table};
 
 use crate::{
-    bytecode::{stmt::class::ObjectInstance, Address, Callable, Chunk, Number, Opcode, Value},
+    bytecode::{Address, Callable, Chunk, Number, Opcode, Value},
     compiler::ProgramOutput,
     std::GLOBALS,
+    utils::{logger, logger::LOGGER},
     vm::{
         call_frame::{CallFrame, Callstack, Environments},
         stack::Stack,
@@ -65,9 +65,10 @@ impl<'a> VM<'a> {
     }
 
     pub fn call(&mut self, callable: Callable) -> Result<()> {
-        let current_env = self.call_stack.lookup(1).env_key;
+        let current_env = self.call_stack.current().env_key;
         match callable {
             Callable::Function(function) => {
+                LOGGER.log("VM / CALL / FUNCTION", &function.name);
                 let env_key = self.environments.create_env(current_env, vec![]);
                 self.new_frame(
                     function.chunk.clone(),
@@ -80,6 +81,7 @@ impl<'a> VM<'a> {
                 Ok(())
             }
             Callable::NativeFunction(function) => {
+                LOGGER.log("VM / CALL / NATIVE", function.name);
                 let args = self.stack.pop_n(function.arity);
                 let value = (function.function)(args, self);
                 self.stack.push(value);
@@ -88,6 +90,7 @@ impl<'a> VM<'a> {
                 Ok(())
             }
             Callable::Closure(closure) => {
+                LOGGER.log("VM / CALL / CLOSURE", &format!("{:?}", closure));
                 // Create new environment to hold closed values in
                 let env = self.environments.create_env(
                     closure
@@ -108,6 +111,7 @@ impl<'a> VM<'a> {
                 Ok(())
             }
             Callable::Class(class) => {
+                LOGGER.log("VM / CALL / CLASS", &class.name);
                 // Number of properties provided to this struct initializer
                 let to_pop = self.stack.pop_number() as usize;
                 let args = self.stack.pop_n(to_pop);
@@ -135,9 +139,7 @@ impl<'a> VM<'a> {
     }
 
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
-        if self.in_debug() {
-            chunk.table();
-        }
+        LOGGER.log("VM", "Starting interpretation...");
         // Reset structs values in case if we would like to rerun some code on VM
         self.ip = 0;
         self.environments = Environments::new();
@@ -160,7 +162,6 @@ impl<'a> VM<'a> {
         match address {
             Address::Property(property) => {
                 let mut object = self.get_from_address(*property.top_parent_address.clone())?;
-                dbg!("BEFORE", &object);
 
                 let mut traverse_object = &mut object;
                 for property in property.properties {
@@ -176,8 +177,7 @@ impl<'a> VM<'a> {
                             )
                         })?;
                 }
-                std::mem::replace(traverse_object, value);
-                dbg!("AFTER", &object);
+                let _ = std::mem::replace(traverse_object, value);
 
                 self.assign_at_address(*property.top_parent_address, object)?;
             }
@@ -261,6 +261,8 @@ impl<'a> VM<'a> {
         }
 
         while let Some(opcode) = frame.chunk.code.get(self.ip) {
+            LOGGER.log_dbg("VM / OPCODE", opcode);
+
             match opcode {
                 Opcode::Constant(index) => {
                     self.stack.push(frame.chunk.read_constant(*index).clone())
@@ -323,7 +325,7 @@ impl<'a> VM<'a> {
                     self.environments.close_value(value, frame.env_key);
                 }
                 Opcode::CreateClosure => {
-                    let current_env = self.call_stack.lookup(1).env_key;
+                    let current_env = self.call_stack.current().env_key;
                     let closure = self
                         .stack
                         .pop_callable()

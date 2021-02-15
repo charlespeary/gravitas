@@ -1,4 +1,7 @@
-use crate::bytecode::{stmt::class::ObjectInstance, Address, Callable, Number, Value};
+use crate::{
+    bytecode::{stmt::class::ObjectInstance, Address, Callable, Number, Value},
+    utils::logger::LOGGER,
+};
 
 #[derive(Debug, Default)]
 pub struct Stack {
@@ -25,16 +28,18 @@ impl Stack {
     }
 
     pub fn push(&mut self, value: Value) {
+        LOGGER.log("STACK / PUSH", &format!("{}", &value));
         self.values.push(value)
     }
 
     pub fn truncate(&mut self, to: usize) {
+        LOGGER.log_dbg("STACK / TRUNCATE", to);
         self.values.truncate(to);
     }
 
     pub fn pop(&mut self) -> Value {
         let value = self.values.pop();
-
+        LOGGER.log_dbg("STACK / POP", &value);
         value.unwrap_or_else(|| panic!("Stack.pop failed, because it was already empty"))
     }
 
