@@ -2,93 +2,38 @@ use std::collections::HashMap;
 use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
-use prettytable::{Cell, Row, Table};
+use prettytable::{Row, Table};
 
-use crate::bytecode::stmt::class::ObjectInstance;
 use crate::{
-    bytecode::{Address, Callable, Chunk, Number, Opcode, Value},
+    bytecode::{stmt::class::ObjectInstance, Address, Callable, Chunk, Number, Opcode, Value},
     compiler::ProgramOutput,
     std::GLOBALS,
-    utils::logger,
     vm::{
-        call_frame::{CallFrame, Environments},
+        call_frame::{CallFrame, Callstack, Environments},
+        stack::Stack,
         utilities::Utilities,
     },
 };
 
 mod call_frame;
+pub mod stack;
 pub mod utilities;
 
 #[derive(Debug, Default)]
 pub struct VM<'a> {
     pub utilities: Option<&'a mut Utilities<'a>>,
     // Stack of local values
-    stack: Vec<Value>,
+    stack: Stack,
     // Struct managing environments
     environments: Environments,
     // Stack of function calls
-    call_stack: Vec<CallFrame>,
-    // Current call frame
-    current_frame: Option<CallFrame>,
+    call_stack: Callstack,
     // Hashmap of global variables, e.g global functions
     globals: HashMap<String, Value>,
     ip: usize,
 }
 
 impl<'a> VM<'a> {
-    fn push_stack(&mut self, value: Value) {
-        self.stack.push(value)
-    }
-
-    fn truncate_stack(&mut self, to: usize) {
-        self.stack.truncate(to);
-    }
-
-    fn pop_stack(&mut self) -> Result<Value> {
-        let value = self.stack.pop();
-
-        value.with_context(|| "Tried to pop value from an empty stack")
-    }
-
-    fn pop_string(&mut self) -> Result<String> {
-        self.pop_stack()?
-            .into_string()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a string."))
-    }
-
-    fn pop_object(&mut self) -> Result<ObjectInstance> {
-        self.pop_stack()?
-            .into_object()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't an object instance."))
-    }
-
-    fn pop_number(&mut self) -> Result<Number> {
-        self.pop_stack()?
-            .into_number()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a number."))
-    }
-
-    fn pop_address(&mut self) -> Result<Address> {
-        self.pop_stack()?
-            .into_address()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't a reference."))
-    }
-
-    fn pop_callable(&mut self) -> Result<Callable> {
-        self.pop_stack()?
-            .into_callable()
-            .map_err(|_| anyhow!("Accessed value from the stack that wasn't callable."))
-    }
-
-    fn pop_n(&mut self, n: usize) -> Result<Vec<Value>> {
-        let mut values: Vec<Value> = vec![];
-
-        for _ in 0..n {
-            values.push(self.pop_stack()?);
-        }
-        Ok(values)
-    }
-
     pub fn new_frame(&mut self, chunk: Chunk, arity: usize, caller_name: String, env_key: usize) {
         self.call_stack.push(CallFrame {
             chunk,
@@ -102,12 +47,6 @@ impl<'a> VM<'a> {
         });
     }
 
-    fn lookup_call_frame(&self, depth: usize) -> &CallFrame {
-        self.call_stack
-            .get(self.call_stack.len() - 1 - depth)
-            .expect("Tried to lookup call frame above the call stack")
-    }
-
     pub fn callback(&mut self, callable: Callable) -> Result<()> {
         match &callable {
             Callable::NativeFunction(_) => {
@@ -115,14 +54,18 @@ impl<'a> VM<'a> {
             }
             _ => {
                 self.call(callable);
-                self.evaluate_last_frame();
+                let frame = self
+                    .call_stack
+                    .next()
+                    .expect("Callback didn't create a new call frame!");
+                self.evaluate_frame(frame)?;
             }
         }
         Ok(())
     }
 
     pub fn call(&mut self, callable: Callable) -> Result<()> {
-        let current_env = self.lookup_call_frame(0).env_key;
+        let current_env = self.call_stack.lookup(1).env_key;
         match callable {
             Callable::Function(function) => {
                 let env_key = self.environments.create_env(current_env, vec![]);
@@ -137,7 +80,7 @@ impl<'a> VM<'a> {
                 Ok(())
             }
             Callable::NativeFunction(function) => {
-                let args = self.pop_n(function.arity)?;
+                let args = self.stack.pop_n(function.arity);
                 let value = (function.function)(args, self);
                 self.stack.push(value);
                 // skip the call
@@ -166,8 +109,8 @@ impl<'a> VM<'a> {
             }
             Callable::Class(class) => {
                 // Number of properties provided to this struct initializer
-                let to_pop = self.pop_number()? as usize;
-                let args = self.pop_n(to_pop)?;
+                let to_pop = self.stack.pop_number() as usize;
+                let args = self.stack.pop_n(to_pop);
                 self.stack.push(class.new_instance(args).into());
                 self.ip += 1;
                 Ok(())
@@ -184,13 +127,11 @@ impl<'a> VM<'a> {
     }
 
     pub fn close_frame(&mut self) {
-        let frame = self
-            .call_stack
-            .pop()
-            .expect("Tried to end call, but there were no call frames available.");
+        // TODO: not popping frame here might be a bug
+        let frame = self.call_stack.current();
         self.environments.decrement_rc(frame.env_key);
         self.ip = frame.return_address;
-        self.truncate_stack(frame.stack_start);
+        self.stack.truncate(frame.stack_start);
     }
 
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
@@ -201,7 +142,7 @@ impl<'a> VM<'a> {
         self.ip = 0;
         self.environments = Environments::new();
         self.globals = HashMap::default();
-        self.call_stack = vec![];
+        self.call_stack = Callstack::default();
 
         self.call_stack.push(CallFrame {
             chunk,
@@ -213,20 +154,8 @@ impl<'a> VM<'a> {
         self.run()
     }
 
-    pub fn evaluate_last_frame(&mut self) -> Result<()> {
-        let frame = self
-            .call_stack
-            .last()
-            .cloned()
-            .expect("Tried to pop from empty callstack.");
-        self.evaluate_frame(frame)
-    }
-
     fn assign_at_address(&mut self, address: Address, value: Value) -> Result<()> {
-        let frame = self
-            .current_frame
-            .as_ref()
-            .expect("Tried to access current frame while there was none");
+        let frame = self.call_stack.current();
 
         match address {
             Address::Property(property) => {
@@ -253,7 +182,7 @@ impl<'a> VM<'a> {
                 self.assign_at_address(*property.top_parent_address, object)?;
             }
             Address::Local(address) => {
-                self.stack[frame.stack_start + address] = value;
+                self.stack.assign_at(frame.stack_start + address, value);
             }
             Address::Upvalue(index, depth) => {
                 match self.environments.get_value_mut(frame.env_key, index, depth) {
@@ -262,8 +191,8 @@ impl<'a> VM<'a> {
                     }
                     // If it wasn't yet closed then it must live on the stack
                     None => {
-                        let address = self.lookup_call_frame(depth).stack_start + index;
-                        self.stack[address] = value;
+                        let address = self.call_stack.lookup(depth).stack_start + index;
+                        self.stack.assign_at(address, value);
                     }
                 }
             }
@@ -271,15 +200,12 @@ impl<'a> VM<'a> {
                 return Err(anyhow!("Cannot reassign global resource!"));
             }
         };
-        self.push_stack(Value::Null);
+        self.stack.push(Value::Null);
         Ok(())
     }
 
     fn get_from_address(&mut self, address: Address) -> Result<Value> {
-        let frame = self
-            .current_frame
-            .as_ref()
-            .expect("Tried to access current frame while there was none");
+        let frame = self.call_stack.current();
 
         Ok(match address {
             Address::Property(property_address) => {
@@ -296,14 +222,14 @@ impl<'a> VM<'a> {
                 }
                 object
             }
-            Address::Local(index) => self.stack[frame.stack_start + index].clone(),
+            Address::Local(index) => self.stack.get_at_cloned(frame.stack_start + index),
             Address::Upvalue(index, depth) => {
                 match self.environments.get_value(frame.env_key, index, depth) {
                     Some(value) => value,
                     // If it wasn't yet closed then it must live on the stack
                     None => {
-                        let address = self.lookup_call_frame(depth).stack_start + index;
-                        self.stack[address].clone()
+                        let address = self.call_stack.lookup(depth).stack_start + index;
+                        self.stack.get_at_cloned(address)
                     }
                 }
             }
@@ -316,54 +242,40 @@ impl<'a> VM<'a> {
     }
 
     pub fn evaluate_frame(&mut self, frame: CallFrame) -> Result<()> {
-        // TODO: Temporary clone
-        self.current_frame = Some(frame.clone());
-        // if self.in_debug() {
-        //     ptable!(
-        //         [ cbH4 => "CALL FRAME"],
-        //         ["CALLER", "STACK START", "RETURN ADDRESS", "ENVIRONMENT KEY"],
-        //         [
-        //             &frame.caller_name,
-        //             &frame.stack_start,
-        //             &frame.return_address,
-        //             &frame.env_key
-        //         ]
-        //     );
-        // }
         /// Helper to simplify repetitive usage of binary operators
         macro_rules! bin_op {
             // macro for math operations
             ($operator:tt, 'm') => {{
-                let a = self.pop_stack()?;
-                let b = self.pop_stack()?;
+                let a = self.stack.pop();
+                let b = self.stack.pop();
                 let result = b $operator a;
-                self.push_stack(result?)
+                self.stack.push(result?)
             }};
             // macro for logical operations
              ($operator:tt, 'l') => {{
-                let a = self.pop_stack()?;
-                let b = self.pop_stack()?;
+                let a = self.stack.pop();
+                let b = self.stack.pop();
 
-                self.push_stack( Value::Bool(b $operator a))
+                self.stack.push( Value::Bool(b $operator a))
             }};
         }
 
         while let Some(opcode) = frame.chunk.code.get(self.ip) {
             match opcode {
                 Opcode::Constant(index) => {
-                    self.push_stack(frame.chunk.read_constant(*index).clone())
+                    self.stack.push(frame.chunk.read_constant(*index).clone())
                 }
-                Opcode::True => self.push_stack(Value::Bool(true)),
-                Opcode::False => self.push_stack(Value::Bool(false)),
-                Opcode::Null => self.push_stack(Value::Null),
+                Opcode::True => self.stack.push(Value::Bool(true)),
+                Opcode::False => self.stack.push(Value::Bool(false)),
+                Opcode::Null => self.stack.push(Value::Null),
                 Opcode::Negate => {
-                    let value = self.pop_stack()?;
+                    let value = self.stack.pop();
                     let negated = value.neg()?;
-                    self.push_stack(negated);
+                    self.stack.push(negated);
                 }
                 Opcode::Not => {
-                    let value: bool = self.pop_stack()?.into();
-                    self.push_stack(Value::Bool(value));
+                    let value: bool = self.stack.pop().into();
+                    self.stack.push(Value::Bool(value));
                 }
                 Opcode::Add => bin_op!(+, 'm'),
                 Opcode::Subtract => bin_op!(-, 'm'),
@@ -376,15 +288,15 @@ impl<'a> VM<'a> {
                 Opcode::Greater => bin_op!(>, 'l'),
                 Opcode::GreaterEqual => bin_op!(>=, 'l'),
                 Opcode::Assign => {
-                    let value = self.pop_stack()?;
-                    let address = self.pop_address()?;
+                    let value = self.stack.pop();
+                    let address = self.stack.pop_address();
                     self.assign_at_address(address, value)?;
                 }
                 Opcode::PopN(amount) => {
-                    self.pop_n(*amount)?;
+                    self.stack.pop_n(*amount);
                 }
                 Opcode::JumpIfFalse(jump) => {
-                    let value: bool = self.pop_stack()?.into();
+                    let value: bool = self.stack.pop().into();
                     if !value {
                         self.ip += *jump;
                     }
@@ -397,45 +309,48 @@ impl<'a> VM<'a> {
                     continue;
                 }
                 Opcode::Block(declared) => {
-                    let result = self.pop_stack()?;
-                    self.pop_n(*declared)?;
-                    self.push_stack(result);
+                    let result = self.stack.pop();
+                    self.stack.pop_n(*declared);
+                    self.stack.push(result);
                 }
                 Opcode::CloseValue => {
                     let address = self
-                        .pop_address()?
+                        .stack
+                        .pop_address()
                         .into_local()
                         .map_err(|_| anyhow!("ds"))?;
-                    let value = self.stack[frame.stack_start + address].clone();
+                    let value = self.stack.get_at_cloned(frame.stack_start + address);
                     self.environments.close_value(value, frame.env_key);
                 }
                 Opcode::CreateClosure => {
-                    let current_env = self.lookup_call_frame(0).env_key;
+                    let current_env = self.call_stack.lookup(1).env_key;
                     let closure = self
-                        .pop_callable()?
+                        .stack
+                        .pop_callable()
                         .into_closure()
                         .map_err(|_| anyhow!("Popped callable that wasn't a closure."))?;
 
-                    self.push_stack(closure.with_enclosing_env(current_env).into());
+                    self.stack
+                        .push(closure.with_enclosing_env(current_env).into());
                 }
                 Opcode::Break(jump) => {
-                    let value = self.pop_stack()?;
+                    let value = self.stack.pop();
                     self.ip += *jump;
-                    self.push_stack(value);
+                    self.stack.push(value);
                 }
                 Opcode::Return => {
-                    let result_value = self.pop_stack()?;
+                    let result_value = self.stack.pop();
                     self.close_frame();
-                    self.push_stack(result_value);
+                    self.stack.push(result_value);
                     return Ok(());
                 }
                 Opcode::Get => {
-                    let address = self.pop_address()?;
+                    let address = self.stack.pop_address();
                     let value = self.get_from_address(address)?;
-                    self.push_stack(value);
+                    self.stack.push(value);
                 }
                 Opcode::Call => {
-                    let caller = self.pop_callable()?;
+                    let caller = self.stack.pop_callable();
                     self.call(caller)?;
                     return Ok(());
                 }
@@ -449,8 +364,8 @@ impl<'a> VM<'a> {
     }
 
     pub fn run(&mut self) -> ProgramOutput {
-        while let Some(frame) = self.call_stack.last_mut().cloned() {
-            self.evaluate_frame(frame);
+        while let Some(frame) = self.call_stack.next() {
+            self.evaluate_frame(frame)?;
         }
 
         Ok(Value::Null)

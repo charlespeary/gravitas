@@ -5,12 +5,14 @@ class Foo : Bar {
 
 var instance = Foo {
     foo = Foo {
-        foo = 20
+        foo = Foo {
+            foo = 20
+            bar = 15
+        }
         bar = 15
     }
     bar = 20
 };
 
-instance.foo.bar = 10;
-print(instance.foo);
-print(instance.foo.bar);
+instance.foo.foo.foo = 15;
+print(instance.foo.foo.foo);

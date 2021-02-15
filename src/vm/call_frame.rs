@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use crate::bytecode::{Chunk, Value};
 
@@ -155,4 +156,33 @@ pub struct CallFrame {
     pub return_address: usize,
     pub caller_name: String,
     pub env_key: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Callstack {
+    pub stack: Vec<CallFrame>,
+    pub current_frame: Option<CallFrame>,
+}
+
+impl Callstack {
+    pub fn push(&mut self, frame: CallFrame) {
+        self.stack.push(frame);
+    }
+
+    pub fn next(&mut self) -> Option<CallFrame> {
+        self.current_frame = self.stack.pop();
+        self.current_frame.clone()
+    }
+
+    pub fn current(&self) -> &CallFrame {
+        self.current_frame
+            .as_ref()
+            .expect("Callstack tried to access frame from an empty stack!")
+    }
+
+    pub fn lookup(&self, offset: usize) -> &CallFrame {
+        self.stack
+            .get(self.stack.len() - offset)
+            .expect("Callframe lookup failed!")
+    }
 }
