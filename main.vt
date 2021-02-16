@@ -6,13 +6,13 @@ class Foo : Bar {
 var instance = Foo {
     foo = Foo {
         foo = Foo {
-            foo = 20
-            bar = 15
+            foo = 22
+            bar = 33
         }
         bar = 15
     }
     bar = 20
 };
-
-instance.foo.foo.foo = 15;
+print("test");
+instance.foo.foo.foo = 1225;
 print(instance.foo.foo.foo);

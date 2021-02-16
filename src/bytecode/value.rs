@@ -28,6 +28,13 @@ pub struct PropertyAddress {
     pub properties: Vec<String>,
 }
 
+impl fmt::Display for PropertyAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let properties = self.properties.join(".");
+        write!(f, "({}{})", self.top_parent_address, properties)
+    }
+}
+
 impl Into<Address> for PropertyAddress {
     fn into(self) -> Address {
         Address::Property(self)
@@ -50,6 +57,17 @@ pub enum Address {
     Global(String),
     // Property of an object
     Property(PropertyAddress),
+}
+
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Address::Local(index) => write!(f, "local_addr<{}>", index),
+            Address::Upvalue(index, depth) => write!(f, "upvalue_addr<{}, {}>", index, depth),
+            Address::Global(name) => write!(f, "global<{}>", name),
+            Address::Property(property) => write!(f, "{}", property),
+        }
+    }
 }
 
 impl Into<Value> for Address {

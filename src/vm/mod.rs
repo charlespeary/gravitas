@@ -3,6 +3,7 @@ use std::ops::Neg;
 
 use anyhow::{anyhow, Context, Result};
 
+use crate::constants::{LAMBDA_NAME, MAIN_FUNCTION_NAME};
 use crate::{
     bytecode::{Address, Callable, Chunk, Number, Opcode, Value},
     compiler::ProgramOutput,
@@ -18,6 +19,13 @@ use crate::{
 mod call_frame;
 pub mod stack;
 pub mod utilities;
+
+// Leave current frame to enter frame of e.g called function or stay in the current frame
+// to proceed with current execution e.g after calling native function or class
+pub enum CallAction {
+    Leave,
+    Stay,
+}
 
 #[derive(Debug, Default)]
 pub struct VM<'a> {
@@ -64,7 +72,7 @@ impl<'a> VM<'a> {
         Ok(())
     }
 
-    pub fn call(&mut self, callable: Callable) -> Result<()> {
+    pub fn call(&mut self, callable: Callable) -> Result<CallAction> {
         let current_env = self.call_stack.current().env_key;
         match callable {
             Callable::Function(function) => {
@@ -78,7 +86,7 @@ impl<'a> VM<'a> {
                 );
                 self.stack.push(Callable::Function(function).into());
                 self.ip = 0;
-                Ok(())
+                Ok(CallAction::Leave)
             }
             Callable::NativeFunction(function) => {
                 LOGGER.log("VM / CALL / NATIVE", function.name);
@@ -87,7 +95,7 @@ impl<'a> VM<'a> {
                 self.stack.push(value);
                 // skip the call
                 self.ip += 1;
-                Ok(())
+                Ok(CallAction::Stay)
             }
             Callable::Closure(closure) => {
                 LOGGER.log("VM / CALL / CLOSURE", &format!("{:?}", closure));
@@ -101,14 +109,14 @@ impl<'a> VM<'a> {
                 self.new_frame(
                     closure.chunk.clone(),
                     closure.arity,
-                    String::from("lambda"),
+                    LAMBDA_NAME.to_owned(),
                     env,
                 );
 
                 self.stack
                     .push(Callable::Closure(closure.with_env(env)).into());
                 self.ip = 0;
-                Ok(())
+                Ok(CallAction::Leave)
             }
             Callable::Class(class) => {
                 LOGGER.log("VM / CALL / CLASS", &class.name);
@@ -117,7 +125,7 @@ impl<'a> VM<'a> {
                 let args = self.stack.pop_n(to_pop);
                 self.stack.push(class.new_instance(args).into());
                 self.ip += 1;
-                Ok(())
+                Ok(CallAction::Stay)
             }
         }
     }
@@ -132,28 +140,32 @@ impl<'a> VM<'a> {
 
     pub fn close_frame(&mut self) {
         // TODO: not popping frame here might be a bug
-        let frame = self.call_stack.current();
+        let frame = self
+            .call_stack
+            .next()
+            .expect("Tried to close frame that didn't exist");
         self.environments.decrement_rc(frame.env_key);
         self.ip = frame.return_address;
         self.stack.truncate(frame.stack_start);
     }
 
     pub fn interpret(&mut self, chunk: Chunk) -> Result<Value> {
-        LOGGER.log("VM", "Starting interpretation...");
+        LOGGER.log("VM", "Start of interpretation...");
         // Reset structs values in case if we would like to rerun some code on VM
         self.ip = 0;
         self.environments = Environments::new();
         self.globals = HashMap::default();
-        self.call_stack = Callstack::default();
-
-        self.call_stack.push(CallFrame {
+        self.call_stack = Callstack::new(CallFrame {
             chunk,
             stack_start: self.stack.len(),
             return_address: self.ip,
-            caller_name: String::from("main"),
+            caller_name: MAIN_FUNCTION_NAME.to_owned(),
             env_key: 0,
         });
-        self.run()
+
+        let execution_result = self.run();
+        LOGGER.log("VM", "End of interpretation...");
+        execution_result
     }
 
     fn assign_at_address(&mut self, address: Address, value: Value) -> Result<()> {
@@ -161,6 +173,7 @@ impl<'a> VM<'a> {
 
         match address {
             Address::Property(property) => {
+                LOGGER.log_dbg("VM / ASSIGN / PROPERTY", &value);
                 let mut object = self.get_from_address(*property.top_parent_address.clone())?;
 
                 let mut traverse_object = &mut object;
@@ -182,9 +195,12 @@ impl<'a> VM<'a> {
                 self.assign_at_address(*property.top_parent_address, object)?;
             }
             Address::Local(address) => {
+                LOGGER.log_dbg("VM / ASSIGN / LOCAL", &value);
                 self.stack.assign_at(frame.stack_start + address, value);
             }
             Address::Upvalue(index, depth) => {
+                LOGGER.log_dbg("VM / ASSIGN / UPVALUE", &value);
+
                 match self.environments.get_value_mut(frame.env_key, index, depth) {
                     Some(old_value) => {
                         let _ = std::mem::replace(old_value, value);
@@ -197,6 +213,8 @@ impl<'a> VM<'a> {
                 }
             }
             Address::Global(_) => {
+                LOGGER.log_dbg("VM / ASSIGN / GLOBAL", &value);
+
                 return Err(anyhow!("Cannot reassign global resource!"));
             }
         };
@@ -209,6 +227,8 @@ impl<'a> VM<'a> {
 
         Ok(match address {
             Address::Property(property_address) => {
+                LOGGER.log_dsp("VM / GET / PROPERTY", &property_address);
+
                 let mut object = self.get_from_address(*property_address.top_parent_address)?;
 
                 for property in property_address.properties {
@@ -222,8 +242,12 @@ impl<'a> VM<'a> {
                 }
                 object
             }
-            Address::Local(index) => self.stack.get_at_cloned(frame.stack_start + index),
+            Address::Local(index) => {
+                LOGGER.log_dsp("VM / GET / LOCAL", index);
+                self.stack.get_at_cloned(frame.stack_start + index)
+            }
             Address::Upvalue(index, depth) => {
+                LOGGER.log("VM / GET / UPVALUE", &format!("{} : {}", index, depth));
                 match self.environments.get_value(frame.env_key, index, depth) {
                     Some(value) => value,
                     // If it wasn't yet closed then it must live on the stack
@@ -233,11 +257,14 @@ impl<'a> VM<'a> {
                     }
                 }
             }
-            Address::Global(name) => GLOBALS
-                .get(name.as_str())
-                .cloned()
-                .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
-                .into(),
+            Address::Global(name) => {
+                LOGGER.log("VM / GET / GLOBAL", &name);
+                GLOBALS
+                    .get(name.as_str())
+                    .cloned()
+                    .with_context(|| anyhow!("Global variable {} doesn't exist", name))?
+                    .into()
+            }
         })
     }
 
@@ -261,22 +288,26 @@ impl<'a> VM<'a> {
         }
 
         while let Some(opcode) = frame.chunk.code.get(self.ip) {
-            LOGGER.log_dbg("VM / OPCODE", opcode);
-
+            LOGGER.log("VM", &format!("OPCODE: {:?} IP: {}", opcode, self.ip));
             match opcode {
                 Opcode::Constant(index) => {
-                    self.stack.push(frame.chunk.read_constant(*index).clone())
+                    let value = frame.chunk.read_constant(*index).clone();
+                    LOGGER.log_dsp("VM / CONSTANT", &value);
+                    self.stack.push(value);
                 }
                 Opcode::True => self.stack.push(Value::Bool(true)),
                 Opcode::False => self.stack.push(Value::Bool(false)),
                 Opcode::Null => self.stack.push(Value::Null),
                 Opcode::Negate => {
                     let value = self.stack.pop();
+                    LOGGER.log_dsp("VM / NEGATE", &value);
                     let negated = value.neg()?;
                     self.stack.push(negated);
                 }
                 Opcode::Not => {
-                    let value: bool = self.stack.pop().into();
+                    let value = self.stack.pop();
+                    LOGGER.log_dsp("VM / NOT", &value);
+                    let value: bool = value.into();
                     self.stack.push(Value::Bool(value));
                 }
                 Opcode::Add => bin_op!(+, 'm'),
@@ -353,14 +384,22 @@ impl<'a> VM<'a> {
                 }
                 Opcode::Call => {
                     let caller = self.stack.pop_callable();
-                    self.call(caller)?;
-                    return Ok(());
+                    match self.call(caller)? {
+                        CallAction::Stay => {
+                            continue;
+                        }
+                        CallAction::Leave => {
+                            return Ok(());
+                        }
+                    }
                 }
             }
             self.ip += 1;
         }
 
-        self.close_frame();
+        if frame.caller_name != MAIN_FUNCTION_NAME {
+            self.close_frame();
+        }
 
         Ok(())
     }

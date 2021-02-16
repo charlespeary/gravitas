@@ -20,6 +20,7 @@ pub use crate::{
 mod bytecode;
 mod cli;
 mod compiler;
+mod constants;
 mod parser;
 mod std;
 mod utils;

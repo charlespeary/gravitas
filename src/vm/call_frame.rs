@@ -178,6 +178,13 @@ pub struct Callstack {
 }
 
 impl Callstack {
+    pub fn new(initial_frame: CallFrame) -> Self {
+        Self {
+            stack: vec![initial_frame],
+            current_frame: None,
+        }
+    }
+
     pub fn push(&mut self, frame: CallFrame) {
         LOGGER.log_dsp("CALLSTACK / PUSH", &frame);
         self.stack.push(frame);
