@@ -1,2 +1,0 @@
-assert_eq(10, 10);
-assert_eq(20, 20);
