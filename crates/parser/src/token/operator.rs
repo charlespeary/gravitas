@@ -51,9 +51,10 @@ pub(crate) fn lex_operator(lex: &mut Lexer<Token>) -> Option<Operator> {
 }
 
 #[cfg(test)]
+#[macro_use]
 mod test {
     use crate::{
-        common::test::{assert_token, assert_tokens},
+        common::test::assert_token,
         token::{operator::Operator, Token},
     };
 
