@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use logos::{Lexer, Logos};
+use logos::{Filter, Lexer, Logos};
 use regex::Regex;
 
 use operator::{lex_operator, Operator};
@@ -13,7 +13,7 @@ fn lex_number<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<f64> {
                 .expect("Couldn't create regex(multiple dots in number)");
     }
 
-    let slice: String = lex.slice().parse().ok()?;
+    let slice: &str = lex.slice();
 
     if MULTIPLE_DOTS_IN_NUMBER.is_match(&slice) {
         None
@@ -36,6 +36,23 @@ fn lex_boolean<'t>(lex: &mut Lexer<'t, Token<'t>>) -> bool {
         "true" => true,
         "false" => false,
         _ => unreachable!(),
+    }
+}
+
+fn lex_error<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Filter<()> {
+    lazy_static! {
+        static ref TO_SKIP: Regex =
+            Regex::new(r"[ \t\n\f\r]+|//.*").expect("Couldn't create regex(tokens to skip)");
+        static ref INVALID_IDENTIFIER: Regex =
+            Regex::new(r"([0-9]+[a-z_A-Z]+)").expect("Couldn't create regex(invalid identifiers)");
+    }
+
+    let slice: &str = lex.slice();
+
+    if TO_SKIP.is_match(slice) {
+        Filter::Skip
+    } else {
+        Filter::Emit(())
     }
 }
 
@@ -91,7 +108,7 @@ pub(crate) enum Token<'t> {
     #[regex("[a-z_A-Z][a-z_A-Z0-9]*")]
     Identifier(&'t str),
     #[error]
-    #[regex(r"[ \t\n\f]+|([0-9]+[a-z_A-Z]+)", logos::skip)]
+    #[regex(r"[ \t\n\f\r]+|([0-9]+[a-z_A-Z]+)|//.*", lex_error)]
     Error,
 }
 
@@ -100,7 +117,7 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::{assert_error, assert_token, assert_tokens},
+        common::test::{assert_empty, assert_error, assert_token, assert_tokens},
         token::Token,
     };
 
@@ -240,4 +257,30 @@ mod test {
         assert_token("bREAk", Identifier("bREAk"));
         assert_token("cONTInue", Identifier("cONTInue"));
     }
+
+    #[test]
+    fn lexer_skips_unnecessary_tokens() {
+        // Skips comments
+        assert_empty("//foobar");
+        assert_tokens("while // smart comment", &[Token::While]);
+        assert_empty("//while smart comment else if");
+        // Skips spaces
+        assert_empty("\x20");
+        assert_empty("\x20\x20\x20\x20");
+        // Skips tabs
+        assert_empty("\x09");
+        assert_empty("\x09\x09\x09\x09");
+        // Skips newlines
+        assert_empty("\x0A");
+        assert_empty("\x0A\x0A\x0A\x0A");
+        // Skips carriage return
+        assert_empty("\x0D");
+        assert_empty("\x0D\x0D\x0D\x0D");
+        // Skips form feed
+        assert_empty("\x0C");
+        assert_empty("\x0C\x0C\x0C\x0C");
+    }
+
+    #[test]
+    fn lexer_reports_errors() {}
 }
