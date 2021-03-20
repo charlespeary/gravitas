@@ -80,7 +80,7 @@ identifier          -> alpha (alpha | digit)*
                      
 boolean             -> 'true' | 'false'
 
-number              -> digit+ ( '.' digit+ )? 
+number              -> '.'? digit+ '.'? digit* 
 
 digit               -> '0' .. '9'
 

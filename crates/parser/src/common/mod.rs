@@ -12,9 +12,4 @@ pub(crate) mod test {
         let lexed: Vec<Token> = Token::lexer(code).collect();
         assert_eq!(lexed[0], token);
     }
-
-    pub(crate) fn assert_tokens(code: &str, tokens: &[Token]) {
-        let lexed: Vec<Token> = Token::lexer(code).collect();
-        assert_eq!(lexed, tokens);
-    }
 }

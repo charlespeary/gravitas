@@ -43,8 +43,10 @@ pub(crate) enum Token<'t> {
     Number(f64),
     #[regex(r#""(\\"|[^"])*""#, lex_string)]
     String(&'t str),
+    #[regex("[a-z_A-Z][a-z_A-Z0-9]*")]
+    Identifier(&'t str),
     #[error]
-    #[regex(r"[ \t\n\f]+ |", logos::skip)]
+    #[regex(r"[ \t\n\f]+ | [0-9a-z_A-Z]*", logos::skip)]
     Error,
 }
 
@@ -59,27 +61,26 @@ mod test {
 
     // #[quickcheck]
     #[test]
-    fn lexer_parses_strings() {
-        // dbg!(&format!("\"{}\"", text));
-        // assert_token(&format!("\"{}\"", text), Token::String(&text));
+    fn lexer_tokenizes_strings() {
+        use Token::String;
         // Simple literals
-        assert_token("\"foo\"", Token::String("foo"));
+        assert_token("\"foo\"", String("foo"));
         // Literals with escapes
-        assert_token(r#""fo\"o""#, Token::String(r#"fo\"o"#));
+        assert_token(r#""fo\"o""#, String(r#"fo\"o"#));
         // Empty strings
-        assert_token(r#""""#, Token::String(""));
-        assert_token(r#""    ""#, Token::String("    "));
+        assert_token(r#""""#, String(""));
+        assert_token(r#""    ""#, String("    "));
     }
 
     #[quickcheck]
-    fn q_lexer_parses_strings(text: String) {
+    fn q_lexer_tokenizes_strings(text: String) {
         // Quickcheck generates strings with quotes and we don't allow these inside
         let text = text.replace("\"", "");
         assert_token(&format!("\"{}\"", text), Token::String(&text));
     }
 
     #[quickcheck]
-    fn lexer_parses_numbers(number: f64) {
+    fn lexer_tokenizes_numbers(number: f64) {
         // Ignore randomly generated stuff that can't be parsed.
         if number.is_nan() || number.is_infinite() {
             return;
@@ -88,7 +89,7 @@ mod test {
     }
 
     #[test]
-    fn lexer_allows_numbers_with_trailing_commas() {
+    fn lexer_tokenizes_numbers_with_trailing_commas() {
         use Token::Number;
         assert_token(".1", Number(0.1));
         assert_token("1.", Number(1.0));
@@ -104,5 +105,36 @@ mod test {
         // more than one dot inside number
         assert_error("1.1.1");
         assert_error("1.1.1.");
+    }
+
+    // TODO: Discard numbers in front of the identifier as an error during the lexing when positive lookaheads are added to the Logos
+    #[test]
+    fn lexer_tokenizes_identifiers() {
+        use Token::Identifier;
+        // allow underscore at the beginning
+        assert_token("_foo", Identifier("_foo"));
+        // allow underscore at the end
+        assert_token("foo_", Identifier("foo_"));
+        // allow underscore inside
+        assert_token("foo_bar", Identifier("foo_bar"));
+        // allow numbers inside
+        assert_token("fo123o", Identifier("fo123o"));
+        // allow numbers at the end
+        assert_token("foo123", Identifier("foo123"));
+        // allow a-Z
+        assert_token(
+            "abcdefghijklmnopqrstuvwxyz",
+            Identifier("abcdefghijklmnopqrstuvwxyz"),
+        );
+        // allow A-Z
+        assert_token(
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            Identifier("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+        );
+        // allow a-zA-Z
+        assert_token(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            Identifier("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+        )
     }
 }
