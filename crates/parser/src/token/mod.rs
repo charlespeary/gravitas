@@ -31,14 +31,59 @@ fn lex_string<'t>(lex: &mut Lexer<'t, Token<'t>>) -> &'t str {
     &slice[1..slice.len() - 1]
 }
 
-#[derive(Logos, Debug, PartialEq)]
-pub(crate) enum Token<'t> {
-    // KEYWORDS
+fn lex_boolean<'t>(lex: &mut Lexer<'t, Token<'t>>) -> bool {
+    match lex.slice() {
+        "true" => true,
+        "false" => false,
+        _ => unreachable!(),
+    }
+}
 
+#[derive(Logos, Debug, PartialEq, Clone)]
+pub(crate) enum Token<'t> {
+    // DECLARATION KEYWORDS
+    #[token("fn")]
+    Function,
+    #[token("class")]
+    Class,
+    #[token("let")]
+    Let,
+    // EXPRESSION KEYWORDS
+    #[token("if")]
+    If,
+    #[token("else if")]
+    ElseIf,
+    #[token("else")]
+    Else,
+    #[token("while")]
+    While,
+    #[token("return")]
+    Return,
+    #[token("for")]
+    For,
+    #[token("break")]
+    Break,
+    #[token("continue")]
+    Continue,
+    // PARENTHESIS
+    #[token("{")]
+    CurlyBracketOpen,
+    #[token("}")]
+    CurlyBracketClose,
+    #[token("(")]
+    RoundBracketOpen,
+    #[token(")")]
+    RoundBracketClose,
+    #[token("[")]
+    SquareBracketOpen,
+    #[token("]")]
+    SquareBracketClose,
     // OPERATORS
-    #[regex(r"\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|!|\.|=", lex_operator)]
+    #[regex(r"\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|in|!|\.|=", lex_operator)]
     Operator(Operator),
     // LITERALS
+    #[regex("true|false", lex_boolean)]
+    Bool(bool),
     #[regex("-?[0-9]*\\.?[0-9\\.]+", lex_number)]
     Number(f64),
     #[regex(r#""(\\"|[^"])*""#, lex_string)]
@@ -46,7 +91,7 @@ pub(crate) enum Token<'t> {
     #[regex("[a-z_A-Z][a-z_A-Z0-9]*")]
     Identifier(&'t str),
     #[error]
-    #[regex(r"[ \t\n\f]+ | [0-9a-z_A-Z]*", logos::skip)]
+    #[regex(r"[ \t\n\f]+|([0-9]+[a-z_A-Z]+)", logos::skip)]
     Error,
 }
 
@@ -55,11 +100,10 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::{assert_error, assert_token},
+        common::test::{assert_error, assert_token, assert_tokens},
         token::Token,
     };
 
-    // #[quickcheck]
     #[test]
     fn lexer_tokenizes_strings() {
         use Token::String;
@@ -74,7 +118,7 @@ mod test {
 
     #[quickcheck]
     fn q_lexer_tokenizes_strings(text: String) {
-        // Quickcheck generates strings with quotes and we don't allow these inside
+        // Quickcheck generates strings with quotes, and we don't allow these inside
         let text = text.replace("\"", "");
         assert_token(&format!("\"{}\"", text), Token::String(&text));
     }
@@ -136,5 +180,64 @@ mod test {
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
             Identifier("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
         )
+    }
+
+    #[test]
+    fn lexer_tokenizes_bool() {
+        use Token::Bool;
+
+        assert_token("true", Bool(true));
+        assert_token("false", Bool(false));
+    }
+
+    #[test]
+    fn lexer_tokenizes_parenthesis() {
+        use Token::*;
+        assert_token("{", CurlyBracketOpen);
+        assert_token("}", CurlyBracketClose);
+        assert_token("(", RoundBracketOpen);
+        assert_token(")", RoundBracketClose);
+        assert_token("[", SquareBracketOpen);
+        assert_token("]", SquareBracketClose);
+
+        assert_tokens("{}", &[CurlyBracketOpen, CurlyBracketClose]);
+        assert_tokens("}{", &[CurlyBracketClose, CurlyBracketOpen]);
+        assert_tokens("()", &[RoundBracketOpen, RoundBracketClose]);
+        assert_tokens(")(", &[RoundBracketClose, RoundBracketOpen]);
+        assert_tokens("[]", &[SquareBracketOpen, SquareBracketClose]);
+        assert_tokens("][", &[SquareBracketClose, SquareBracketOpen]);
+    }
+
+    #[test]
+    fn lexer_tokenizes_keywords() {
+        use Token::*;
+
+        assert_token("fn", Function);
+        assert_token("class", Class);
+        assert_token("let", Let);
+        assert_token("if", If);
+        assert_token("else if", ElseIf);
+        assert_token("else", Else);
+        assert_token("while", While);
+        assert_token("return", Return);
+        assert_token("for", For);
+        assert_token("break", Break);
+        assert_token("continue", Continue);
+    }
+
+    #[test]
+    fn lexer_keywords_are_key_sensitive() {
+        use Token::Identifier;
+        assert_token("fN", Identifier("fN"));
+        assert_token("clASS", Identifier("clASS"));
+        assert_token("lEt", Identifier("lEt"));
+        assert_token("iF", Identifier("iF"));
+        assert_tokens("ElsE If", &[Identifier("ElsE"), Identifier("If")]);
+        assert_token("eLSe", Identifier("eLSe"));
+        assert_token("wHILe", Identifier("wHILe"));
+        assert_token("rETUrn", Identifier("rETUrn"));
+        assert_token("FOr", Identifier("FOr"));
+        assert_token("bREAk", Identifier("bREAk"));
+        assert_token("cONTInue", Identifier("cONTInue"));
     }
 }
