@@ -26,7 +26,7 @@ pub(crate) enum Operator {
     Dot,
 }
 
-pub(crate) fn lex_operator(lex: &mut Lexer<Token>) -> Option<Operator> {
+pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operator> {
     let slice: String = lex.slice().parse().ok()?;
     Some(match slice.as_str() {
         "+" => Operator::Plus,
