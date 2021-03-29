@@ -1,3 +1,5 @@
+pub(crate) mod error;
+
 #[cfg(test)]
 pub(crate) mod test {
     use logos::Logos;

@@ -1,6 +1,8 @@
 use logos::Lexer;
 
-use super::Token;
+use crate::token::Token;
+
+pub(crate) mod precedence;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum Operator {

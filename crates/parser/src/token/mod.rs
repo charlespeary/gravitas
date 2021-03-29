@@ -1,12 +1,16 @@
+use itertools::{peek_nth, PeekNth};
 use lazy_static::lazy_static;
-use logos::{Filter, Lexer, Logos};
+use logos::Span;
+use logos::{Filter, Logos};
 use regex::Regex;
 
 use operator::{lex_operator, Operator};
 
+use crate::parse::VtasStringRef;
+
 pub(crate) mod operator;
 
-fn lex_number<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<f64> {
+fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Option<f64> {
     lazy_static! {
         static ref MULTIPLE_DOTS_IN_NUMBER: Regex =
             Regex::new("(-|\\.)?[0-9]*((\\.[0-9]+){2,}|((\\.{2,}[0-9]*))|(([0-9]\\.){2,}))\\.?")
@@ -26,12 +30,12 @@ fn lex_number<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<f64> {
     }
 }
 
-fn lex_string<'t>(lex: &mut Lexer<'t, Token<'t>>) -> &'t str {
+fn lex_string<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> &'t str {
     let slice: &str = lex.slice();
     &slice[1..slice.len() - 1]
 }
 
-fn lex_boolean<'t>(lex: &mut Lexer<'t, Token<'t>>) -> bool {
+fn lex_boolean<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> bool {
     match lex.slice() {
         "true" => true,
         "false" => false,
@@ -39,7 +43,7 @@ fn lex_boolean<'t>(lex: &mut Lexer<'t, Token<'t>>) -> bool {
     }
 }
 
-fn lex_error<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Filter<()> {
+fn lex_error<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Filter<()> {
     lazy_static! {
         static ref TO_SKIP: Regex =
             Regex::new(r"[ \t\n\f\r]+|//.*").expect("Couldn't create regex(tokens to skip)");
@@ -56,7 +60,7 @@ fn lex_error<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Filter<()> {
     }
 }
 
-#[derive(Logos, Debug, PartialEq, Clone)]
+#[derive(Logos, Debug, PartialEq, Clone, Copy)]
 pub(crate) enum Token<'t> {
     // DECLARATION KEYWORDS
     #[token("fn")]
@@ -112,14 +116,178 @@ pub(crate) enum Token<'t> {
     Error,
 }
 
+struct Source<'t> {
+    inner: logos::Lexer<'t, Token<'t>>,
+}
+
+impl<'t> Source<'t> {
+    pub fn new(input: &'t str) -> Self {
+        Self {
+            inner: Token::lexer(input),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) struct Lexeme<'t> {
+    pub(crate) token: Token<'t>,
+    pub(crate) intern_key: Option<VtasStringRef>,
+    pub(crate) slice: &'t str,
+    pub(crate) span_start: usize,
+    pub(crate) span_end: usize,
+}
+
+impl<'t> Lexeme<'t> {
+    pub(crate) fn span(&self) -> Span {
+        self.span_start..self.span_end
+    }
+}
+
+impl<'t> Iterator for Source<'t> {
+    type Item = Lexeme<'t>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.inner.next()?;
+        let slice = self.inner.slice();
+        let span = self.inner.span();
+
+        Some(Lexeme {
+            intern_key: None,
+            token,
+            slice,
+            span_start: span.start,
+            span_end: span.end,
+        })
+    }
+}
+
+pub(crate) struct Lexer<'t> {
+    // Logos lexer that lexes our source input
+    inner: PeekNth<Source<'t>>,
+}
+
+impl<'t> Lexer<'t> {
+    pub(crate) fn new(input: &'t str) -> Self {
+        Self {
+            inner: peek_nth(Source::new(input)),
+        }
+    }
+
+    pub(crate) fn span(&mut self) -> Option<Span> {
+        self.inner.peek().map(|l| l.span())
+    }
+
+    pub(crate) fn slice(&mut self) -> Option<&str> {
+        self.inner.peek().map(|l| l.slice)
+    }
+
+    pub(crate) fn peek(&mut self) -> Option<Lexeme> {
+        self.peek_nth(0)
+    }
+
+    pub(crate) fn peek_nth(&mut self, nth: usize) -> Option<Lexeme> {
+        self.inner.peek_nth(nth).copied()
+    }
+}
+
+impl<'t> Iterator for Lexer<'t> {
+    type Item = Lexeme<'t>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
         common::test::{assert_empty, assert_error, assert_token, assert_tokens},
-        token::Token,
+        token::{operator::Operator, Lexeme, Lexer, Token},
     };
+
+    #[test]
+    fn lexer_peeks() {
+        let mut lexer = Lexer::new("2 + 4");
+        let two_l = Lexeme {
+            intern_key: None,
+            slice: "2",
+            token: Token::Number(2.0),
+            span_start: 0,
+            span_end: 1,
+        };
+
+        assert_eq!(lexer.peek().unwrap(), two_l);
+        // and it doesn't advance further
+        assert_eq!(lexer.peek().unwrap(), two_l);
+        // it can also peek nth lexeme
+
+        let four_l = Lexeme {
+            intern_key: None,
+            slice: "4",
+            token: Token::Number(4.0),
+            span_start: 4,
+            span_end: 5,
+        };
+
+        assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
+        // and it also doesn't advance the iterator
+        assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
+        // we get None if we peek too far
+        assert!(lexer.peek_nth(3).is_none());
+    }
+
+    #[test]
+    fn lexer_returns_current_text_slice() {
+        let mut lexer = Lexer::new("2 + 4");
+        assert_eq!(lexer.slice(), Some("2"));
+        // and it does so without advancing
+        assert_eq!(lexer.slice(), Some("2"));
+    }
+
+    #[test]
+    fn lexer_returns_current_span() {
+        let mut lexer = Lexer::new("2 + 4");
+        assert_eq!(lexer.span(), Some(0..1));
+        // and it does so without advancing
+        assert_eq!(lexer.span(), Some(0..1));
+    }
+
+    #[test]
+    fn lexer_implements_iterator() {
+        let mut lexer = Lexer::new("2 + 4");
+        assert_eq!(
+            lexer.next().unwrap(),
+            Lexeme {
+                intern_key: None,
+                token: Token::Number(2.0),
+                slice: "2",
+                span_start: 0,
+                span_end: 1,
+            }
+        );
+        assert_eq!(
+            lexer.next().unwrap(),
+            Lexeme {
+                intern_key: None,
+                token: Token::Operator(Operator::Plus),
+                slice: "+",
+                span_start: 2,
+                span_end: 3,
+            }
+        );
+        assert_eq!(
+            lexer.next().unwrap(),
+            Lexeme {
+                intern_key: None,
+                token: Token::Number(4.0),
+                slice: "4",
+                span_start: 4,
+                span_end: 5,
+            }
+        );
+    }
 
     #[test]
     fn lexer_tokenizes_strings() {
@@ -282,5 +450,9 @@ mod test {
     }
 
     #[test]
-    fn lexer_reports_errors() {}
+    fn lexer_reports_errors() {
+        // Identifiers beginning with a number
+        assert_error("123foo");
+        assert_error("123foo");
+    }
 }

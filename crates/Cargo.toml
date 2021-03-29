@@ -4,5 +4,6 @@ members = [
     "parser",
     "cli",
     "bytecode",
-    "vm"
+    "vm",
+    "common"
 ]
