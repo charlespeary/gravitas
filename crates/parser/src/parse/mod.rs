@@ -41,6 +41,10 @@ impl<'a> Parser<'a> {
     }
 
     fn advance(&mut self) -> ParseResult<Lexeme> {
+        while self.peek().map(|n| n == Token::Whitespace).unwrap_or(false) {
+            self.lexer.next();
+        }
+
         self.lexer
             .next()
             .as_mut()
@@ -62,4 +66,30 @@ impl<'a> Parser<'a> {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use super::*;
+
+    #[test]
+    fn parser_interns_strings() {
+        let mut parser = Parser::new("\"string literal\"");
+        assert!(parser.advance().unwrap().intern_key.is_some());
+    }
+
+    #[test]
+    fn parser_interns_identifiers() {
+        let mut parser = Parser::new("foo");
+        assert!(parser.advance().unwrap().intern_key.is_some());
+    }
+
+    #[test]
+    fn parser_unexpected_end_of_input_on_advance() {
+        let mut parser = Parser::new("");
+        assert_eq!(parser.advance().unwrap_err(), ParseErrorCause::EndOfInput);
+    }
+
+    #[test]
+    fn parser_unexpected_end_of_input_on_peek() {
+        let mut parser = Parser::new("");
+        assert_eq!(parser.peek().unwrap_err(), ParseErrorCause::EndOfInput);
+    }
+}

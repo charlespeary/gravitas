@@ -7,7 +7,7 @@ pub(crate) struct ParseError {
     pub(crate) cause: ParseErrorCause,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum ParseErrorCause {
     EndOfInput,
 }
