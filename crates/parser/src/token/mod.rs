@@ -132,7 +132,6 @@ impl<'t> Source<'t> {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) struct Lexeme<'t> {
     pub(crate) token: Token<'t>,
-    pub(crate) intern_key: Option<VtasStringRef>,
     pub(crate) slice: &'t str,
     pub(crate) span_start: usize,
     pub(crate) span_end: usize,
@@ -153,7 +152,6 @@ impl<'t> Iterator for Source<'t> {
         let span = self.inner.span();
 
         Some(Lexeme {
-            intern_key: None,
             token,
             slice,
             span_start: span.start,
@@ -212,7 +210,6 @@ mod test {
     fn lexer_peeks() {
         let mut lexer = Lexer::new("2 + 4");
         let two_l = Lexeme {
-            intern_key: None,
             slice: "2",
             token: Token::Number(2.0),
             span_start: 0,
@@ -227,7 +224,6 @@ mod test {
         assert_eq!(
             lexer.peek_nth(1).unwrap(),
             Lexeme {
-                intern_key: None,
                 slice: "+",
                 token: Token::Operator(Operator::Plus),
                 span_start: 2,
@@ -235,7 +231,6 @@ mod test {
             }
         );
         let four_l = Lexeme {
-            intern_key: None,
             slice: "4",
             token: Token::Number(4.0),
             span_start: 4,
@@ -271,7 +266,6 @@ mod test {
         assert_eq!(
             lexer.next().unwrap(),
             Lexeme {
-                intern_key: None,
                 token: Token::Number(2.0),
                 slice: "2",
                 span_start: 0,
@@ -281,7 +275,6 @@ mod test {
         assert_eq!(
             lexer.next().unwrap(),
             Lexeme {
-                intern_key: None,
                 token: Token::Operator(Operator::Plus),
                 slice: "+",
                 span_start: 2,
@@ -291,7 +284,6 @@ mod test {
         assert_eq!(
             lexer.next().unwrap(),
             Lexeme {
-                intern_key: None,
                 token: Token::Number(4.0),
                 slice: "4",
                 span_start: 4,

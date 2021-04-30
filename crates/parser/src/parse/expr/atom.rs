@@ -10,7 +10,6 @@ use crate::{
 pub enum AtomicValue {
     Boolean(bool),
     Number(f64),
-
     Text(VtasStringRef),
     Identifier(VtasStringRef),
 }
@@ -37,8 +36,8 @@ impl<'a> Parser<'a> {
             Token::Number(val) => AtomicValue::Number(val),
             // It's safe to unwrap because these strings should be interned during advance()
             // If it panics then we have a bug in our code
-            Token::String(_) => AtomicValue::Text(lexeme.intern_key.unwrap()),
-            Token::Identifier(_) => AtomicValue::Identifier(lexeme.intern_key.unwrap()),
+            Token::String(_) => AtomicValue::Text(lexeme.span()),
+            Token::Identifier(_) => AtomicValue::Identifier(lexeme.span()),
             _ => unreachable!(),
         };
 
@@ -100,24 +99,15 @@ mod test {
         let quoted_text = format!("\"{}\"", &text);
         let mut parser = Parser::new(&quoted_text);
 
-        let interned_key = parser.intern(&text);
-
         let parsed_string = parser.parse_atom().unwrap();
+
         assert_eq!(
             parsed_string,
             Atom {
-                val: AtomicValue::Text(interned_key),
+                val: AtomicValue::Text(0..text.len() + 2),
                 span: 0..text.len() + 2,
             }
         );
-
-        // Interned key points to the same string that got interned before we parsed the atom
-        if let AtomicValue::Text(key) = parsed_string.val {
-            assert_eq!(parser.interner.resolve(&key), text);
-        } else {
-            // Panic if it's not there. Something went wrong.
-            panic!();
-        }
     }
 
     #[test]
@@ -125,24 +115,14 @@ mod test {
         fn test_identifier(identifier: &str) {
             let mut parser = Parser::new(identifier);
 
-            let interned_key = parser.intern(&identifier);
-
             let parsed_identifier = parser.parse_atom().unwrap();
             assert_eq!(
                 parsed_identifier,
                 Atom {
-                    val: AtomicValue::Identifier(interned_key),
+                    val: AtomicValue::Identifier(0..identifier.len()),
                     span: 0..identifier.len(),
                 }
             );
-
-            // Interned key points to the same string that got interned before we parsed the atom
-            if let AtomicValue::Identifier(key) = parsed_identifier.val {
-                assert_eq!(parser.interner.resolve(&key), identifier);
-            } else {
-                // Panic if it's not there. Something went wrong.
-                panic!();
-            }
         }
         test_identifier("foo");
         test_identifier("foo_bar");
