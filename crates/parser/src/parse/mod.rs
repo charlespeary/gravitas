@@ -1,8 +1,8 @@
-use crate::common::error::ParseErrorCause;
 use crate::{
-    common::error::ParseError,
+    common::error::{ParseError, ParseErrorCause},
     token::{Lexeme, Lexer, Token},
 };
+use lasso::{Rodeo, Spur};
 use std::ops::Range;
 
 pub(crate) mod expr;
@@ -10,12 +10,14 @@ pub(crate) mod expr;
 pub(crate) struct Parser<'a> {
     lexer: Lexer<'a>,
     errors: Vec<ParseError>,
+    symbols: Rodeo,
 }
 
 pub(crate) struct AST;
 
 pub(crate) type ParserOutput<'e> = Result<AST, &'e [ParseError]>;
 pub(crate) type ParseResult<T> = Result<T, ParseErrorCause>;
+pub(crate) type Number = f64;
 // For the time being, string is represented as a range of text positions in the source code
 pub(crate) type VtasStringRef = Range<usize>;
 
@@ -24,6 +26,7 @@ impl<'a> Parser<'a> {
         Self {
             lexer: Lexer::new(input),
             errors: vec![],
+            symbols: Rodeo::new(),
         }
     }
 

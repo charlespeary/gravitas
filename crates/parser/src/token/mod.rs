@@ -6,8 +6,6 @@ use regex::Regex;
 
 use operator::{lex_operator, Operator};
 
-use crate::parse::VtasStringRef;
-
 pub(crate) mod operator;
 
 fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Option<f64> {

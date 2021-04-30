@@ -37,29 +37,35 @@ pub(crate) enum Operator {
     Dot,
 }
 
+impl From<&str> for Operator {
+    fn from(val: &str) -> Self {
+        match val {
+            "+" => Operator::Plus,
+            "-" => Operator::Minus,
+            "*" => Operator::Multiply,
+            "/" => Operator::Divide,
+            "%" => Operator::Modulo,
+            "**" => Operator::Exponent,
+            "=" => Operator::Assign,
+            "==" => Operator::Compare,
+            "!=" => Operator::BangCompare,
+            "<" => Operator::Less,
+            "<=" => Operator::LessEqual,
+            ">" => Operator::Greater,
+            ">=" => Operator::GreaterEqual,
+            "or" => Operator::Or,
+            "and" => Operator::And,
+            "in" => Operator::In,
+            "!" => Operator::Bang,
+            "." => Operator::Dot,
+            _ => unreachable!(),
+        }
+    }
+}
+
 pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operator> {
     let slice: String = lex.slice().parse().ok()?;
-    Some(match slice.as_str() {
-        "+" => Operator::Plus,
-        "-" => Operator::Minus,
-        "*" => Operator::Multiply,
-        "/" => Operator::Divide,
-        "%" => Operator::Modulo,
-        "**" => Operator::Exponent,
-        "=" => Operator::Assign,
-        "==" => Operator::Compare,
-        "!=" => Operator::BangCompare,
-        "<" => Operator::Less,
-        "<=" => Operator::LessEqual,
-        ">" => Operator::Greater,
-        ">=" => Operator::GreaterEqual,
-        "or" => Operator::Or,
-        "and" => Operator::And,
-        "in" => Operator::In,
-        "!" => Operator::Bang,
-        "." => Operator::Dot,
-        _ => unreachable!(),
-    })
+    Some(Operator::from(slice.as_str()))
 }
 
 #[cfg(test)]
@@ -67,8 +73,18 @@ pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operato
 mod test {
     use crate::{
         common::test::assert_token,
-        token::{operator::Operator, Token},
+        token::{
+            operator::{Operator, OPERATORS},
+            Token,
+        },
     };
+    use quickcheck::{Arbitrary, Gen};
+
+    impl Arbitrary for Operator {
+        fn arbitrary(g: &mut Gen) -> Self {
+            Operator::from(g.choose(&OPERATORS).cloned().unwrap())
+        }
+    }
 
     macro_rules! op {
         ($variant: ident) => {

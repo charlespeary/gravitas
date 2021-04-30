@@ -1,23 +1,28 @@
-use derive_more::Display;
 use std::ops::Range;
 
 use crate::{
-    parse::{expr::SExpr, ParseResult, Parser, VtasStringRef},
+    parse::{expr::SExpr, Number, ParseResult, Parser, VtasStringRef},
     token::Token,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomicValue {
     Boolean(bool),
-    Number(f64),
+    Number(Number),
     Text(VtasStringRef),
     Identifier(VtasStringRef),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub(crate) struct Atom {
     pub(crate) val: AtomicValue,
     pub(crate) span: Range<usize>,
+}
+
+impl PartialEq for Atom {
+    fn eq(&self, other: &Self) -> bool {
+        self.val == other.val
+    }
 }
 
 impl Into<SExpr> for Atom {
@@ -46,10 +51,31 @@ impl<'a> Parser<'a> {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
+    use quickcheck::{Arbitrary, Gen};
     use quickcheck_macros::quickcheck;
 
     use super::*;
+    use lasso::Spur;
+
+    impl Arbitrary for AtomicValue {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let number = AtomicValue::Number(f64::arbitrary(g));
+            let boolean = AtomicValue::Boolean(bool::arbitrary(g));
+            let identifier = AtomicValue::Identifier(0..0);
+            let text = AtomicValue::Text(0..0);
+            g.choose(&[number, boolean, identifier, text])
+                .cloned()
+                .unwrap()
+        }
+    }
+
+    fn atom(val: AtomicValue) -> SExpr {
+        SExpr::Atom(Atom { val, span: 0..0 })
+    }
+    pub(crate) fn num(val: Number) -> SExpr {
+        atom(AtomicValue::Number(val))
+    }
 
     #[test]
     fn parser_parses_atom_booleans() {

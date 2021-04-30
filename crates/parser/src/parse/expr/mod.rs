@@ -6,7 +6,7 @@ use crate::{
 
 pub(crate) mod atom;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum SExpr {
     Atom(Atom),
     Cons(Operator, Vec<SExpr>),
@@ -53,15 +53,27 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use quickcheck_macros::quickcheck;
+
+    use crate::parse::{
+        expr::{
+            atom::{test::num, AtomicValue},
+            Operator,
+        },
+        Number,
+    };
 
     fn sexpr(input: &str) -> SExpr {
         let mut parser = Parser::new(input);
         parser.parse_expression().unwrap()
     }
 
-    #[test]
-    fn parser_parses_simple_expressions() {
-        dbg!(sexpr("\"foo\" + 2"));
-        // assert_eq!(sexpr("2 + 2"), SExpr::Cons(Operator::Plus, vec![]))
+    #[quickcheck]
+    fn q_parser_parses_simple_expressions(a: AtomicValue, b: AtomicValue, operator: Operator) {
+        dbg!(a, b, operator);
+        // assert_eq!(
+        //     sexpr("2 + 2"),
+        //     SExpr::Cons(Operator::Plus, vec![num(2.0), num(2.0)])
+        // )
     }
 }
