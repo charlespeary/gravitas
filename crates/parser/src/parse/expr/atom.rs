@@ -1,7 +1,8 @@
+use derive_more::Display;
 use std::ops::Range;
 
 use crate::{
-    parse::{ParseResult, Parser, VtasStringRef},
+    parse::{expr::SExpr, ParseResult, Parser, VtasStringRef},
     token::Token,
 };
 
@@ -9,14 +10,21 @@ use crate::{
 pub enum AtomicValue {
     Boolean(bool),
     Number(f64),
+
     Text(VtasStringRef),
     Identifier(VtasStringRef),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Atom {
-    val: AtomicValue,
-    span: Range<usize>,
+    pub(crate) val: AtomicValue,
+    pub(crate) span: Range<usize>,
+}
+
+impl Into<SExpr> for Atom {
+    fn into(self) -> SExpr {
+        SExpr::Atom(self)
+    }
 }
 
 impl<'a> Parser<'a> {

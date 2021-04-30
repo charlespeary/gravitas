@@ -1,8 +1,16 @@
+use lazy_static::lazy_static;
 use logos::Lexer;
 
 use crate::token::Token;
 
 pub(crate) mod precedence;
+
+lazy_static! {
+    pub(crate) static ref OPERATORS: Vec<&'static str> = vec![
+        "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "in",
+        "!", ".",
+    ];
+}
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum Operator {

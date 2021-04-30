@@ -46,7 +46,7 @@ fn lex_boolean<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> bool {
 fn lex_error<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Filter<()> {
     lazy_static! {
         static ref TO_SKIP: Regex =
-            Regex::new(r"[\n\f\r]+|//.*").expect("Couldn't create regex(tokens to skip)");
+            Regex::new(r"[\n\f\r \t]+|//.*").expect("Couldn't create regex(tokens to skip)");
         static ref INVALID_IDENTIFIER: Regex =
             Regex::new(r"([0-9]+[a-z_A-Z]+)").expect("Couldn't create regex(invalid identifiers)");
     }
@@ -111,10 +111,9 @@ pub(crate) enum Token<'t> {
     String(&'t str),
     #[regex("[a-z_A-Z][a-z_A-Z0-9]*")]
     Identifier(&'t str),
-    #[regex(r"[ \t]")]
-    Whitespace,
+    Eof,
     #[error]
-    #[regex(r"[\n\f\r]+|([0-9]+[a-z_A-Z]+)|//.*", lex_error)]
+    #[regex(r"[\n\f\r \t]+|([0-9]+[a-z_A-Z]+)|//.*", lex_error)]
     Error,
 }
 
@@ -229,35 +228,12 @@ mod test {
             lexer.peek_nth(1).unwrap(),
             Lexeme {
                 intern_key: None,
-                slice: " ",
-                token: Token::Whitespace,
-                span_start: 1,
-                span_end: 2,
-            }
-        );
-
-        assert_eq!(
-            lexer.peek_nth(2).unwrap(),
-            Lexeme {
-                intern_key: None,
                 slice: "+",
                 token: Token::Operator(Operator::Plus),
                 span_start: 2,
                 span_end: 3,
             }
         );
-
-        assert_eq!(
-            lexer.peek_nth(3).unwrap(),
-            Lexeme {
-                intern_key: None,
-                slice: " ",
-                token: Token::Whitespace,
-                span_start: 3,
-                span_end: 4,
-            }
-        );
-
         let four_l = Lexeme {
             intern_key: None,
             slice: "4",
@@ -266,11 +242,11 @@ mod test {
             span_end: 5,
         };
 
-        assert_eq!(lexer.peek_nth(4).unwrap(), four_l);
+        assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
         // and it also doesn't advance the iterator
-        assert_eq!(lexer.peek_nth(4).unwrap(), four_l);
+        assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
         // we get None if we peek too far
-        assert!(lexer.peek_nth(5).is_none());
+        assert!(lexer.peek_nth(3).is_none());
     }
 
     #[test]
@@ -306,30 +282,10 @@ mod test {
             lexer.next().unwrap(),
             Lexeme {
                 intern_key: None,
-                token: Token::Whitespace,
-                slice: " ",
-                span_start: 1,
-                span_end: 2,
-            }
-        );
-        assert_eq!(
-            lexer.next().unwrap(),
-            Lexeme {
-                intern_key: None,
                 token: Token::Operator(Operator::Plus),
                 slice: "+",
                 span_start: 2,
                 span_end: 3,
-            }
-        );
-        assert_eq!(
-            lexer.next().unwrap(),
-            Lexeme {
-                intern_key: None,
-                token: Token::Whitespace,
-                slice: " ",
-                span_start: 3,
-                span_end: 4,
             }
         );
         assert_eq!(
@@ -472,42 +428,13 @@ mod test {
         assert_token("clASS", Identifier("clASS"));
         assert_token("lEt", Identifier("lEt"));
         assert_token("iF", Identifier("iF"));
-        assert_tokens(
-            "ElsE If",
-            &[Identifier("ElsE"), Token::Whitespace, Identifier("If")],
-        );
+        assert_tokens("ElsE If", &[Identifier("ElsE"), Identifier("If")]);
         assert_token("eLSe", Identifier("eLSe"));
         assert_token("wHILe", Identifier("wHILe"));
         assert_token("rETUrn", Identifier("rETUrn"));
         assert_token("FOr", Identifier("FOr"));
         assert_token("bREAk", Identifier("bREAk"));
         assert_token("cONTInue", Identifier("cONTInue"));
-    }
-
-    #[test]
-    fn lexer_tokenizes_whitespaces_and_tabs() {
-        // Spaces
-        assert_tokens("\x20", &[Token::Whitespace]);
-        assert_tokens(
-            "\x20\x20\x20\x20",
-            &[
-                Token::Whitespace,
-                Token::Whitespace,
-                Token::Whitespace,
-                Token::Whitespace,
-            ],
-        );
-        // Tabs
-        assert_tokens("\x09", &[Token::Whitespace]);
-        assert_tokens(
-            "\x09\x09\x09\x09",
-            &[
-                Token::Whitespace,
-                Token::Whitespace,
-                Token::Whitespace,
-                Token::Whitespace,
-            ],
-        );
     }
 
     #[test]
@@ -525,6 +452,9 @@ mod test {
         // Skips form feed
         assert_empty("\x0C");
         assert_empty("\x0C\x0C\x0C\x0C");
+        // Spaces
+        assert_empty(" ");
+        assert_empty("       ");
     }
 
     #[test]

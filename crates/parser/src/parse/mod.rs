@@ -33,18 +33,14 @@ impl<'a> Parser<'a> {
         self.interner.get_or_intern(str)
     }
 
-    fn peek(&mut self) -> ParseResult<Token> {
+    fn peek(&mut self) -> Token {
         self.lexer
-            .peek()
+            .peek_nth(0)
             .map(|l| l.token)
-            .ok_or(ParseErrorCause::EndOfInput)
+            .unwrap_or(Token::Eof)
     }
 
     fn advance(&mut self) -> ParseResult<Lexeme> {
-        while self.peek().map(|n| n == Token::Whitespace).unwrap_or(false) {
-            self.lexer.next();
-        }
-
         self.lexer
             .next()
             .as_mut()
@@ -88,8 +84,8 @@ mod test {
     }
 
     #[test]
-    fn parser_unexpected_end_of_input_on_peek() {
+    fn parser_eof_token_on_peek() {
         let mut parser = Parser::new("");
-        assert_eq!(parser.peek().unwrap_err(), ParseErrorCause::EndOfInput);
+        assert_eq!(parser.peek(), Token::Eof);
     }
 }
