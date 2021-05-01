@@ -7,10 +7,13 @@ pub(crate) struct ParseError {
     pub(crate) cause: ParseErrorCause,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
+    // Lexer
+    TooMuchDots,
+    InvalidNumber,
 }
 
 impl ParseError {
@@ -20,6 +23,7 @@ impl ParseError {
         match &self.cause {
             EndOfInput => Diagnostic::error().with_message("unexpected end of input"),
             UnexpectedToken => Diagnostic::error().with_message("todo"),
+            _ => Diagnostic::error(),
         }
     }
 }

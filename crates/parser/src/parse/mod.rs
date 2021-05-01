@@ -6,6 +6,7 @@ use lasso::{Rodeo, Spur};
 use std::ops::Range;
 
 pub(crate) mod expr;
+pub(crate) mod operator;
 
 pub(crate) struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -13,13 +14,29 @@ pub(crate) struct Parser<'a> {
     symbols: Rodeo,
 }
 
-pub(crate) struct AST;
+pub struct AST;
 
 pub(crate) type ParserOutput<'e> = Result<AST, &'e [ParseError]>;
 pub(crate) type ParseResult<T> = Result<T, ParseErrorCause>;
-pub(crate) type Number = f64;
+pub type Number = f64;
 // For the time being, string is represented as a range of text positions in the source code
-pub(crate) type Symbol = Spur;
+pub type Symbol = Spur;
+pub type Span = Range<usize>;
+
+#[derive(Debug, Clone)]
+pub struct Spanned<T> {
+    pub val: T,
+    pub span: Span,
+}
+
+impl<T> PartialEq for Spanned<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.val == other.val
+    }
+}
 
 impl<'a> Parser<'a> {
     pub(crate) fn new(input: &'a str) -> Self {

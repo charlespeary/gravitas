@@ -1,27 +1,31 @@
 use lazy_static::lazy_static;
 use logos::Lexer;
 
+use crate::common::error::ParseErrorCause;
 use crate::token::Token;
+use std::str::FromStr;
 
 pub(crate) mod precedence;
 
 lazy_static! {
     pub(crate) static ref OPERATORS: Vec<&'static str> = vec![
-        "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "in",
-        "!", ".",
+        "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "!",
+        ".",
     ];
+    pub(crate) static ref BINARY_OPERATORS: Vec<&'static str> =
+        vec!["+", "-", "*", "/", "%", "**", "==", "!=", "<", "<=", ">", ">=", "or", "and"];
+    pub(crate) static ref UNARY_OPERATORS: Vec<&'static str> = vec!["!", "-"];
+    pub(crate) static ref POSTFIX_OPERATORS: Vec<&'static str> = vec!["."];
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum Operator {
-    // MATH
     Plus,
     Minus,
     Multiply,
     Divide,
     Modulo,
     Exponent,
-    // COMPARISON
     Compare,
     BangCompare,
     Less,
@@ -30,42 +34,58 @@ pub(crate) enum Operator {
     GreaterEqual,
     Or,
     And,
-    // MISC
-    In,
     Bang,
     Assign,
     Dot,
 }
 
-impl From<&str> for Operator {
-    fn from(val: &str) -> Self {
-        match val {
-            "+" => Operator::Plus,
-            "-" => Operator::Minus,
-            "*" => Operator::Multiply,
-            "/" => Operator::Divide,
-            "%" => Operator::Modulo,
-            "**" => Operator::Exponent,
-            "=" => Operator::Assign,
-            "==" => Operator::Compare,
-            "!=" => Operator::BangCompare,
-            "<" => Operator::Less,
-            "<=" => Operator::LessEqual,
-            ">" => Operator::Greater,
-            ">=" => Operator::GreaterEqual,
-            "or" => Operator::Or,
-            "and" => Operator::And,
-            "in" => Operator::In,
-            "!" => Operator::Bang,
-            "." => Operator::Dot,
-            _ => unreachable!(),
+macro_rules! impl_from_to_str {
+    ($($op_str: literal => $op: path),*) => {
+        impl std::str::FromStr for Operator {
+            type Err = ParseErrorCause;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                Ok(match s {
+                    $($op_str => $op),*,
+                    _ => return Err(ParseErrorCause::UnexpectedToken),
+                })
+            }
         }
-    }
+
+        impl std::fmt::Display for Operator {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                let s = match self {
+                    $($op => $op_str),*
+                };
+                f.write_str(s)
+            }
+        }
+    };
 }
+
+impl_from_to_str!(
+    "+" => Operator::Plus,
+    "-" => Operator::Minus,
+    "*" => Operator::Multiply,
+    "/" => Operator::Divide,
+    "%" => Operator::Modulo,
+    "**" => Operator::Exponent,
+    "=" => Operator::Assign,
+    "==" => Operator::Compare,
+    "!=" => Operator::BangCompare,
+    "<" => Operator::Less,
+    "<=" => Operator::LessEqual,
+    ">" => Operator::Greater,
+    ">=" => Operator::GreaterEqual,
+    "or" => Operator::Or,
+    "and" => Operator::And,
+    "!" => Operator::Bang,
+    "." => Operator::Dot
+);
 
 pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operator> {
     let slice: String = lex.slice().parse().ok()?;
-    Some(Operator::from(slice.as_str()))
+    Operator::from_str(slice.as_str()).ok()
 }
 
 #[cfg(test)]
@@ -78,13 +98,6 @@ mod test {
             Token,
         },
     };
-    use quickcheck::{Arbitrary, Gen};
-
-    impl Arbitrary for Operator {
-        fn arbitrary(g: &mut Gen) -> Self {
-            Operator::from(g.choose(&OPERATORS).cloned().unwrap())
-        }
-    }
 
     macro_rules! op {
         ($variant: ident) => {
@@ -109,7 +122,6 @@ mod test {
         assert_token(">=", op!(GreaterEqual));
         assert_token("or", op!(Or));
         assert_token("and", op!(And));
-        assert_token("in", op!(In));
         assert_token("!", op!(Bang));
         assert_token(".", op!(Dot));
     }

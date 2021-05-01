@@ -10,7 +10,7 @@ pub(crate) mod test {
         Token::lexer(code).collect()
     }
 
-    fn first_token(code: &str) -> Token {
+    pub(crate) fn first_token(code: &str) -> Token {
         (tokens(code)[0]).clone()
     }
 

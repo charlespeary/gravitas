@@ -4,12 +4,13 @@ use logos::Span;
 use logos::{Filter, Logos};
 use regex::Regex;
 
+use crate::common::error::ParseErrorCause;
 use crate::parse::Symbol;
 use operator::{lex_operator, Operator};
 
 pub(crate) mod operator;
 
-fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Option<f64> {
+fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Result<f64, Token<'t>> {
     lazy_static! {
         static ref MULTIPLE_DOTS_IN_NUMBER: Regex =
             Regex::new("(-|\\.)?[0-9]*((\\.[0-9]+){2,}|((\\.{2,}[0-9]*))|(([0-9]\\.){2,}))\\.?")
@@ -18,14 +19,22 @@ fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Option<f64> {
 
     let slice: &str = lex.slice();
 
+    if slice == "Infinity" || slice == "inf" {
+        return Ok(f64::INFINITY);
+    }
+
+    if slice == "NaN" {
+        return Ok(f64::NAN);
+    }
+
     if MULTIPLE_DOTS_IN_NUMBER.is_match(&slice) {
-        None
+        Err(Token::Error)
     } else {
-        Some(
-            slice
-                .parse::<f64>()
-                .expect("Couldn't parse f64 while lexing Token::Number"),
-        )
+        let x = slice.parse::<f64>().map_err(|_| Token::Error);
+        if x.is_err() {
+            println!("ERR {:?}", x);
+        }
+        x
     }
 }
 
@@ -99,11 +108,12 @@ pub(crate) enum Token<'t> {
     #[token("]")]
     SquareBracketClose,
     // OPERATORS
-    #[regex(r"\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|in|!|\.|=", lex_operator)]
+    #[regex(r"\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|!|\.|=", lex_operator)]
     Operator(Operator),
     // LITERALS
     #[regex("true|false", lex_boolean)]
     Bool(bool),
+    #[regex("Infinity|inf|NaN", lex_number)]
     #[regex("-?[0-9]*\\.?[0-9\\.]+", lex_number)]
     Number(f64),
     #[regex(r#""(\\"|[^"])*""#, lex_string)]
@@ -203,7 +213,7 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::{assert_empty, assert_error, assert_token, assert_tokens},
+        common::test::{assert_empty, assert_error, assert_token, assert_tokens, first_token},
         token::{operator::Operator, Lexeme, Lexer, Token},
     };
 
@@ -325,6 +335,22 @@ mod test {
             return;
         }
         assert_token(number.to_string().as_str(), Token::Number(number));
+    }
+
+    #[test]
+    fn lexer_tokenizes_nan() {
+        let token = first_token("NaN");
+        if let Token::Number(num) = token {
+            assert!(num.is_nan());
+        } else {
+            panic!("Lexer didn't tokenize NaN");
+        }
+    }
+
+    #[test]
+    fn lexer_tokenizes_infinity() {
+        assert_token("inf", Token::Number(f64::INFINITY));
+        assert_token("Infinity", Token::Number(f64::INFINITY));
     }
 
     #[test]
