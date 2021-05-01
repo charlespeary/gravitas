@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::{
-    parse::{expr::SExpr, Number, ParseResult, Parser, VtasStringRef},
+    parse::{expr::SExpr, Number, ParseResult, Parser, Symbol},
     token::Token,
 };
 
@@ -9,8 +9,8 @@ use crate::{
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
-    Text(VtasStringRef),
-    Identifier(VtasStringRef),
+    Text(Symbol),
+    Identifier(Symbol),
 }
 
 #[derive(Debug, Clone)]
@@ -41,8 +41,8 @@ impl<'a> Parser<'a> {
             Token::Number(val) => AtomicValue::Number(val),
             // It's safe to unwrap because these strings should be interned during advance()
             // If it panics then we have a bug in our code
-            Token::String(_) => AtomicValue::Text(lexeme.span()),
-            Token::Identifier(_) => AtomicValue::Identifier(lexeme.span()),
+            Token::String(_) => AtomicValue::Text(lexeme.intern_key.unwrap()),
+            Token::Identifier(_) => AtomicValue::Identifier(lexeme.intern_key.unwrap()),
             _ => unreachable!(),
         };
 
@@ -62,8 +62,8 @@ pub(crate) mod test {
         fn arbitrary(g: &mut Gen) -> Self {
             let number = AtomicValue::Number(f64::arbitrary(g));
             let boolean = AtomicValue::Boolean(bool::arbitrary(g));
-            let identifier = AtomicValue::Identifier(0..0);
-            let text = AtomicValue::Text(0..0);
+            let identifier = AtomicValue::Identifier(Spur::default());
+            let text = AtomicValue::Text(Spur::default());
             g.choose(&[number, boolean, identifier, text])
                 .cloned()
                 .unwrap()
@@ -130,7 +130,7 @@ pub(crate) mod test {
         assert_eq!(
             parsed_string,
             Atom {
-                val: AtomicValue::Text(0..text.len() + 2),
+                val: AtomicValue::Text(Spur::default()),
                 span: 0..text.len() + 2,
             }
         );
@@ -145,7 +145,7 @@ pub(crate) mod test {
             assert_eq!(
                 parsed_identifier,
                 Atom {
-                    val: AtomicValue::Identifier(0..identifier.len()),
+                    val: AtomicValue::Identifier(Spur::default()),
                     span: 0..identifier.len(),
                 }
             );

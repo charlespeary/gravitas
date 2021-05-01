@@ -19,7 +19,7 @@ pub(crate) type ParserOutput<'e> = Result<AST, &'e [ParseError]>;
 pub(crate) type ParseResult<T> = Result<T, ParseErrorCause>;
 pub(crate) type Number = f64;
 // For the time being, string is represented as a range of text positions in the source code
-pub(crate) type VtasStringRef = Range<usize>;
+pub(crate) type Symbol = Spur;
 
 impl<'a> Parser<'a> {
     pub(crate) fn new(input: &'a str) -> Self {
@@ -37,8 +37,24 @@ impl<'a> Parser<'a> {
             .unwrap_or(Token::Eof)
     }
 
+    fn intern(&mut self, string: &str) -> Symbol {
+        self.symbols.get_or_intern(string)
+    }
+
     fn advance(&mut self) -> ParseResult<Lexeme> {
-        self.lexer.next().ok_or(ParseErrorCause::EndOfInput)
+        self.lexer
+            .next()
+            .as_mut()
+            .map(|lexeme| {
+                let intern_key = match lexeme.token {
+                    Token::String(string) => Some(self.intern(string)),
+                    Token::Identifier(identifier) => Some(self.intern(identifier)),
+                    _ => None,
+                };
+                lexeme.intern_key = intern_key;
+                *lexeme
+            })
+            .ok_or(ParseErrorCause::EndOfInput)
     }
 
     pub(crate) fn parse(&mut self) {
@@ -49,6 +65,18 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn parser_interns_strings() {
+        let mut parser = Parser::new("\"string literal\"");
+        assert!(parser.advance().unwrap().intern_key.is_some());
+    }
+
+    #[test]
+    fn parser_interns_identifiers() {
+        let mut parser = Parser::new("foo");
+        assert!(parser.advance().unwrap().intern_key.is_some());
+    }
 
     #[test]
     fn parser_unexpected_end_of_input_on_advance() {
