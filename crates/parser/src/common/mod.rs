@@ -4,7 +4,11 @@ pub(crate) mod error;
 pub(crate) mod test {
     use logos::Logos;
 
-    use crate::token::Token;
+    use crate::token::{operator::Operator, Token};
+
+    pub(crate) fn op<'t>(operator: Operator) -> Token<'t> {
+        Token::Operator(operator)
+    }
 
     fn tokens(code: &str) -> Vec<Token> {
         Token::lexer(code).collect()

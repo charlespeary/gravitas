@@ -3,23 +3,24 @@ use crate::{
     parse::{expr::atom::Atom, operator::BinaryOperator, ParseResult, Parser, Spanned},
     token::Token,
 };
+use derive_more::Display;
 use std::convert::TryInto;
 
 pub(crate) mod atom;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Display, PartialEq)]
+#[display(fmt = "({} {} {})", op, lhs, rhs)]
 pub(crate) struct Binary {
     pub(crate) lhs: Box<Expr>,
     pub(crate) op: Spanned<BinaryOperator>,
     pub(crate) rhs: Box<Expr>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Display, Clone, PartialEq)]
 pub(crate) enum Expr {
     Atom(Atom),
     Binary(Binary),
 }
-
 // Macro to implement From traits for all the AST little expression pieces
 macro_rules! impl_from_for_ast_pieces {
     ( $( $ast_piece: ident), *) => {
@@ -40,7 +41,6 @@ impl<'a> Parser<'a> {
 
     pub(super) fn parse_expression_bp(&mut self, min_bp: u8) -> ParseResult<Expr> {
         let mut lhs: Expr = self.parse_atom()?.into();
-
         loop {
             let operator = match self.peek() {
                 Token::Operator(operator) => operator,
@@ -49,7 +49,6 @@ impl<'a> Parser<'a> {
             };
 
             let (l_bp, r_bp) = operator.bp();
-
             if l_bp < min_bp {
                 break;
             }
@@ -78,36 +77,42 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quickcheck_macros::quickcheck;
-
-    use crate::parse::{
-        expr::atom::{test::num, AtomicValue},
-        operator::BinaryOperator,
-        Number,
-    };
 
     fn expr(input: &str) -> Expr {
         let mut parser = Parser::new(input);
         parser.parse_expression().unwrap()
     }
 
-    fn spanned<T>(val: T) -> Spanned<T>
-    where
-        T: PartialEq,
-    {
-        Spanned { val, span: 0..0 }
+    fn assert_expr(input: &str, expected: &str) {
+        assert_eq!(expr(input).to_string(), expected)
     }
 
-    #[quickcheck]
-    fn q_parser_parses_simple_numeric_binary_expressions(a: Number, b: Number, op: BinaryOperator) {
-        // TODO: make it work by excluding spans from the equality check
-        assert_eq!(
-            expr(&format!("{} {} {}", a, op, b)),
-            Expr::Binary(Binary {
-                lhs: Box::new(num(a)),
-                op: spanned(op),
-                rhs: Box::new(num(b))
-            })
-        )
+    #[test]
+    fn parser_parses_simple_binary_expression() {
+        assert_expr("1 + 2", "(+ 1 2)");
+        assert_expr("1 - 2", "(- 1 2)");
+        assert_expr("1 * 2", "(* 1 2)");
+        assert_expr("1 / 2", "(/ 1 2)");
+    }
+
+    #[test]
+    fn parser_parses_binary_expressions_with_equal_precedence() {
+        // addition and subtraction
+        assert_expr("1 + 2 + 3", "(+ (+ 1 2) 3)");
+        assert_expr("1 + 2 + 3 + 4", "(+ (+ (+ 1 2) 3) 4)");
+        assert_expr("1 + 2 - 3", "(- (+ 1 2) 3)");
+        assert_expr("1 - 2 + 3", "(+ (- 1 2) 3)");
+        // multiplication and division
+        assert_expr("1 * 2 * 3", "(* (* 1 2) 3)");
+        assert_expr("1 / 2 * 3", "(* (/ 1 2) 3)");
+        assert_expr("1 * 2 / 3", "(/ (* 1 2) 3)");
+        // multiplication and addition, subtraction
+        assert_expr("1 * 2 / 3 + 2", "(+ (/ (* 1 2) 3) 2)");
+    }
+
+    #[test]
+    fn parser_parses_binary_expressions_with_bigger_precedence() {
+        assert_expr("1 + 2 * 3", "(+ 1 (* 2 3))");
+        assert_expr("1 * 2 + 3", "(+ (* 1 2) 3)");
     }
 }

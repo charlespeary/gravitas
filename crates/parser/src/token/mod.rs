@@ -213,7 +213,7 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::{assert_empty, assert_error, assert_token, assert_tokens, first_token},
+        common::test::{assert_empty, assert_error, assert_token, assert_tokens, first_token, op},
         token::{operator::Operator, Lexeme, Lexer, Token},
     };
 
@@ -480,6 +480,29 @@ mod test {
         // Spaces
         assert_empty(" ");
         assert_empty("       ");
+    }
+
+    #[test]
+    fn lexer_tokenizes_binary_expression() {
+        use self::Operator::*;
+        use Token::*;
+
+        assert_tokens(
+            "foo == foo",
+            &[Identifier("foo"), op(Compare), Identifier("foo")],
+        );
+
+        assert_tokens(
+            "\"foo\" == \"foo\"",
+            &[String("foo"), op(Compare), String("foo")],
+        );
+
+        assert_tokens("true and true", &[Bool(true), op(And), Bool(true)]);
+        assert_tokens("false or true", &[Bool(false), op(Or), Bool(true)]);
+
+        assert_tokens("0 + 1", &[Number(0.0), op(Plus), Number(1.0)]);
+        assert_tokens("-0 + 1", &[Number(0.0), op(Plus), Number(1.0)]);
+        assert_tokens("-0 + -1", &[Number(0.0), op(Plus), Number(-1.0)]);
     }
 
     #[test]

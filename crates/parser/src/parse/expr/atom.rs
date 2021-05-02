@@ -2,12 +2,15 @@ use crate::{
     parse::{Number, ParseResult, Parser, Spanned, Symbol},
     token::Token,
 };
+use derive_more::Display;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Display, Clone, PartialEq)]
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
+    #[display(fmt = "symbol")]
     Text(Symbol),
+    #[display(fmt = "symbol")]
     Identifier(Symbol),
 }
 
@@ -25,7 +28,9 @@ impl<'a> Parser<'a> {
             // If it panics then we have a bug in our code
             Token::String(_) => AtomicValue::Text(lexeme.intern_key.unwrap()),
             Token::Identifier(_) => AtomicValue::Identifier(lexeme.intern_key.unwrap()),
-            _ => unreachable!(),
+            t => {
+                panic!("Encountered {:?} while parsing atom", t);
+            }
         };
 
         Ok(Atom { val, span })
@@ -37,15 +42,7 @@ pub(crate) mod test {
     use quickcheck_macros::quickcheck;
 
     use super::*;
-    use crate::parse::expr::Expr;
     use lasso::Spur;
-
-    fn atom(val: AtomicValue) -> Expr {
-        Expr::Atom(Atom { val, span: 0..0 })
-    }
-    pub(crate) fn num(val: Number) -> Expr {
-        atom(AtomicValue::Number(val))
-    }
 
     #[test]
     fn parser_parses_atom_booleans() {

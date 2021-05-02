@@ -39,7 +39,7 @@ impl FromStr for BinaryOperator {
     type Err = ParseErrorCause;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Operator::from_str(s)?.try_into()?)
+        Operator::from_str(s)?.try_into()
     }
 }
 

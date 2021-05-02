@@ -2,6 +2,7 @@ use crate::{
     common::error::{ParseError, ParseErrorCause},
     token::{Lexeme, Lexer, Token},
 };
+use derive_more::Display;
 use lasso::{Rodeo, Spur};
 use std::ops::Range;
 
@@ -23,7 +24,8 @@ pub type Number = f64;
 pub type Symbol = Spur;
 pub type Span = Range<usize>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Display)]
+#[display(fmt = "{}", val)]
 pub struct Spanned<T> {
     pub val: T,
     pub span: Span,

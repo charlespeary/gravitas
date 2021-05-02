@@ -6,7 +6,8 @@ impl Operator {
     pub(crate) fn bp(&self) -> BindingPower {
         match self {
             Plus | Minus => (1, 2),
-            _ => (0, 0), // _ => panic!("Operator binding power used in wrong context!"),
+            Multiply | Divide => (3, 4),
+            _ => panic!("Operator binding power used in wrong context!"),
         }
     }
 }
