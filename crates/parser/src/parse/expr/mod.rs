@@ -48,7 +48,7 @@ impl<'a> Parser<'a> {
                 _ => return Err(ParseErrorCause::UnexpectedToken),
             };
 
-            let (l_bp, r_bp) = operator.bp();
+            let (l_bp, r_bp) = operator.infix_bp();
             if l_bp < min_bp {
                 break;
             }
@@ -88,31 +88,73 @@ mod test {
     }
 
     #[test]
-    fn parser_parses_simple_binary_expression() {
+    fn parses_simple_binary_expression() {
         assert_expr("1 + 2", "(+ 1 2)");
         assert_expr("1 - 2", "(- 1 2)");
         assert_expr("1 * 2", "(* 1 2)");
         assert_expr("1 / 2", "(/ 1 2)");
+        assert_expr("1 % 2", "(% 1 2)");
+        assert_expr("1 ** 2", "(** 1 2)");
+        assert_expr("1 == 2", "(== 1 2)");
+        assert_expr("1 != 2", "(!= 1 2)");
+        assert_expr("1 < 2", "(< 1 2)");
+        assert_expr("1 <= 2", "(<= 1 2)");
+        assert_expr("1 > 2", "(> 1 2)");
+        assert_expr("1 >= 2", "(>= 1 2)");
+        assert_expr("1 or 2", "(or 1 2)");
+        assert_expr("1 and 2", "(and 1 2)");
     }
 
     #[test]
-    fn parser_parses_binary_expressions_with_equal_precedence() {
+    fn parses_binary_expressions_with_equal_precedence() {
+        // logical
+        assert_expr("1 or 2 or 3", "(or (or 1 2) 3)");
+        assert_expr("1 and 2 and 3", "(and (and 1 2) 3)");
+        // comparison, this will get discarded during static analysis,
+        // but we want to ensure that parser doesn't surprise us
+        assert_expr("1 == 2 == 3", "(== (== 1 2) 3)");
+        assert_expr("1 != 2 != 3", "(!= (!= 1 2) 3)");
+        assert_expr("1 < 2 < 3", "(< (< 1 2) 3)");
+        assert_expr("1 <= 2 <= 3", "(<= (<= 1 2) 3)");
+        assert_expr("1 > 2 > 3", "(> (> 1 2) 3)");
+        assert_expr("1 >= 2 >= 3", "(>= (>= 1 2) 3)");
         // addition and subtraction
         assert_expr("1 + 2 + 3", "(+ (+ 1 2) 3)");
         assert_expr("1 + 2 + 3 + 4", "(+ (+ (+ 1 2) 3) 4)");
         assert_expr("1 + 2 - 3", "(- (+ 1 2) 3)");
         assert_expr("1 - 2 + 3", "(+ (- 1 2) 3)");
-        // multiplication and division
+        // multiplication, division, modulo
         assert_expr("1 * 2 * 3", "(* (* 1 2) 3)");
         assert_expr("1 / 2 * 3", "(* (/ 1 2) 3)");
         assert_expr("1 * 2 / 3", "(/ (* 1 2) 3)");
-        // multiplication and addition, subtraction
-        assert_expr("1 * 2 / 3 + 2", "(+ (/ (* 1 2) 3) 2)");
+        assert_expr("1 % 2 % 3", "(% (% 1 2) 3)");
+        assert_expr("1 * 2 / 3 % 4", "(% (/ (* 1 2) 3) 4)");
+        // exponent
+        assert_expr("1 ** 2 ** 3", "(** (** 1 2) 3)");
     }
 
     #[test]
-    fn parser_parses_binary_expressions_with_bigger_precedence() {
+    fn parses_binary_expressions_with_bigger_precedence() {
+        // logical operators precedes comparison
+        assert_expr("1 and 2 < 3", "(and 1 (< 2 3))");
+        assert_expr("1 < 2 and 3", "(and (< 1 2) 3)");
+        assert_expr("1 or 2 < 3", "(or 1 (< 2 3))");
+        assert_expr("1 < 2 or 3", "(or (< 1 2) 3)");
+        // comparison precedes addition and subtraction
+        assert_expr("1 + 2 > 3", "(> (+ 1 2) 3)");
+        assert_expr("1 > 2 + 3", "(> 1 (+ 2 3))");
+        assert_expr("1 > 2 - 3", "(> 1 (- 2 3))");
+        assert_expr("1 - 2 > 3", "(> (- 1 2) 3)");
+        // addition and subtraction precedes multiplication, division and modulo
         assert_expr("1 + 2 * 3", "(+ 1 (* 2 3))");
         assert_expr("1 * 2 + 3", "(+ (* 1 2) 3)");
+        assert_expr("1 - 2 / 3", "(- 1 (/ 2 3))");
+        assert_expr("1 / 2 - 3", "(- (/ 1 2) 3)");
+        assert_expr("1 + 2 % 3", "(+ 1 (% 2 3))");
+        assert_expr("1 % 2 - 3", "(- (% 1 2) 3)");
+        // multiplication, division and modulo precedes exponent
+        assert_expr("1 * 2 ** 3", "(* 1 (** 2 3))");
+        assert_expr("1 ** 2 / 3", "(/ (** 1 2) 3)");
+        assert_expr("1 % 2 ** 3", "(% 1 (** 2 3))");
     }
 }

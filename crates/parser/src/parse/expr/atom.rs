@@ -45,7 +45,7 @@ pub(crate) mod test {
     use lasso::Spur;
 
     #[test]
-    fn parser_parses_atom_booleans() {
+    fn parses_atom_booleans() {
         let mut parser = Parser::new("true false");
         assert_eq!(
             parser.parse_atom().unwrap(),
@@ -64,7 +64,7 @@ pub(crate) mod test {
     }
 
     #[quickcheck]
-    fn parser_parses_atom_numbers(number: f64) {
+    fn parses_atom_numbers(number: f64) {
         if number.is_nan() || number.is_infinite() {
             return;
         }
@@ -84,7 +84,7 @@ pub(crate) mod test {
 
     #[quickcheck]
     #[test]
-    fn parser_parses_atom_strings(text: String) {
+    fn parses_atom_strings(text: String) {
         let text = text.replace("\"", "");
         // Quote the string, so it's lexed as a string token and not an identifier
         // Also, get rid of the quotes because they are not allowed inside our string representation
@@ -104,7 +104,7 @@ pub(crate) mod test {
     }
 
     #[test]
-    fn parser_parses_atom_identifiers() {
+    fn parses_atom_identifiers() {
         fn test_identifier(identifier: &str) {
             let mut parser = Parser::new(identifier);
 
