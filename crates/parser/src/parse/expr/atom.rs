@@ -1,5 +1,5 @@
 use crate::{
-    parse::{Number, ParseResult, Parser, Spanned, Symbol},
+    parse::{expr::Expr, Number, ParseResult, Parser, Spanned, Symbol},
     token::Token,
 };
 use derive_more::Display;
@@ -14,10 +14,8 @@ pub enum AtomicValue {
     Identifier(Symbol),
 }
 
-pub(crate) type Atom = Spanned<AtomicValue>;
-
 impl<'a> Parser<'a> {
-    pub(super) fn parse_atom(&mut self) -> ParseResult<Atom> {
+    pub(super) fn parse_atom(&mut self) -> ParseResult<Expr> {
         let lexeme = self.advance()?;
         let span = lexeme.span();
 
@@ -33,7 +31,7 @@ impl<'a> Parser<'a> {
             }
         };
 
-        Ok(Atom { val, span })
+        Ok(Expr::Atom(Spanned { val, span }))
     }
 }
 
@@ -49,17 +47,17 @@ pub(crate) mod test {
         let mut parser = Parser::new("true false");
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Atom {
+            Expr::Atom(Spanned {
                 val: AtomicValue::Boolean(true),
                 span: 0..4,
-            }
+            })
         );
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Atom {
+            Expr::Atom(Spanned {
                 val: AtomicValue::Boolean(false),
                 span: 5..10,
-            }
+            })
         )
     }
 
@@ -75,10 +73,10 @@ pub(crate) mod test {
 
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Atom {
+            Expr::Atom(Spanned {
                 val: AtomicValue::Number(number),
                 span: 0..num_as_str.len(),
-            }
+            })
         );
     }
 
@@ -96,10 +94,10 @@ pub(crate) mod test {
 
         assert_eq!(
             parsed_string,
-            Atom {
+            Expr::Atom(Spanned {
                 val: AtomicValue::Text(Spur::default()),
                 span: 0..text.len() + 2,
-            }
+            })
         );
     }
 
@@ -111,10 +109,10 @@ pub(crate) mod test {
             let parsed_identifier = parser.parse_atom().unwrap();
             assert_eq!(
                 parsed_identifier,
-                Atom {
+                Expr::Atom(Spanned {
                     val: AtomicValue::Identifier(Spur::default()),
                     span: 0..identifier.len(),
-                }
+                })
             );
         }
         test_identifier("foo");

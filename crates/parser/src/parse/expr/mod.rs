@@ -1,7 +1,7 @@
 use crate::parse::operator::UnaryOperator;
 use crate::{
     common::error::ParseErrorCause,
-    parse::{expr::atom::Atom, operator::BinaryOperator, ParseResult, Parser, Spanned},
+    parse::{expr::atom::AtomicValue, operator::BinaryOperator, ParseResult, Parser, Spanned},
     token::Token,
 };
 use derive_more::Display;
@@ -9,40 +9,21 @@ use std::convert::TryInto;
 
 pub(crate) mod atom;
 
-#[derive(Debug, Clone, Display, PartialEq)]
-#[display(fmt = "({} {} {})", op, lhs, rhs)]
-pub(crate) struct Binary {
-    pub(crate) lhs: Box<Expr>,
-    pub(crate) op: Spanned<BinaryOperator>,
-    pub(crate) rhs: Box<Expr>,
-}
-
-#[derive(Debug, Clone, Display, PartialEq)]
-#[display(fmt = "({} {})", op, rhs)]
-pub(crate) struct Unary {
-    pub(crate) op: Spanned<UnaryOperator>,
-    pub(crate) rhs: Box<Expr>,
-}
-
 #[derive(Debug, Display, Clone, PartialEq)]
 pub(crate) enum Expr {
-    Atom(Atom),
-    Binary(Binary),
-    Unary(Unary),
+    Atom(Spanned<AtomicValue>),
+    #[display(fmt = "({} {} {})", op, lhs, rhs)]
+    Binary {
+        lhs: Box<Expr>,
+        op: Spanned<BinaryOperator>,
+        rhs: Box<Expr>,
+    },
+    #[display(fmt = "({} {})", op, rhs)]
+    Unary {
+        op: Spanned<UnaryOperator>,
+        rhs: Box<Expr>,
+    },
 }
-
-// Macro to implement From traits for all the AST little expression pieces
-macro_rules! impl_from_for_ast_pieces {
-    ( $( $ast_piece: ident), *) => {
-        $(
-            impl From<$ast_piece> for Expr {
-                fn from(val: $ast_piece) -> Self { Expr::$ast_piece(val)}
-            }
-        )*
-    }
-}
-
-impl_from_for_ast_pieces!(Atom, Binary, Unary);
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
@@ -55,9 +36,9 @@ impl<'a> Parser<'a> {
                 let ((), r_bp) = op.prefix_bp();
                 let op = self.construct_spanned(op.try_into()?)?;
                 let rhs = Box::new(self.parse_expression_bp(r_bp)?);
-                Unary { op, rhs }.into()
+                Expr::Unary { op, rhs }
             }
-            _ => self.parse_atom()?.into(),
+            _ => self.parse_atom()?,
         };
 
         loop {
@@ -80,13 +61,13 @@ impl<'a> Parser<'a> {
                     span: lexeme.span(),
                 }
             };
+
             let rhs = self.parse_expression_bp(r_bp)?;
-            lhs = Binary {
+            lhs = Expr::Binary {
                 lhs: Box::new(lhs),
                 op,
                 rhs: Box::new(rhs),
-            }
-            .into();
+            };
         }
 
         Ok(lhs)
@@ -185,11 +166,17 @@ mod test {
         assert_expr("!!true", "(! (! true))");
         assert_expr("!!!true", "(! (! (! true)))");
         assert_expr("!!!!true", "(! (! (! (! true))))");
+
+        assert_expr("--5", "(- -5)");
+        assert_expr("---5", "(- (- -5))");
+        assert_expr("----5", "(- (- (- -5)))");
     }
 
     #[test]
     fn parses_combined_expression() {
         assert_expr("!true == false", "(== (! true) false)");
         assert_expr("!!true == !false", "(== (! (! true)) (! false))");
+        assert_expr("2 >= 10 + 3", "(>= 2 (+ 10 3))");
+        assert_expr("2 + 2 ** 3 >= 10 + 3", "(>= (+ 2 (** 2 3)) (+ 10 3))");
     }
 }
