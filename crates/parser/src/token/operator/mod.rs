@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 use logos::Lexer;
 
 use crate::common::error::ParseErrorCause;
@@ -9,6 +8,7 @@ pub(crate) mod precedence;
 
 pub(crate) static OPERATORS: &[&str] = &[
     "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "!", ".",
+    "[", "]", "(", ")",
 ];
 
 pub(crate) static BINARY_OPERATORS: &[&str] = &[
@@ -16,7 +16,7 @@ pub(crate) static BINARY_OPERATORS: &[&str] = &[
 ];
 
 pub(crate) static UNARY_OPERATORS: &[&str] = &["!", "-"];
-pub(crate) static POSTFIX_OPERATORS: &[&'static str] = &["."];
+pub(crate) static POSTFIX_OPERATORS: &[&'static str] = &[".", "[", "]", "(", ")"];
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum Operator {
@@ -37,6 +37,12 @@ pub(crate) enum Operator {
     Bang,
     Assign,
     Dot,
+    RoundBracketOpen,
+    RoundBracketClose,
+    SquareBracketOpen,
+    SquareBracketClose,
+    CurlyBracketOpen,
+    CurlyBracketClose,
 }
 
 macro_rules! impl_from_to_str {
@@ -80,7 +86,13 @@ impl_from_to_str!(
     "or" => Operator::Or,
     "and" => Operator::And,
     "!" => Operator::Bang,
-    "." => Operator::Dot
+    "." => Operator::Dot,
+    "[" => Operator::SquareBracketOpen,
+    "]" => Operator::SquareBracketClose,
+    "(" => Operator::RoundBracketOpen,
+    ")" => Operator::RoundBracketClose,
+    "{" => Operator::CurlyBracketOpen,
+    "}" => Operator::CurlyBracketClose
 );
 
 pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operator> {
@@ -93,10 +105,7 @@ pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operato
 mod test {
     use crate::{
         common::test::{assert_token, op},
-        token::{
-            operator::{Operator, OPERATORS},
-            Token,
-        },
+        token::{operator::Operator, Token},
     };
 
     #[test]
@@ -119,5 +128,11 @@ mod test {
         assert_token("and", op(And));
         assert_token("!", op(Bang));
         assert_token(".", op(Dot));
+        assert_token("(", op(RoundBracketOpen));
+        assert_token(")", op(RoundBracketClose));
+        assert_token("[", op(SquareBracketOpen));
+        assert_token("]", op(SquareBracketClose));
+        assert_token("{", op(CurlyBracketOpen));
+        assert_token("}", op(CurlyBracketClose));
     }
 }

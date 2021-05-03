@@ -79,6 +79,14 @@ impl<'a> Parser<'a> {
     pub(crate) fn parse(&mut self) {
         self.parse_expression();
     }
+
+    fn construct_spanned<T>(&mut self, val: T) -> ParseResult<Spanned<T>> {
+        let lexeme = self.advance()?;
+        Ok(Spanned {
+            val,
+            span: lexeme.span(),
+        })
+    }
 }
 
 #[cfg(test)]

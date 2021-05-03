@@ -1,3 +1,4 @@
+use crate::parse::operator::UnaryOperator;
 use crate::{
     common::error::ParseErrorCause,
     parse::{expr::atom::Atom, operator::BinaryOperator, ParseResult, Parser, Spanned},
@@ -16,11 +17,20 @@ pub(crate) struct Binary {
     pub(crate) rhs: Box<Expr>,
 }
 
+#[derive(Debug, Clone, Display, PartialEq)]
+#[display(fmt = "({} {})", op, rhs)]
+pub(crate) struct Unary {
+    pub(crate) op: Spanned<UnaryOperator>,
+    pub(crate) rhs: Box<Expr>,
+}
+
 #[derive(Debug, Display, Clone, PartialEq)]
 pub(crate) enum Expr {
     Atom(Atom),
     Binary(Binary),
+    Unary(Unary),
 }
+
 // Macro to implement From traits for all the AST little expression pieces
 macro_rules! impl_from_for_ast_pieces {
     ( $( $ast_piece: ident), *) => {
@@ -32,7 +42,7 @@ macro_rules! impl_from_for_ast_pieces {
     }
 }
 
-impl_from_for_ast_pieces!(Atom, Binary);
+impl_from_for_ast_pieces!(Atom, Binary, Unary);
 
 impl<'a> Parser<'a> {
     pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
@@ -40,7 +50,16 @@ impl<'a> Parser<'a> {
     }
 
     pub(super) fn parse_expression_bp(&mut self, min_bp: u8) -> ParseResult<Expr> {
-        let mut lhs: Expr = self.parse_atom()?.into();
+        let mut lhs: Expr = match self.peek() {
+            Token::Operator(op) => {
+                let ((), r_bp) = op.prefix_bp();
+                let op = self.construct_spanned(op.try_into()?)?;
+                let rhs = Box::new(self.parse_expression_bp(r_bp)?);
+                Unary { op, rhs }.into()
+            }
+            _ => self.parse_atom()?.into(),
+        };
+
         loop {
             let operator = match self.peek() {
                 Token::Operator(operator) => operator,
@@ -156,5 +175,21 @@ mod test {
         assert_expr("1 * 2 ** 3", "(* 1 (** 2 3))");
         assert_expr("1 ** 2 / 3", "(/ (** 1 2) 3)");
         assert_expr("1 % 2 ** 3", "(% 1 (** 2 3))");
+    }
+
+    #[test]
+    fn parses_unary_expressions() {
+        assert_expr("- -1", "(- -1)");
+        assert_expr("- 2 + 2", "(- (+ 2 2))");
+        assert_expr("!true", "(! true)");
+        assert_expr("!!true", "(! (! true))");
+        assert_expr("!!!true", "(! (! (! true)))");
+        assert_expr("!!!!true", "(! (! (! (! true))))");
+    }
+
+    #[test]
+    fn parses_combined_expression() {
+        assert_expr("!true == false", "(== (! true) false)");
+        assert_expr("!!true == !false", "(== (! (! true)) (! false))");
     }
 }

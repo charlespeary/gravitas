@@ -94,21 +94,11 @@ pub(crate) enum Token<'t> {
     Break,
     #[token("continue")]
     Continue,
-    // PARENTHESIS
-    #[token("{")]
-    CurlyBracketOpen,
-    #[token("}")]
-    CurlyBracketClose,
-    #[token("(")]
-    RoundBracketOpen,
-    #[token(")")]
-    RoundBracketClose,
-    #[token("[")]
-    SquareBracketOpen,
-    #[token("]")]
-    SquareBracketClose,
     // OPERATORS
-    #[regex(r"\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|!|\.|=", lex_operator)]
+    #[regex(
+        r"\[|\]|\{|\}|\(|\)|\+|\-|\*|/|%|\*\*|==|!=|<|<=|>|>=|or|and|!|\.|=",
+        lex_operator
+    )]
     Operator(Operator),
     // LITERALS
     #[regex("true|false", lex_boolean)]
@@ -409,24 +399,6 @@ mod test {
 
         assert_token("true", Bool(true));
         assert_token("false", Bool(false));
-    }
-
-    #[test]
-    fn lexer_tokenizes_parenthesis() {
-        use Token::*;
-        assert_token("{", CurlyBracketOpen);
-        assert_token("}", CurlyBracketClose);
-        assert_token("(", RoundBracketOpen);
-        assert_token(")", RoundBracketClose);
-        assert_token("[", SquareBracketOpen);
-        assert_token("]", SquareBracketClose);
-
-        assert_tokens("{}", &[CurlyBracketOpen, CurlyBracketClose]);
-        assert_tokens("}{", &[CurlyBracketClose, CurlyBracketOpen]);
-        assert_tokens("()", &[RoundBracketOpen, RoundBracketClose]);
-        assert_tokens(")(", &[RoundBracketClose, RoundBracketOpen]);
-        assert_tokens("[]", &[SquareBracketOpen, SquareBracketClose]);
-        assert_tokens("][", &[SquareBracketClose, SquareBracketOpen]);
     }
 
     #[test]

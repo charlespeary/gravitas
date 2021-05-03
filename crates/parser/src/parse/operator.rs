@@ -3,37 +3,80 @@ use std::convert::TryInto;
 use std::fmt;
 use std::str::FromStr;
 
+macro_rules! impl_double_ended_conversion {
+    ($from: ty, $to: ty, [$($operator: path => $binary_operator: path),*]) => {
+        impl std::convert::TryFrom<$from> for $to {
+            type Error = ParseErrorCause;
+
+            fn try_from(op: $from) -> Result<Self, Self::Error> {
+                Ok(match op {
+                    $($operator => $binary_operator),*,
+                    _ => return Err(ParseErrorCause::UnexpectedToken),
+                })
+            }
+        }
+
+        impl std::convert::From<$to> for $from {
+
+            fn from(op: $to) -> Self {
+                match op {
+                    $($binary_operator => $operator),*,
+                }
+            }
+        }
+    };
+}
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum BinaryOperator {
     // +
-    Add,
+    Addition,
     // -
-    Sub,
+    Subtraction,
     // *
-    Mul,
+    Multiplication,
     // /
-    Div,
+    Division,
     // %
-    Mod,
+    Modulo,
     // **
-    Exp,
+    Power,
     // ==
-    Eq,
+    Equals,
     // !=
-    Ne,
+    NotEquals,
     // <
-    Lt,
+    LesserThan,
     // <=
-    Le,
+    LesserEquals,
     // >
-    Gt,
+    GreaterThan,
     // >=
-    Ge,
+    GreaterEquals,
     // or
     Or,
     // and
     And,
 }
+
+impl_double_ended_conversion!(
+    Operator, BinaryOperator, [
+        Operator::Plus => BinaryOperator::Addition,
+        Operator::Minus => BinaryOperator::Subtraction,
+        Operator::Multiply => BinaryOperator::Multiplication,
+        Operator::Divide => BinaryOperator::Division,
+        Operator::Modulo => BinaryOperator::Modulo,
+        Operator::Exponent => BinaryOperator::Power,
+        Operator::Compare => BinaryOperator::Equals,
+        Operator::BangCompare => BinaryOperator::NotEquals,
+        Operator::Less => BinaryOperator::LesserThan,
+        Operator::LessEqual => BinaryOperator::LesserEquals,
+        Operator::Greater => BinaryOperator::GreaterThan,
+        Operator::GreaterEqual => BinaryOperator::GreaterEquals,
+        Operator::Or => BinaryOperator::Or,
+        Operator::And => BinaryOperator::And
+    ]
+);
 
 impl FromStr for BinaryOperator {
     type Err = ParseErrorCause;
@@ -55,56 +98,18 @@ pub(crate) enum UnaryOperator {
     Not,
 }
 
-impl From<Operator> for UnaryOperator {
-    fn from(operator: Operator) -> Self {
-        match operator {
-            Operator::Bang => UnaryOperator::Not,
-            Operator::Minus => UnaryOperator::Negate,
-            _ => unreachable!(),
-        }
+impl_double_ended_conversion!(
+    Operator, UnaryOperator, [
+        Operator::Minus => UnaryOperator::Negate,
+        Operator::Bang => UnaryOperator::Not
+    ]
+);
+
+impl fmt::Display for UnaryOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", Operator::from(*self))
     }
 }
-
-macro_rules! impl_double_ended_conversion {
-    ($($operator: path => $binary_operator: path),*) => {
-        impl std::convert::TryFrom<Operator> for BinaryOperator {
-            type Error = ParseErrorCause;
-
-            fn try_from(op: Operator) -> Result<Self, Self::Error> {
-                Ok(match op {
-                    $($operator => $binary_operator),*,
-                    _ => return Err(ParseErrorCause::UnexpectedToken),
-                })
-            }
-        }
-
-        impl std::convert::From<BinaryOperator> for Operator {
-
-            fn from(op: BinaryOperator) -> Self {
-                match op {
-                    $($binary_operator => $operator),*,
-                }
-            }
-        }
-    };
-}
-
-impl_double_ended_conversion!(
-    Operator::Plus => BinaryOperator::Add,
-    Operator::Minus => BinaryOperator::Sub,
-    Operator::Multiply => BinaryOperator::Mul,
-    Operator::Divide => BinaryOperator::Div,
-    Operator::Modulo => BinaryOperator::Mod,
-    Operator::Exponent => BinaryOperator::Exp,
-    Operator::Compare => BinaryOperator::Eq,
-    Operator::BangCompare => BinaryOperator::Ne,
-    Operator::Less => BinaryOperator::Lt,
-    Operator::LessEqual => BinaryOperator::Le,
-    Operator::Greater => BinaryOperator::Gt,
-    Operator::GreaterEqual => BinaryOperator::Ge,
-    Operator::Or => BinaryOperator::Or,
-    Operator::And => BinaryOperator::And
-);
 
 #[cfg(test)]
 mod test {
