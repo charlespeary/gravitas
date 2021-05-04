@@ -12,14 +12,8 @@ pub(crate) struct ParseError {
 pub(crate) enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
-    Expected {
-        expected: Token<'static>,
-        got: Span,
-    },
-    ExpectedOneOf {
-        expected: Vec<Token<'static>>,
-        got: Span,
-    },
+    Expected(Token<'static>),
+    ExpectedOneOf(Vec<Token<'static>>),
     // Lexer
     TooMuchDots,
     InvalidNumber,

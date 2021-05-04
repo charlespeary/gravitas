@@ -77,15 +77,13 @@ impl<'t> Parser<'t> {
     }
 
     fn expect(&mut self, expected: Token<'static>) -> ParseResult<Lexeme> {
-        let next = self.advance()?;
-        if next.token == expected {
-            Ok(next)
-        } else {
-            Err(ParseErrorCause::Expected {
-                expected,
-                got: next.span(),
-            })
+        if let Ok(next) = self.advance() {
+            if next.token == expected {
+                return Ok(next);
+            }
         }
+
+        Err(ParseErrorCause::Expected(expected))
     }
 
     pub(crate) fn parse(&mut self) {

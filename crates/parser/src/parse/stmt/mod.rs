@@ -28,7 +28,13 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
 
-    use crate::common::test::parser::assert_stmt;
+    use crate::{
+        common::{
+            error::ParseErrorCause,
+            test::parser::{assert_stmt, assert_stmt_error},
+        },
+        token::Token,
+    };
 
     #[test]
     fn parses_expression_statement() {
@@ -43,5 +49,15 @@ mod test {
         );
         // unary expression
         assert_stmt("!false;", "(! false);");
+    }
+
+    #[test]
+    fn expect_semicolon() {
+        fn assert_semicolon(input: &str) {
+            assert_stmt_error(input, ParseErrorCause::Expected(Token::Semicolon));
+        }
+        assert_semicolon("2");
+        assert_semicolon("2 + 2");
+        assert_semicolon("2 + 2 >= 10");
     }
 }

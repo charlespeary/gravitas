@@ -38,6 +38,7 @@ pub(crate) mod test {
 
     pub(crate) mod parser {
 
+        use crate::common::error::ParseErrorCause;
         use crate::parse::{expr::Expr, stmt::Stmt, Parser};
 
         pub(crate) fn expr(input: &str) -> Expr {
@@ -56,6 +57,16 @@ pub(crate) mod test {
 
         pub(crate) fn assert_stmt(input: &str, expected: &str) {
             assert_eq!(stmt(input).to_string(), expected)
+        }
+
+        pub(crate) fn assert_expr_error(input: &str, expected: ParseErrorCause) {
+            let mut parser = Parser::new(input);
+            assert_eq!(parser.parse_expression().unwrap_err(), expected)
+        }
+
+        pub(crate) fn assert_stmt_error(input: &str, expected: ParseErrorCause) {
+            let mut parser = Parser::new(input);
+            assert_eq!(parser.parse_stmt().unwrap_err(), expected)
         }
     }
 }

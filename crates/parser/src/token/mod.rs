@@ -30,11 +30,7 @@ fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Result<f64, Token<'t
     if MULTIPLE_DOTS_IN_NUMBER.is_match(&slice) {
         Err(Token::Error)
     } else {
-        let x = slice.parse::<f64>().map_err(|_| Token::Error);
-        if x.is_err() {
-            println!("ERR {:?}", x);
-        }
-        x
+        slice.parse::<f64>().map_err(|_| Token::Error)
     }
 }
 
@@ -166,12 +162,14 @@ impl<'t> Iterator for Source<'t> {
 pub(crate) struct Lexer<'t> {
     // Logos lexer that lexes our source input
     inner: PeekNth<Source<'t>>,
+    pub(crate) current: Option<Lexeme<'t>>,
 }
 
 impl<'t> Lexer<'t> {
     pub(crate) fn new(input: &'t str) -> Self {
         Self {
             inner: peek_nth(Source::new(input)),
+            current: None,
         }
     }
 
@@ -190,13 +188,24 @@ impl<'t> Lexer<'t> {
     pub(crate) fn peek_nth(&mut self, nth: usize) -> Option<Lexeme> {
         self.inner.peek_nth(nth).copied()
     }
+
+    pub(crate) fn current_lexeme(&self) -> Lexeme {
+        self.current
+            .expect("Tried to access current lexeme before iterator started")
+    }
 }
 
 impl<'t> Iterator for Lexer<'t> {
     type Item = Lexeme<'t>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
+        match self.inner.next() {
+            Some(lexeme) => {
+                self.current = Some(lexeme);
+                Some(lexeme)
+            }
+            None => None,
+        }
     }
 }
 
