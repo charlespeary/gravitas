@@ -6,18 +6,6 @@ use std::str::FromStr;
 
 pub(crate) mod precedence;
 
-pub(crate) static OPERATORS: &[&str] = &[
-    "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "!", ".",
-    "[", "]", "(", ")",
-];
-
-pub(crate) static BINARY_OPERATORS: &[&str] = &[
-    "+", "-", "*", "/", "%", "**", "==", "!=", "<", "<=", ">", ">=", "or", "and",
-];
-
-pub(crate) static UNARY_OPERATORS: &[&str] = &["!", "-"];
-pub(crate) static POSTFIX_OPERATORS: &[&'static str] = &[".", "[", "]", "(", ")"];
-
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum Operator {
     Plus,
@@ -104,7 +92,7 @@ pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operato
 #[macro_use]
 mod test {
     use crate::{
-        common::test::{assert_token, op},
+        common::test::lexer::{assert_token, op},
         token::{operator::Operator, Token},
     };
 

@@ -4,10 +4,10 @@ use logos::Span;
 use logos::{Filter, Logos};
 use regex::Regex;
 
-use crate::common::error::ParseErrorCause;
 use crate::parse::Symbol;
 use operator::{lex_operator, Operator};
 
+pub(crate) mod constants;
 pub(crate) mod operator;
 
 fn lex_number<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Result<f64, Token<'t>> {
@@ -77,6 +77,8 @@ pub(crate) enum Token<'t> {
     Class,
     #[token("let")]
     Let,
+    #[token(";")]
+    Semicolon,
     // EXPRESSION KEYWORDS
     #[token("if")]
     If,
@@ -133,8 +135,8 @@ pub(crate) struct Lexeme<'t> {
     pub(crate) token: Token<'t>,
     pub(crate) slice: &'t str,
     pub(crate) span_start: usize,
-    pub(crate) intern_key: Option<Symbol>,
     pub(crate) span_end: usize,
+    pub(crate) intern_key: Option<Symbol>,
 }
 
 impl<'t> Lexeme<'t> {
@@ -203,7 +205,9 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::{assert_empty, assert_error, assert_token, assert_tokens, first_token, op},
+        common::test::lexer::{
+            assert_empty, assert_error, assert_token, assert_tokens, first_token, op,
+        },
         token::{operator::Operator, Lexeme, Lexer, Token},
     };
 
@@ -482,5 +486,12 @@ mod test {
         // Identifiers beginning with a number
         assert_error("123foo");
         assert_error("123foo");
+    }
+
+    #[test]
+    fn lexer_tokenizes_semicolons() {
+        assert_token(";", Token::Semicolon);
+        assert_token(";;", Token::Semicolon);
+        assert_token(";;;", Token::Semicolon);
     }
 }

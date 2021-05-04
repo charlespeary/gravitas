@@ -8,19 +8,19 @@ use std::ops::Range;
 
 pub(crate) mod expr;
 pub(crate) mod operator;
+pub(crate) mod stmt;
 
-pub(crate) struct Parser<'a> {
-    lexer: Lexer<'a>,
+pub(crate) struct Parser<'t> {
+    lexer: Lexer<'t>,
     errors: Vec<ParseError>,
     symbols: Rodeo,
 }
 
 pub struct AST;
 
-pub(crate) type ParserOutput<'e> = Result<AST, &'e [ParseError]>;
-pub(crate) type ParseResult<T> = Result<T, ParseErrorCause>;
+pub(crate) type ParserOutput<'t> = Result<AST, &'t [ParseError]>;
+pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub type Number = f64;
-// For the time being, string is represented as a range of text positions in the source code
 pub type Symbol = Spur;
 pub type Span = Range<usize>;
 
@@ -40,8 +40,8 @@ where
     }
 }
 
-impl<'a> Parser<'a> {
-    pub(crate) fn new(input: &'a str) -> Self {
+impl<'t> Parser<'t> {
+    pub(crate) fn new(input: &'t str) -> Self {
         Self {
             lexer: Lexer::new(input),
             errors: vec![],
@@ -74,6 +74,18 @@ impl<'a> Parser<'a> {
                 *lexeme
             })
             .ok_or(ParseErrorCause::EndOfInput)
+    }
+
+    fn expect(&mut self, expected: Token<'static>) -> ParseResult<Lexeme> {
+        let next = self.advance()?;
+        if next.token == expected {
+            Ok(next)
+        } else {
+            Err(ParseErrorCause::Expected {
+                expected,
+                got: next.span(),
+            })
+        }
     }
 
     pub(crate) fn parse(&mut self) {

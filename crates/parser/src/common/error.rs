@@ -1,3 +1,4 @@
+use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use logos::Span;
 
@@ -7,10 +8,18 @@ pub(crate) struct ParseError {
     pub(crate) cause: ParseErrorCause,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
+    Expected {
+        expected: Token<'static>,
+        got: Span,
+    },
+    ExpectedOneOf {
+        expected: Vec<Token<'static>>,
+        got: Span,
+    },
     // Lexer
     TooMuchDots,
     InvalidNumber,
@@ -22,7 +31,9 @@ impl ParseError {
 
         match &self.cause {
             EndOfInput => Diagnostic::error().with_message("unexpected end of input"),
-            UnexpectedToken => Diagnostic::error().with_message("todo"),
+            UnexpectedToken { .. } => Diagnostic::error().with_message("todo"),
+            Expected { .. } => Diagnostic::error(),
+            ExpectedOneOf { .. } => Diagnostic::error(),
             _ => Diagnostic::error(),
         }
     }

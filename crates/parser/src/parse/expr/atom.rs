@@ -14,7 +14,7 @@ pub enum AtomicValue {
     Identifier(Symbol),
 }
 
-impl<'a> Parser<'a> {
+impl<'t> Parser<'t> {
     pub(super) fn parse_atom(&mut self) -> ParseResult<Expr> {
         let lexeme = self.advance()?;
         let span = lexeme.span();

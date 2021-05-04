@@ -2,7 +2,7 @@ use crate::parse::operator::UnaryOperator;
 use crate::{
     common::error::ParseErrorCause,
     parse::{expr::atom::AtomicValue, operator::BinaryOperator, ParseResult, Parser, Spanned},
-    token::Token,
+    token::{operator::Operator, Token},
 };
 use derive_more::Display;
 use std::convert::TryInto;
@@ -23,14 +23,19 @@ pub(crate) enum Expr {
         op: Spanned<UnaryOperator>,
         rhs: Box<Expr>,
     },
+    #[display(fmt = "{}[{}]", target, position)]
+    Index {
+        target: Spanned<Box<Expr>>,
+        position: Spanned<Box<Expr>>,
+    },
 }
 
-impl<'a> Parser<'a> {
-    pub(super) fn parse_expression(&mut self) -> ParseResult<Expr> {
+impl<'t> Parser<'t> {
+    pub(crate) fn parse_expression(&mut self) -> ParseResult<Expr> {
         self.parse_expression_bp(0)
     }
 
-    pub(super) fn parse_expression_bp(&mut self, min_bp: u8) -> ParseResult<Expr> {
+    fn parse_expression_bp(&mut self, min_bp: u8) -> ParseResult<Expr> {
         let mut lhs: Expr = match self.peek() {
             Token::Operator(op) => {
                 let ((), r_bp) = op.prefix_bp();
@@ -44,7 +49,7 @@ impl<'a> Parser<'a> {
         loop {
             let operator = match self.peek() {
                 Token::Operator(operator) => operator,
-                Token::Eof => break,
+                Token::Eof | Token::Semicolon => break,
                 _ => return Err(ParseErrorCause::UnexpectedToken),
             };
 
@@ -76,16 +81,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
-    fn expr(input: &str) -> Expr {
-        let mut parser = Parser::new(input);
-        parser.parse_expression().unwrap()
-    }
-
-    fn assert_expr(input: &str, expected: &str) {
-        assert_eq!(expr(input).to_string(), expected)
-    }
+    use crate::common::test::parser::*;
 
     #[test]
     fn parses_simple_binary_expression() {
@@ -178,5 +174,6 @@ mod test {
         assert_expr("!!true == !false", "(== (! (! true)) (! false))");
         assert_expr("2 >= 10 + 3", "(>= 2 (+ 10 3))");
         assert_expr("2 + 2 ** 3 >= 10 + 3", "(>= (+ 2 (** 2 3)) (+ 10 3))");
+        assert_expr("- -2 - -2", "(- (- -2 -2))");
     }
 }

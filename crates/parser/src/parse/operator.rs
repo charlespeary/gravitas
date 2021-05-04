@@ -114,7 +114,7 @@ impl fmt::Display for UnaryOperator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::token::operator::{Operator, BINARY_OPERATORS};
+    use crate::token::{constants::BINARY_OPERATORS, operator::Operator};
     use quickcheck::{Arbitrary, Gen};
     use std::convert::TryFrom;
 
