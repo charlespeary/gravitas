@@ -1,3 +1,5 @@
+use crate::parse::Span;
+
 pub(crate) mod error;
 
 #[cfg(test)]
@@ -69,4 +71,10 @@ pub(crate) mod test {
             assert_eq!(parser.parse_stmt().unwrap_err(), expected)
         }
     }
+}
+
+pub(crate) fn combine(a: &Span, b: &Span) -> Span {
+    assert!(a.start <= b.end);
+
+    a.start..b.end
 }

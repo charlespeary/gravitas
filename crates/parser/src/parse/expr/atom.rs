@@ -1,5 +1,8 @@
 use crate::{
-    parse::{expr::Expr, Number, ParseResult, Parser, Spanned, Symbol},
+    parse::{
+        expr::{Expr, ExprKind},
+        Number, ParseResult, Parser, Spanned, Symbol,
+    },
     token::Token,
 };
 use derive_more::Display;
@@ -31,7 +34,7 @@ impl<'t> Parser<'t> {
             }
         };
 
-        Ok(Expr::Atom(Spanned { val, span }))
+        Ok(Expr::new(ExprKind::Atom(val), lexeme.span()))
     }
 }
 
@@ -47,17 +50,11 @@ pub(crate) mod test {
         let mut parser = Parser::new("true false");
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Expr::Atom(Spanned {
-                val: AtomicValue::Boolean(true),
-                span: 0..4,
-            })
+            Expr::new(ExprKind::Atom(AtomicValue::Boolean(true)), 0..4)
         );
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Expr::Atom(Spanned {
-                val: AtomicValue::Boolean(false),
-                span: 5..10,
-            })
+            Expr::new(ExprKind::Atom(AtomicValue::Boolean(false)), 5..10)
         )
     }
 
@@ -73,11 +70,11 @@ pub(crate) mod test {
 
         assert_eq!(
             parser.parse_atom().unwrap(),
-            Expr::Atom(Spanned {
-                val: AtomicValue::Number(number),
-                span: 0..num_as_str.len(),
-            })
-        );
+            Expr::new(
+                ExprKind::Atom(AtomicValue::Number(number)),
+                0..num_as_str.len()
+            )
+        )
     }
 
     #[quickcheck]
@@ -94,10 +91,10 @@ pub(crate) mod test {
 
         assert_eq!(
             parsed_string,
-            Expr::Atom(Spanned {
-                val: AtomicValue::Text(Spur::default()),
-                span: 0..text.len() + 2,
-            })
+            Expr::new(
+                ExprKind::Atom(AtomicValue::Text(Spur::default())),
+                0..text.len() + 2
+            )
         );
     }
 
@@ -109,10 +106,10 @@ pub(crate) mod test {
             let parsed_identifier = parser.parse_atom().unwrap();
             assert_eq!(
                 parsed_identifier,
-                Expr::Atom(Spanned {
-                    val: AtomicValue::Identifier(Spur::default()),
-                    span: 0..identifier.len(),
-                })
+                Expr::new(
+                    ExprKind::Atom(AtomicValue::Identifier(Spur::default())),
+                    0..identifier.len(),
+                )
             );
         }
         test_identifier("foo");

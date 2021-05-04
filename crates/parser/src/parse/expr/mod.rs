@@ -1,8 +1,10 @@
 use crate::parse::operator::UnaryOperator;
 use crate::{
-    common::error::ParseErrorCause,
-    parse::{expr::atom::AtomicValue, operator::BinaryOperator, ParseResult, Parser, Spanned},
-    token::{operator::Operator, Token},
+    common::{combine, error::ParseErrorCause},
+    parse::{
+        expr::atom::AtomicValue, operator::BinaryOperator, ParseResult, Parser, Span, Spanned,
+    },
+    token::Token,
 };
 use derive_more::Display;
 use std::convert::TryInto;
@@ -10,23 +12,39 @@ use std::convert::TryInto;
 pub(crate) mod atom;
 
 #[derive(Debug, Display, Clone, PartialEq)]
-pub(crate) enum Expr {
-    Atom(Spanned<AtomicValue>),
+#[display(fmt = "{}", kind)]
+pub(crate) struct Expr {
+    pub(crate) kind: Box<ExprKind>,
+    pub(crate) span: Span,
+}
+
+impl Expr {
+    pub(crate) fn new(kind: ExprKind, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
+#[derive(Debug, Display, Clone, PartialEq)]
+pub(crate) enum ExprKind {
+    Atom(AtomicValue),
     #[display(fmt = "({} {} {})", op, lhs, rhs)]
     Binary {
-        lhs: Box<Expr>,
+        lhs: Expr,
         op: Spanned<BinaryOperator>,
-        rhs: Box<Expr>,
+        rhs: Expr,
     },
     #[display(fmt = "({} {})", op, rhs)]
     Unary {
         op: Spanned<UnaryOperator>,
-        rhs: Box<Expr>,
+        rhs: Expr,
     },
     #[display(fmt = "{}[{}]", target, position)]
     Index {
-        target: Spanned<Box<Expr>>,
-        position: Spanned<Box<Expr>>,
+        target: Expr,
+        position: Expr,
     },
 }
 
@@ -40,8 +58,9 @@ impl<'t> Parser<'t> {
             Token::Operator(op) => {
                 let ((), r_bp) = op.prefix_bp();
                 let op = self.construct_spanned(op.try_into()?)?;
-                let rhs = Box::new(self.parse_expression_bp(r_bp)?);
-                Expr::Unary { op, rhs }
+                let rhs = self.parse_expression_bp(r_bp)?;
+                let range = combine(&op.span, &rhs.span);
+                Expr::new(ExprKind::Unary { op, rhs }, range)
             }
             _ => self.parse_atom()?,
         };
@@ -68,11 +87,8 @@ impl<'t> Parser<'t> {
             };
 
             let rhs = self.parse_expression_bp(r_bp)?;
-            lhs = Expr::Binary {
-                lhs: Box::new(lhs),
-                op,
-                rhs: Box::new(rhs),
-            };
+            let span = combine(&lhs.span, &rhs.span);
+            lhs = Expr::new(ExprKind::Binary { lhs, op, rhs }, span);
         }
 
         Ok(lhs)

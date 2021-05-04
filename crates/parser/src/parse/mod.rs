@@ -1,9 +1,14 @@
+use crate::token::operator::Operator;
 use crate::{
     common::error::{ParseError, ParseErrorCause},
-    token::{Lexeme, Lexer, Token},
+    token::{
+        constants::{IDENTIFIER, OPERATOR},
+        Lexeme, Lexer, Token,
+    },
 };
 use derive_more::Display;
 use lasso::{Rodeo, Spur};
+use std::mem::discriminant;
 use std::ops::Range;
 
 pub(crate) mod expr;
@@ -84,6 +89,16 @@ impl<'t> Parser<'t> {
         }
 
         Err(ParseErrorCause::Expected(expected))
+    }
+
+    fn expect_identifier(&mut self) -> ParseResult<Symbol> {
+        if let Ok(next) = self.advance() {
+            if discriminant(&next.token) == discriminant(&IDENTIFIER) {
+                return Ok(next.intern_key.unwrap());
+            }
+        }
+
+        Err(ParseErrorCause::ExpectedIdentifier)
     }
 
     pub(crate) fn parse(&mut self) {

@@ -14,6 +14,7 @@ pub(crate) enum ParseErrorCause {
     UnexpectedToken,
     Expected(Token<'static>),
     ExpectedOneOf(Vec<Token<'static>>),
+    ExpectedIdentifier,
     // Lexer
     TooMuchDots,
     InvalidNumber,

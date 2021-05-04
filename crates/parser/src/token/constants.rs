@@ -1,13 +1,14 @@
-use crate::token::Token;
-use lazy_static::lazy_static;
-use std::collections::HashMap;
+use crate::token::{operator::Operator, Token};
 
-pub(crate) static OPERATORS: &[&str] = &[
+pub(crate) const OPERATORS: &[&str] = &[
     "+", "-", "*", "/", "%", "**", "=", "==", "!=", "<", "<=", ">", ">=", "or", "and", "!", ".",
     "[", "]", "(", ")",
 ];
-pub(crate) static BINARY_OPERATORS: &[&str] = &[
+pub(crate) const BINARY_OPERATORS: &[&str] = &[
     "+", "-", "*", "/", "%", "**", "==", "!=", "<", "<=", ">", ">=", "or", "and",
 ];
-pub(crate) static UNARY_OPERATORS: &[&str] = &["!", "-"];
-pub(crate) static POSTFIX_OPERATORS: &[&str] = &[".", "[", "]", "(", ")"];
+pub(crate) const UNARY_OPERATORS: &[&str] = &["!", "-"];
+pub(crate) const POSTFIX_OPERATORS: &[&str] = &[".", "[", "]", "(", ")"];
+// Dummy constants to use for discriminant comparisons
+pub(crate) const IDENTIFIER: Token = Token::Identifier("");
+pub(crate) const OPERATOR: Token = Token::Operator(Operator::Assign);
