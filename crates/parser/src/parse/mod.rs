@@ -117,6 +117,7 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::parse::expr::atom::AtomicValue;
 
     #[test]
     fn parser_interns_strings() {
@@ -140,5 +141,51 @@ mod test {
     fn parser_eof_token_on_peek() {
         let mut parser = Parser::new("");
         assert_eq!(parser.peek(), Token::Eof);
+    }
+
+    #[test]
+    fn parser_expects_token() {
+        let mut parser = Parser::new("class fn");
+        // it advances and returns the advanced lexeme
+        assert_eq!(
+            parser.expect(Token::Class).unwrap(),
+            Lexeme {
+                token: Token::Class,
+                slice: "class",
+                span_start: 0,
+                span_end: 5,
+                intern_key: None
+            }
+        );
+        // it reports an error if there isn't what we expect
+        assert_eq!(
+            parser.expect(Token::Class).unwrap_err(),
+            ParseErrorCause::Expected(Token::Class)
+        );
+    }
+
+    #[test]
+    fn parser_expects_identifiers() {
+        let mut parser = Parser::new("foo fn");
+        let identifier = parser.expect_identifier().unwrap();
+        assert_eq!(parser.symbols.resolve(&identifier), "foo");
+        assert_eq!(
+            parser.expect_identifier().unwrap_err(),
+            ParseErrorCause::ExpectedIdentifier
+        );
+    }
+
+    #[test]
+    fn parser_constructs_spanned() {
+        let mut parser = Parser::new("2");
+        let two = AtomicValue::Number(2.0);
+
+        assert_eq!(
+            parser.construct_spanned(two.clone()).unwrap(),
+            Spanned {
+                val: two,
+                span: 0..1
+            }
+        )
     }
 }
