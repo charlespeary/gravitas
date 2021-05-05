@@ -1,10 +1,7 @@
-use crate::token::operator::Operator;
 use crate::{
     common::error::{ParseError, ParseErrorCause},
-    token::{
-        constants::{IDENTIFIER, OPERATOR},
-        Lexeme, Lexer, Token,
-    },
+    parse::{expr::Expr, stmt::Stmt},
+    token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
 };
 use derive_more::Display;
 use lasso::{Rodeo, Spur};
@@ -25,6 +22,9 @@ pub struct AST;
 
 pub(crate) type ParserOutput<'t> = Result<AST, &'t [ParseError]>;
 pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
+pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
+pub(crate) type StmtResult<'t> = ParseResult<'t, Stmt>;
+
 pub type Number = f64;
 pub type Symbol = Spur;
 pub type Span = Range<usize>;

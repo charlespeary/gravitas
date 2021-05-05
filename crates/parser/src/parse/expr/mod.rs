@@ -1,15 +1,20 @@
-use crate::parse::operator::UnaryOperator;
 use crate::{
     common::{combine, error::ParseErrorCause},
     parse::{
-        expr::atom::AtomicValue, operator::BinaryOperator, ParseResult, Parser, Span, Spanned,
+        expr::atom::AtomicValue,
+        operator::{BinaryOperator, UnaryOperator},
+        stmt::Stmt,
+        ExprResult, Parser, Span, Spanned,
     },
-    token::Token,
+    token::{operator::Operator, Token},
 };
 use derive_more::Display;
 use std::convert::TryInto;
+use std::fmt;
+use std::fmt::Formatter;
 
 pub(crate) mod atom;
+pub(crate) mod control_flow;
 
 #[derive(Debug, Display, Clone, PartialEq)]
 #[display(fmt = "{}", kind)]
@@ -27,42 +32,80 @@ impl Expr {
     }
 }
 
-#[derive(Debug, Display, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ExprKind {
     Atom(AtomicValue),
-    #[display(fmt = "({} {} {})", op, lhs, rhs)]
+    // #[display(fmt = "({} {} {})", op, lhs, rhs)]
     Binary {
         lhs: Expr,
         op: Spanned<BinaryOperator>,
         rhs: Expr,
     },
-    #[display(fmt = "({} {})", op, rhs)]
+    // #[display(fmt = "({} {})", op, rhs)]
     Unary {
         op: Spanned<UnaryOperator>,
         rhs: Expr,
     },
-    #[display(fmt = "{}[{}]", target, position)]
+    // #[display(fmt = "{{ {} {}}}", stmts, return_expr)]
+    Block {
+        stmts: Vec<Stmt>,
+        return_expr: Option<Expr>,
+    },
+    // #[display(fmt = "{}[{}]", target, position)]
     Index {
         target: Expr,
         position: Expr,
     },
 }
 
+impl fmt::Display for ExprKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use ExprKind::*;
+
+        match self {
+            Atom(value) => write!(f, "{}", value),
+            Binary { lhs, op, rhs } => write!(f, "({} {} {})", op, lhs, rhs),
+            Unary { op, rhs } => write!(f, "({} {})", op, rhs),
+            Block { stmts, return_expr } => {
+                write!(f, "{{ ")?;
+                for (index, stmt) in stmts.iter().enumerate() {
+                    if index > 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}", stmt)?;
+                }
+
+                if let Some(expr) = return_expr {
+                    if !stmts.is_empty() {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}", expr)?;
+                }
+                write!(f, " }}")?;
+
+                Ok(())
+            }
+            _ => write!(f, ""),
+        }
+    }
+}
+
 impl<'t> Parser<'t> {
-    pub(crate) fn parse_expression(&mut self) -> ParseResult<Expr> {
+    pub(crate) fn parse_expression(&mut self) -> ExprResult {
         self.parse_expression_bp(0)
     }
 
-    fn parse_expression_bp(&mut self, min_bp: u8) -> ParseResult<Expr> {
+    fn parse_expression_bp(&mut self, min_bp: u8) -> ExprResult {
         let mut lhs: Expr = match self.peek() {
+            Token::Operator(Operator::CurlyBracketOpen) => self.parse_block_expr()?,
             Token::Operator(op) => {
-                let ((), r_bp) = op.prefix_bp();
+                let ((), r_bp) = op.prefix_bp().ok_or(ParseErrorCause::ExpectedLiteral)?;
                 let op = self.construct_spanned(op.try_into()?)?;
                 let rhs = self.parse_expression_bp(r_bp)?;
                 let range = combine(&op.span, &rhs.span);
                 Expr::new(ExprKind::Unary { op, rhs }, range)
             }
-            _ => self.parse_atom()?,
+            _ => self.parse_atom_expr()?,
         };
 
         loop {
@@ -72,7 +115,11 @@ impl<'t> Parser<'t> {
                 _ => return Err(ParseErrorCause::UnexpectedToken),
             };
 
-            let (l_bp, r_bp) = operator.infix_bp();
+            let (l_bp, r_bp) = match operator.infix_bp() {
+                Some(bp) => bp,
+                _ => break,
+            };
+
             if l_bp < min_bp {
                 break;
             }

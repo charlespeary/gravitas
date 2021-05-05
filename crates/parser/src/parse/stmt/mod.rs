@@ -1,6 +1,6 @@
 use crate::{
     common::combine,
-    parse::{expr::Expr, ParseResult, Parser, Span, Spanned, Symbol},
+    parse::{expr::Expr, Parser, Span, Spanned, StmtResult, Symbol},
     token::{operator::Operator, Token},
 };
 use derive_more::Display;
@@ -18,21 +18,21 @@ pub(crate) enum Stmt {
 }
 
 impl<'t> Parser<'t> {
-    pub(crate) fn parse_stmt(&mut self) -> ParseResult<Stmt> {
+    pub(crate) fn parse_stmt(&mut self) -> StmtResult {
         match self.peek() {
             Token::Let => self.parse_variable_declaration(),
             _ => self.parse_expression_stmt(),
         }
     }
 
-    pub(super) fn parse_expression_stmt(&mut self) -> ParseResult<Stmt> {
+    pub(super) fn parse_expression_stmt(&mut self) -> StmtResult {
         let expr = self.parse_expression()?;
         let lexeme = self.expect(Token::Semicolon)?;
 
         Ok(Stmt::Expression { expr })
     }
 
-    pub(super) fn parse_variable_declaration(&mut self) -> ParseResult<Stmt> {
+    pub(super) fn parse_variable_declaration(&mut self) -> StmtResult {
         let let_keyword = {
             let lexeme = self.expect(Token::Let)?;
             lexeme.span()

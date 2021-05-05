@@ -114,6 +114,36 @@ pub(crate) enum Token<'t> {
     Error,
 }
 
+impl<'t> Token<'t> {
+    pub(crate) fn is_stmt(&self) -> bool {
+        use Token::*;
+
+        matches!(self, Class | Function | Let)
+    }
+
+    pub(crate) fn is_expr(&self) -> bool {
+        match self {
+            Token::Operator(op) => !matches!(
+                op,
+                Operator::CurlyBracketClose
+                    | Operator::SquareBracketClose
+                    | Operator::RoundBracketClose
+            ),
+            Token::Identifier(_)
+            | Token::String(_)
+            | Token::Bool(_)
+            | Token::Number(_)
+            | Token::Break
+            | Token::Continue
+            | Token::For
+            | Token::If
+            | Token::Return
+            | Token::While => true,
+            _ => false,
+        }
+    }
+}
+
 struct Source<'t> {
     inner: logos::Lexer<'t, Token<'t>>,
 }

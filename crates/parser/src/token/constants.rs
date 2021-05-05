@@ -12,3 +12,6 @@ pub(crate) const POSTFIX_OPERATORS: &[&str] = &[".", "[", "]", "(", ")"];
 // Dummy constants to use for discriminant comparisons
 pub(crate) const IDENTIFIER: Token = Token::Identifier("");
 pub(crate) const OPERATOR: Token = Token::Operator(Operator::Assign);
+
+pub(crate) const OPEN_BRACKET: Token = Token::Operator(Operator::CurlyBracketOpen);
+pub(crate) const CLOSE_BRACKET: Token = Token::Operator(Operator::CurlyBracketClose);

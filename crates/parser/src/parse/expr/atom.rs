@@ -1,7 +1,7 @@
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
-        Number, ParseResult, Parser, Spanned, Symbol,
+        ExprResult, Number, Parser, Spanned, Symbol,
     },
     token::Token,
 };
@@ -18,7 +18,7 @@ pub enum AtomicValue {
 }
 
 impl<'t> Parser<'t> {
-    pub(super) fn parse_atom(&mut self) -> ParseResult<Expr> {
+    pub(super) fn parse_atom_expr(&mut self) -> ExprResult {
         let lexeme = self.advance()?;
         let span = lexeme.span();
 
@@ -49,11 +49,11 @@ pub(crate) mod test {
     fn parses_atom_booleans() {
         let mut parser = Parser::new("true false");
         assert_eq!(
-            parser.parse_atom().unwrap(),
+            parser.parse_atom_expr().unwrap(),
             Expr::new(ExprKind::Atom(AtomicValue::Boolean(true)), 0..4)
         );
         assert_eq!(
-            parser.parse_atom().unwrap(),
+            parser.parse_atom_expr().unwrap(),
             Expr::new(ExprKind::Atom(AtomicValue::Boolean(false)), 5..10)
         )
     }
@@ -69,7 +69,7 @@ pub(crate) mod test {
         let mut parser = Parser::new(&num_as_str);
 
         assert_eq!(
-            parser.parse_atom().unwrap(),
+            parser.parse_atom_expr().unwrap(),
             Expr::new(
                 ExprKind::Atom(AtomicValue::Number(number)),
                 0..num_as_str.len()
@@ -87,7 +87,7 @@ pub(crate) mod test {
         let quoted_text = format!("\"{}\"", &text);
         let mut parser = Parser::new(&quoted_text);
 
-        let parsed_string = parser.parse_atom().unwrap();
+        let parsed_string = parser.parse_atom_expr().unwrap();
 
         assert_eq!(
             parsed_string,
@@ -103,7 +103,7 @@ pub(crate) mod test {
         fn test_identifier(identifier: &str) {
             let mut parser = Parser::new(identifier);
 
-            let parsed_identifier = parser.parse_atom().unwrap();
+            let parsed_identifier = parser.parse_atom_expr().unwrap();
             assert_eq!(
                 parsed_identifier,
                 Expr::new(
