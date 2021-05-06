@@ -78,8 +78,6 @@ pub(crate) enum Token<'t> {
     // EXPRESSION KEYWORDS
     #[token("if")]
     If,
-    #[token("else if")]
-    ElseIf,
     #[token("else")]
     Else,
     #[token("while")]
@@ -452,7 +450,6 @@ mod test {
         assert_token("class", Class);
         assert_token("let", Let);
         assert_token("if", If);
-        assert_token("else if", ElseIf);
         assert_token("else", Else);
         assert_token("while", While);
         assert_token("return", Return);

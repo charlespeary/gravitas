@@ -55,7 +55,7 @@ mod test {
 
     use crate::{
         common::{
-            error::ParseErrorCause,
+            error::{Expect, ParseErrorCause},
             test::parser::{assert_stmt, assert_stmt_error},
         },
         token::Token,
@@ -79,7 +79,10 @@ mod test {
     #[test]
     fn expression_statement_should_expect_semicolon() {
         fn assert_semicolon(input: &str) {
-            assert_stmt_error(input, ParseErrorCause::Expected(Token::Semicolon));
+            assert_stmt_error(
+                input,
+                ParseErrorCause::Expected(Expect::Token(Token::Semicolon)),
+            );
         }
         assert_semicolon("2");
         assert_semicolon("2 + 2");

@@ -2,6 +2,15 @@ use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use logos::Span;
 
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum Expect {
+    Identifier,
+    Literal,
+    Expression,
+    Statement,
+    Token(Token<'static>),
+}
+
 #[derive(Debug)]
 pub(crate) struct ParseError {
     pub(crate) span: Span,
@@ -12,10 +21,8 @@ pub(crate) struct ParseError {
 pub(crate) enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
-    Expected(Token<'static>),
+    Expected(Expect),
     ExpectedOneOf(Vec<Token<'static>>),
-    ExpectedIdentifier,
-    ExpectedLiteral,
     // Lexer
     TooMuchDots,
     InvalidNumber,

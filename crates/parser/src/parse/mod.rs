@@ -1,5 +1,5 @@
 use crate::{
-    common::error::{ParseError, ParseErrorCause},
+    common::error::{Expect, ParseError, ParseErrorCause},
     parse::{expr::Expr, stmt::Stmt},
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
 };
@@ -88,7 +88,7 @@ impl<'t> Parser<'t> {
             }
         }
 
-        Err(ParseErrorCause::Expected(expected))
+        Err(ParseErrorCause::Expected(Expect::Token(expected)))
     }
 
     fn expect_identifier(&mut self) -> ParseResult<Symbol> {
@@ -98,7 +98,7 @@ impl<'t> Parser<'t> {
             }
         }
 
-        Err(ParseErrorCause::ExpectedIdentifier)
+        Err(ParseErrorCause::Expected(Expect::Identifier))
     }
 
     pub(crate) fn parse(&mut self) {
@@ -160,7 +160,7 @@ mod test {
         // it reports an error if there isn't what we expect
         assert_eq!(
             parser.expect(Token::Class).unwrap_err(),
-            ParseErrorCause::Expected(Token::Class)
+            ParseErrorCause::Expected(Expect::Token(Token::Class))
         );
     }
 
@@ -171,7 +171,7 @@ mod test {
         assert_eq!(parser.symbols.resolve(&identifier), "foo");
         assert_eq!(
             parser.expect_identifier().unwrap_err(),
-            ParseErrorCause::ExpectedIdentifier
+            ParseErrorCause::Expected(Expect::Identifier)
         );
     }
 

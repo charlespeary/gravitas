@@ -1,5 +1,8 @@
 use crate::{
-    common::{combine, error::ParseErrorCause},
+    common::{
+        combine,
+        error::{Expect, ParseErrorCause},
+    },
     parse::{
         expr::atom::AtomicValue,
         operator::{BinaryOperator, UnaryOperator},
@@ -35,23 +38,24 @@ impl Expr {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ExprKind {
     Atom(AtomicValue),
-    // #[display(fmt = "({} {} {})", op, lhs, rhs)]
     Binary {
         lhs: Expr,
         op: Spanned<BinaryOperator>,
         rhs: Expr,
     },
-    // #[display(fmt = "({} {})", op, rhs)]
     Unary {
         op: Spanned<UnaryOperator>,
         rhs: Expr,
     },
-    // #[display(fmt = "{{ {} {}}}", stmts, return_expr)]
     Block {
         stmts: Vec<Stmt>,
         return_expr: Option<Expr>,
     },
-    // #[display(fmt = "{}[{}]", target, position)]
+    If {
+        expr: Expr,
+        body: Expr,
+        else_expr: Option<Expr>,
+    },
     Index {
         target: Expr,
         position: Expr,
@@ -85,6 +89,18 @@ impl fmt::Display for ExprKind {
 
                 Ok(())
             }
+            If {
+                expr,
+                body,
+                else_expr,
+            } => {
+                write!(f, "if {}", expr)?;
+                write!(f, " {}", body)?;
+                if let Some(expr) = else_expr {
+                    write!(f, " else {}", expr)?;
+                }
+                Ok(())
+            }
             _ => write!(f, ""),
         }
     }
@@ -96,10 +112,17 @@ impl<'t> Parser<'t> {
     }
 
     fn parse_expression_bp(&mut self, min_bp: u8) -> ExprResult {
+        if !self.peek().is_expr() {
+            return Err(ParseErrorCause::Expected(Expect::Expression));
+        }
+
         let mut lhs: Expr = match self.peek() {
+            Token::If => self.parse_if_expr()?,
             Token::Operator(Operator::CurlyBracketOpen) => self.parse_block_expr()?,
             Token::Operator(op) => {
-                let ((), r_bp) = op.prefix_bp().ok_or(ParseErrorCause::ExpectedLiteral)?;
+                let ((), r_bp) = op
+                    .prefix_bp()
+                    .ok_or(ParseErrorCause::Expected(Expect::Literal))?;
                 let op = self.construct_spanned(op.try_into()?)?;
                 let rhs = self.parse_expression_bp(r_bp)?;
                 let range = combine(&op.span, &rhs.span);
