@@ -11,9 +11,9 @@ use derive_more::Display;
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
-    #[display(fmt = "symbol")]
+    #[display(fmt = "$symbol")]
     Text(Symbol),
-    #[display(fmt = "symbol")]
+    #[display(fmt = "$symbol")]
     Identifier(Symbol),
 }
 

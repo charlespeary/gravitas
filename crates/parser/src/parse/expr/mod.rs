@@ -52,10 +52,18 @@ pub(crate) enum ExprKind {
         return_expr: Option<Expr>,
     },
     If {
-        expr: Expr,
+        condition: Expr,
         body: Expr,
         else_expr: Option<Expr>,
     },
+    While {
+        condition: Expr,
+        body: Expr,
+    },
+    Break {
+        return_expr: Option<Expr>,
+    },
+    Continue,
     Index {
         target: Expr,
         position: Expr,
@@ -90,15 +98,34 @@ impl fmt::Display for ExprKind {
                 Ok(())
             }
             If {
-                expr,
+                condition,
                 body,
                 else_expr,
             } => {
-                write!(f, "if {}", expr)?;
+                write!(f, "if {}", condition)?;
                 write!(f, " {}", body)?;
                 if let Some(expr) = else_expr {
                     write!(f, " else {}", expr)?;
                 }
+                Ok(())
+            }
+            While { condition, body } => {
+                write!(f, "while {} {}", condition, body)?;
+                Ok(())
+            }
+            Break { return_expr } => {
+                match return_expr {
+                    Some(expr) => {
+                        write!(f, "break {}", expr)?;
+                    }
+                    None => {
+                        write!(f, "break")?;
+                    }
+                }
+                Ok(())
+            }
+            Continue => {
+                write!(f, "continue")?;
                 Ok(())
             }
             _ => write!(f, ""),
@@ -118,6 +145,9 @@ impl<'t> Parser<'t> {
 
         let mut lhs: Expr = match self.peek() {
             Token::If => self.parse_if_expr()?,
+            Token::While => self.parse_while_expr()?,
+            Token::Break => self.parse_break_expr()?,
+            Token::Continue => self.parse_continue_expr()?,
             Token::Operator(Operator::CurlyBracketOpen) => self.parse_block_expr()?,
             Token::Operator(op) => {
                 let ((), r_bp) = op

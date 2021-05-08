@@ -40,7 +40,7 @@ impl<'t> Parser<'t> {
 
     pub(super) fn parse_if_expr(&mut self) -> ExprResult {
         let start_span = self.expect(Token::If)?.span();
-        let expr = self.parse_expression()?;
+        let condition = self.parse_expression()?;
         let body = self.parse_block_expr()?;
         let else_expr = if self.peek() == Token::Else {
             let else_keyword = self.advance()?;
@@ -64,12 +64,44 @@ impl<'t> Parser<'t> {
 
         Ok(Expr::new(
             ExprKind::If {
-                expr,
+                condition,
                 else_expr,
                 body,
             },
             span,
         ))
+    }
+
+    pub(super) fn parse_while_expr(&mut self) -> ExprResult {
+        let keyword = self.expect(Token::While)?.span();
+        let condition = self.parse_expression()?;
+        let body = self.parse_block_expr()?;
+        let span = combine(&keyword, &body.span);
+
+        Ok(Expr::new(ExprKind::While { condition, body }, span))
+    }
+
+    pub(super) fn parse_break_expr(&mut self) -> ExprResult {
+        let keyword = self.expect(Token::Break)?.span();
+        let return_expr = if self.peek().is_expr() {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        let span = if let Some(return_expr) = &return_expr {
+            combine(&keyword, &return_expr.span)
+        } else {
+            keyword
+        };
+
+        Ok(Expr::new(ExprKind::Break { return_expr }, span))
+    }
+
+    pub(super) fn parse_continue_expr(&mut self) -> ExprResult {
+        let keyword = self.expect(Token::Continue)?.span();
+
+        Ok(Expr::new(ExprKind::Continue, keyword))
     }
 }
 
@@ -118,5 +150,28 @@ mod test {
             "if 2 == 3 { 1 } else if 3 == 4 { 0 } else { 2 }",
             "if (== 2 3) { 1 } else if (== 3 4) { 0 } else { 2 }",
         );
+    }
+
+    #[test]
+    fn parser_parses_while_expressions() {
+        assert_expr("while true { }", "while true {  }");
+        assert_expr("while 3 < 10 { 5 }", "while (< 3 10) { 5 }");
+        assert_expr(
+            "while x < 10 { let x = x + 1; }",
+            "while (< $symbol 10) { let $symbol = (+ $symbol 1); }",
+        );
+    }
+
+    #[test]
+    fn parser_parses_break_expressions() {
+        assert_expr("break", "break");
+        assert_expr("break 5", "break 5");
+        assert_expr("break foo + 10", "break (+ $symbol 10)");
+        assert_expr("break foo <= bar", "break (<= $symbol $symbol)");
+    }
+
+    #[test]
+    fn parser_parses_continue_expressions() {
+        assert_expr("continue", "continue");
     }
 }
