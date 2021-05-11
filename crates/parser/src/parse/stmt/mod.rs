@@ -1,20 +1,18 @@
 use crate::{
     common::combine,
-    parse::{expr::Expr, Parser, Span, Spanned, StmtResult, Symbol},
+    parse::{expr::Expr, Node, Parser, Span, StmtResult, Symbol},
     token::{operator::Operator, Token},
 };
 use derive_more::Display;
 
+pub(crate) type Stmt = Node<Box<StmtKind>>;
+
 #[derive(Debug, Display, Clone, PartialEq)]
-pub(crate) enum Stmt {
+pub(crate) enum StmtKind {
     #[display(fmt = "{};", expr)]
     Expression { expr: Expr },
     #[display(fmt = "let $symbol = {};", expr)]
-    VariableDeclaration {
-        span: Span,
-        identifier: Symbol,
-        expr: Expr,
-    },
+    VariableDeclaration { identifier: Symbol, expr: Expr },
 }
 
 impl<'t> Parser<'t> {
@@ -27,9 +25,10 @@ impl<'t> Parser<'t> {
 
     pub(super) fn parse_expression_stmt(&mut self) -> StmtResult {
         let expr = self.parse_expression()?;
-        let lexeme = self.expect(Token::Semicolon)?;
+        let semicolon = self.expect(Token::Semicolon)?.span();
+        let span = combine(&expr.span, &semicolon);
 
-        Ok(Stmt::Expression { expr })
+        Ok(Stmt::boxed(StmtKind::Expression { expr }, span))
     }
 
     pub(super) fn parse_variable_declaration(&mut self) -> StmtResult {
@@ -42,11 +41,10 @@ impl<'t> Parser<'t> {
         let expr = self.parse_expression()?;
         let semicolon = self.expect(Token::Semicolon)?;
         let span = combine(&let_keyword, &semicolon.span());
-        Ok(Stmt::VariableDeclaration {
+        Ok(Stmt::boxed(
+            StmtKind::VariableDeclaration { identifier, expr },
             span,
-            identifier,
-            expr,
-        })
+        ))
     }
 }
 

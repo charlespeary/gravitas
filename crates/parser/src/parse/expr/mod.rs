@@ -7,7 +7,7 @@ use crate::{
         expr::atom::AtomicValue,
         operator::{BinaryOperator, UnaryOperator},
         stmt::Stmt,
-        ExprResult, Parser, Span, Spanned,
+        ExprResult, Node, Parser, Span,
     },
     token::{operator::Operator, Token},
 };
@@ -19,32 +19,18 @@ use std::fmt::Formatter;
 pub(crate) mod atom;
 pub(crate) mod control_flow;
 
-#[derive(Debug, Display, Clone, PartialEq)]
-#[display(fmt = "{}", kind)]
-pub(crate) struct Expr {
-    pub(crate) kind: Box<ExprKind>,
-    pub(crate) span: Span,
-}
-
-impl Expr {
-    pub(crate) fn new(kind: ExprKind, span: Span) -> Self {
-        Self {
-            kind: Box::new(kind),
-            span,
-        }
-    }
-}
+pub(crate) type Expr = Node<Box<ExprKind>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ExprKind {
     Atom(AtomicValue),
     Binary {
         lhs: Expr,
-        op: Spanned<BinaryOperator>,
+        op: Node<BinaryOperator>,
         rhs: Expr,
     },
     Unary {
-        op: Spanned<UnaryOperator>,
+        op: Node<UnaryOperator>,
         rhs: Expr,
     },
     Block {
@@ -153,10 +139,10 @@ impl<'t> Parser<'t> {
                 let ((), r_bp) = op
                     .prefix_bp()
                     .ok_or(ParseErrorCause::Expected(Expect::Literal))?;
-                let op = self.construct_spanned(op.try_into()?)?;
+                let op = self.construct_node(op.try_into()?)?;
                 let rhs = self.parse_expression_bp(r_bp)?;
                 let range = combine(&op.span, &rhs.span);
-                Expr::new(ExprKind::Unary { op, rhs }, range)
+                Expr::boxed(ExprKind::Unary { op, rhs }, range)
             }
             _ => self.parse_atom_expr()?,
         };
@@ -180,15 +166,15 @@ impl<'t> Parser<'t> {
             // Advance and construct spanned operator
             let op = {
                 let lexeme = self.advance()?;
-                Spanned {
-                    val: operator.try_into()?,
+                Node {
+                    kind: operator.try_into()?,
                     span: lexeme.span(),
                 }
             };
 
             let rhs = self.parse_expression_bp(r_bp)?;
             let span = combine(&lhs.span, &rhs.span);
-            lhs = Expr::new(ExprKind::Binary { lhs, op, rhs }, span);
+            lhs = Expr::boxed(ExprKind::Binary { lhs, op, rhs }, span);
         }
 
         Ok(lhs)

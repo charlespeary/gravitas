@@ -35,7 +35,7 @@ impl<'t> Parser<'t> {
 
         let close_bracket = self.expect(CLOSE_BRACKET)?.span();
         let span = combine(&open_bracket, &close_bracket);
-        Ok(Expr::new(ExprKind::Block { return_expr, stmts }, span))
+        Ok(Expr::boxed(ExprKind::Block { return_expr, stmts }, span))
     }
 
     pub(super) fn parse_if_expr(&mut self) -> ExprResult {
@@ -62,7 +62,7 @@ impl<'t> Parser<'t> {
 
         let span = combine(&start_span, &end_span);
 
-        Ok(Expr::new(
+        Ok(Expr::boxed(
             ExprKind::If {
                 condition,
                 else_expr,

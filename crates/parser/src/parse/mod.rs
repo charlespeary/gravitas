@@ -30,18 +30,33 @@ pub type Symbol = Spur;
 pub type Span = Range<usize>;
 
 #[derive(Debug, Clone, Display)]
-#[display(fmt = "{}", val)]
-pub struct Spanned<T> {
-    pub val: T,
+#[display(fmt = "{}", kind)]
+pub struct Node<T> {
+    pub kind: T,
     pub span: Span,
 }
 
-impl<T> PartialEq for Spanned<T>
+impl<T> Node<T> {
+    pub(crate) fn new(kind: T, span: Span) -> Self {
+        Self { kind, span }
+    }
+}
+
+impl<T> Node<Box<T>> {
+    pub(crate) fn boxed(kind: T, span: Span) -> Self {
+        Self {
+            kind: Box::new(kind),
+            span,
+        }
+    }
+}
+
+impl<T> PartialEq for Node<T>
 where
     T: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.val == other.val
+        self.kind == other.kind
     }
 }
 
@@ -105,10 +120,10 @@ impl<'t> Parser<'t> {
         self.parse_expression();
     }
 
-    fn construct_spanned<T>(&mut self, val: T) -> ParseResult<Spanned<T>> {
+    fn construct_node<T>(&mut self, val: T) -> ParseResult<Node<T>> {
         let lexeme = self.advance()?;
-        Ok(Spanned {
-            val,
+        Ok(Node {
+            kind: val,
             span: lexeme.span(),
         })
     }
@@ -181,9 +196,9 @@ mod test {
         let two = AtomicValue::Number(2.0);
 
         assert_eq!(
-            parser.construct_spanned(two.clone()).unwrap(),
-            Spanned {
-                val: two,
+            parser.construct_node(two.clone()).unwrap(),
+            Node {
+                kind: two,
                 span: 0..1
             }
         )

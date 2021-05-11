@@ -1,7 +1,7 @@
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
-        ExprResult, Number, Parser, Spanned, Symbol,
+        ExprResult, Node, Number, Parser, Symbol,
     },
     token::Token,
 };
@@ -34,7 +34,7 @@ impl<'t> Parser<'t> {
             }
         };
 
-        Ok(Expr::new(ExprKind::Atom(val), lexeme.span()))
+        Ok(Expr::boxed(ExprKind::Atom(val), lexeme.span()))
     }
 }
 
@@ -50,11 +50,11 @@ pub(crate) mod test {
         let mut parser = Parser::new("true false");
         assert_eq!(
             parser.parse_atom_expr().unwrap(),
-            Expr::new(ExprKind::Atom(AtomicValue::Boolean(true)), 0..4)
+            Expr::boxed(ExprKind::Atom(AtomicValue::Boolean(true)), 0..4)
         );
         assert_eq!(
             parser.parse_atom_expr().unwrap(),
-            Expr::new(ExprKind::Atom(AtomicValue::Boolean(false)), 5..10)
+            Expr::boxed(ExprKind::Atom(AtomicValue::Boolean(false)), 5..10)
         )
     }
 
@@ -70,7 +70,7 @@ pub(crate) mod test {
 
         assert_eq!(
             parser.parse_atom_expr().unwrap(),
-            Expr::new(
+            Expr::boxed(
                 ExprKind::Atom(AtomicValue::Number(number)),
                 0..num_as_str.len()
             )
@@ -91,7 +91,7 @@ pub(crate) mod test {
 
         assert_eq!(
             parsed_string,
-            Expr::new(
+            Expr::boxed(
                 ExprKind::Atom(AtomicValue::Text(Spur::default())),
                 0..text.len() + 2
             )
@@ -106,7 +106,7 @@ pub(crate) mod test {
             let parsed_identifier = parser.parse_atom_expr().unwrap();
             assert_eq!(
                 parsed_identifier,
-                Expr::new(
+                Expr::boxed(
                     ExprKind::Atom(AtomicValue::Identifier(Spur::default())),
                     0..identifier.len(),
                 )
