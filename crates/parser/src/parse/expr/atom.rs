@@ -5,16 +5,37 @@ use crate::{
     },
     token::Token,
 };
-use derive_more::Display;
+use std::fmt;
 
-#[derive(Debug, Display, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
-    #[display(fmt = "$symbol")]
     Text(Symbol),
-    #[display(fmt = "$symbol")]
     Identifier(Symbol),
+}
+
+impl fmt::Display for AtomicValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use AtomicValue::*;
+
+        match self {
+            Boolean(val) => {
+                write!(f, "{}", val)?;
+            }
+            Number(val) => {
+                write!(f, "{}", val)?;
+            }
+            Text(val) => {
+                write!(f, "$symbol")?;
+            }
+            Identifier(val) => {
+                write!(f, "$symbol")?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl<'t> Parser<'t> {

@@ -20,7 +20,8 @@ declarationStatement -> classDeclaration
 
 classDeclaration     -> 'class' IDENTIFIER (':' IDENTIFIER)? '{' declarationStatement* '}'
 
-functionDeclaration  -> 'fn' IDENTIFIER '(' IDENTIFIER* ')' blockExpression ';'
+functionDeclaration  -> 'fn' IDENTIFIER '(' IDENTIFIER* ')' blockExpression
+                      | => expression ';'
 
 variableDeclaration  -> 'let' IDENTIFIER '=' expression ';'
 ```
@@ -28,6 +29,8 @@ variableDeclaration  -> 'let' IDENTIFIER '=' expression ';'
 ### Expressions
 
 ```text
+lambda              -> 
+
 expression          -> assignment | controlFlowExpression
 
 assignment          -> IDENTIFIER (('.' IDENTIFIER)*)? '=' logic_or

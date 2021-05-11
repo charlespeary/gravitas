@@ -75,6 +75,10 @@ pub(crate) enum Token<'t> {
     Let,
     #[token(";")]
     Semicolon,
+    #[token("=>")]
+    Arrow,
+    #[token(",")]
+    Comma,
     // EXPRESSION KEYWORDS
     #[token("if")]
     If,
@@ -96,8 +100,6 @@ pub(crate) enum Token<'t> {
         lex_operator
     )]
     Operator(Operator),
-    #[regex(",")]
-    Comma,
     // LITERALS
     #[regex("true|false", lex_boolean)]
     Bool(bool),
@@ -531,10 +533,11 @@ mod test {
     }
 
     #[test]
-    fn lexer_tokenizes_code_hygiene_tokens() {
+    fn lexer_tokenizes_misc_tokens() {
         assert_token(";", Token::Semicolon);
         assert_token(";;", Token::Semicolon);
         assert_token(";;;", Token::Semicolon);
         assert_token(",", Token::Comma);
+        assert_token("=>", Token::Arrow);
     }
 }

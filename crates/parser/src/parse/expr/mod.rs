@@ -11,7 +11,6 @@ use crate::{
     },
     token::{operator::Operator, Token},
 };
-use derive_more::Display;
 use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Formatter;
@@ -61,9 +60,15 @@ impl fmt::Display for ExprKind {
         use ExprKind::*;
 
         match self {
-            Atom(value) => write!(f, "{}", value),
-            Binary { lhs, op, rhs } => write!(f, "({} {} {})", op, lhs, rhs),
-            Unary { op, rhs } => write!(f, "({} {})", op, rhs),
+            Atom(value) => {
+                write!(f, "{}", value)?;
+            }
+            Binary { lhs, op, rhs } => {
+                write!(f, "({} {} {})", op, lhs, rhs)?;
+            }
+            Unary { op, rhs } => {
+                write!(f, "({} {})", op, rhs)?;
+            }
             Block { stmts, return_expr } => {
                 write!(f, "{{ ")?;
                 for (index, stmt) in stmts.iter().enumerate() {
@@ -80,8 +85,6 @@ impl fmt::Display for ExprKind {
                     write!(f, "{}", expr)?;
                 }
                 write!(f, " }}")?;
-
-                Ok(())
             }
             If {
                 condition,
@@ -93,29 +96,26 @@ impl fmt::Display for ExprKind {
                 if let Some(expr) = else_expr {
                     write!(f, " else {}", expr)?;
                 }
-                Ok(())
             }
             While { condition, body } => {
                 write!(f, "while {} {}", condition, body)?;
-                Ok(())
             }
-            Break { return_expr } => {
-                match return_expr {
-                    Some(expr) => {
-                        write!(f, "break {}", expr)?;
-                    }
-                    None => {
-                        write!(f, "break")?;
-                    }
+            Break { return_expr } => match return_expr {
+                Some(expr) => {
+                    write!(f, "break {}", expr)?;
                 }
-                Ok(())
-            }
+                None => {
+                    write!(f, "break")?;
+                }
+            },
             Continue => {
                 write!(f, "continue")?;
-                Ok(())
             }
-            _ => write!(f, ""),
+            _ => {
+                write!(f, "NOT YET IMPLEMENTED!")?;
+            }
         }
+        Ok(())
     }
 }
 

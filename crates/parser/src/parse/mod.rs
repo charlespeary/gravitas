@@ -3,8 +3,8 @@ use crate::{
     parse::{expr::Expr, stmt::Stmt},
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
 };
-use derive_more::Display;
 use lasso::{Rodeo, Spur};
+use std::fmt;
 use std::mem::discriminant;
 use std::ops::Range;
 
@@ -29,11 +29,20 @@ pub type Number = f64;
 pub type Symbol = Spur;
 pub type Span = Range<usize>;
 
-#[derive(Debug, Clone, Display)]
-#[display(fmt = "{}", kind)]
+#[derive(Debug, Clone)]
 pub struct Node<T> {
     pub kind: T,
     pub span: Span,
+}
+
+impl<T> fmt::Display for Node<T>
+where
+    T: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.kind)?;
+        Ok(())
+    }
 }
 
 impl<T> Node<T> {
