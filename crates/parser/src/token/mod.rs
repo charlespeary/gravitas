@@ -96,6 +96,8 @@ pub(crate) enum Token<'t> {
         lex_operator
     )]
     Operator(Operator),
+    #[regex(",")]
+    Comma,
     // LITERALS
     #[regex("true|false", lex_boolean)]
     Bool(bool),
@@ -139,6 +141,10 @@ impl<'t> Token<'t> {
             | Token::While => true,
             _ => false,
         }
+    }
+
+    pub(crate) fn is_identifier(&self) -> bool {
+        matches!(self, Token::Identifier(_))
     }
 }
 
@@ -525,9 +531,10 @@ mod test {
     }
 
     #[test]
-    fn lexer_tokenizes_semicolons() {
+    fn lexer_tokenizes_code_hygiene_tokens() {
         assert_token(";", Token::Semicolon);
         assert_token(";;", Token::Semicolon);
         assert_token(";;;", Token::Semicolon);
+        assert_token(",", Token::Comma);
     }
 }

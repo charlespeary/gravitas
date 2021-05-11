@@ -11,6 +11,11 @@ pub(crate) enum Expect {
     Token(Token<'static>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum Forbidden {
+    TrailingComma,
+}
+
 #[derive(Debug)]
 pub(crate) struct ParseError {
     pub(crate) span: Span,
@@ -23,6 +28,7 @@ pub(crate) enum ParseErrorCause {
     UnexpectedToken,
     Expected(Expect),
     ExpectedOneOf(Vec<Token<'static>>),
+    NotAllowed(Forbidden),
     // Lexer
     TooMuchDots,
     InvalidNumber,

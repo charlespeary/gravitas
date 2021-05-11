@@ -78,7 +78,7 @@ impl<'t> Parser<'t> {
         let body = self.parse_block_expr()?;
         let span = combine(&keyword, &body.span);
 
-        Ok(Expr::new(ExprKind::While { condition, body }, span))
+        Ok(Expr::boxed(ExprKind::While { condition, body }, span))
     }
 
     pub(super) fn parse_break_expr(&mut self) -> ExprResult {
@@ -95,13 +95,13 @@ impl<'t> Parser<'t> {
             keyword
         };
 
-        Ok(Expr::new(ExprKind::Break { return_expr }, span))
+        Ok(Expr::boxed(ExprKind::Break { return_expr }, span))
     }
 
     pub(super) fn parse_continue_expr(&mut self) -> ExprResult {
         let keyword = self.expect(Token::Continue)?.span();
 
-        Ok(Expr::new(ExprKind::Continue, keyword))
+        Ok(Expr::boxed(ExprKind::Continue, keyword))
     }
 }
 

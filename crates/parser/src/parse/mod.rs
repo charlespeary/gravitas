@@ -106,10 +106,10 @@ impl<'t> Parser<'t> {
         Err(ParseErrorCause::Expected(Expect::Token(expected)))
     }
 
-    fn expect_identifier(&mut self) -> ParseResult<Symbol> {
+    fn expect_identifier(&mut self) -> ParseResult<(Symbol, Lexeme)> {
         if let Ok(next) = self.advance() {
             if discriminant(&next.token) == discriminant(&IDENTIFIER) {
-                return Ok(next.intern_key.unwrap());
+                return Ok((next.intern_key.unwrap(), next));
             }
         }
 
@@ -182,7 +182,7 @@ mod test {
     #[test]
     fn parser_expects_identifiers() {
         let mut parser = Parser::new("foo fn");
-        let identifier = parser.expect_identifier().unwrap();
+        let (identifier, _) = parser.expect_identifier().unwrap();
         assert_eq!(parser.symbols.resolve(&identifier), "foo");
         assert_eq!(
             parser.expect_identifier().unwrap_err(),

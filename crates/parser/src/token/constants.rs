@@ -15,3 +15,6 @@ pub(crate) const OPERATOR: Token = Token::Operator(Operator::Assign);
 
 pub(crate) const OPEN_BRACKET: Token = Token::Operator(Operator::CurlyBracketOpen);
 pub(crate) const CLOSE_BRACKET: Token = Token::Operator(Operator::CurlyBracketClose);
+
+pub(crate) const OPEN_PARENTHESIS: Token = Token::Operator(Operator::RoundBracketOpen);
+pub(crate) const CLOSE_PARENTHESIS: Token = Token::Operator(Operator::RoundBracketClose);

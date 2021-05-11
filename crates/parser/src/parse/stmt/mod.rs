@@ -7,6 +7,8 @@ use derive_more::Display;
 
 pub(crate) type Stmt = Node<Box<StmtKind>>;
 
+pub(crate) mod fun;
+
 #[derive(Debug, Display, Clone, PartialEq)]
 pub(crate) enum StmtKind {
     #[display(fmt = "{};", expr)]
@@ -36,7 +38,7 @@ impl<'t> Parser<'t> {
             let lexeme = self.expect(Token::Let)?;
             lexeme.span()
         };
-        let identifier = self.expect_identifier()?;
+        let (identifier, _) = self.expect_identifier()?;
         self.expect(Token::Operator(Operator::Assign))?;
         let expr = self.parse_expression()?;
         let semicolon = self.expect(Token::Semicolon)?;

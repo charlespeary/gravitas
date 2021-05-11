@@ -40,8 +40,11 @@ pub(crate) mod test {
 
     pub(crate) mod parser {
 
-        use crate::common::error::ParseErrorCause;
-        use crate::parse::{expr::Expr, stmt::Stmt, Parser};
+        use crate::{
+            common::error::ParseErrorCause,
+            parse::{expr::Expr, stmt::Stmt, Parser, Symbol},
+        };
+        use lasso::Key;
 
         pub(crate) fn expr(input: &str) -> Expr {
             let mut parser = Parser::new(input);
@@ -69,6 +72,10 @@ pub(crate) mod test {
         pub(crate) fn assert_stmt_error(input: &str, expected: ParseErrorCause) {
             let mut parser = Parser::new(input);
             assert_eq!(parser.parse_stmt().unwrap_err(), expected)
+        }
+
+        pub(crate) fn symbol(key: usize) -> Symbol {
+            Symbol::try_from_usize(key).unwrap()
         }
     }
 }
