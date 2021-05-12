@@ -1,3 +1,4 @@
+use crate::token::constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS};
 use crate::{
     common::{
         combine,
@@ -7,7 +8,7 @@ use crate::{
         expr::atom::AtomicValue,
         operator::{BinaryOperator, UnaryOperator},
         stmt::Stmt,
-        ExprResult, Node, Parser, Span,
+        ExprResult, Node, Parser, Span, Symbol,
     },
     token::{operator::Operator, Token},
 };
@@ -19,6 +20,7 @@ pub(crate) mod atom;
 pub(crate) mod control_flow;
 
 pub(crate) type Expr = Node<Box<ExprKind>>;
+pub(crate) type PathSegment = Node<Symbol>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ExprKind {
@@ -49,6 +51,10 @@ pub(crate) enum ExprKind {
         return_expr: Option<Expr>,
     },
     Continue,
+    Call {
+        calee: Expr,
+        args: Vec<Expr>,
+    },
     Index {
         target: Expr,
         position: Expr,
@@ -134,6 +140,12 @@ impl<'t> Parser<'t> {
             Token::While => self.parse_while_expr()?,
             Token::Break => self.parse_break_expr()?,
             Token::Continue => self.parse_continue_expr()?,
+            Token::Operator(Operator::RoundBracketOpen) => {
+                let open_paren = self.expect(OPEN_PARENTHESIS)?.span();
+                let expr = self.parse_expression()?;
+                let close_paren = self.expect(CLOSE_PARENTHESIS)?.span();
+                Expr::new(expr.kind, combine(&open_paren, &close_paren))
+            }
             Token::Operator(Operator::CurlyBracketOpen) => self.parse_block_expr()?,
             Token::Operator(op) => {
                 let ((), r_bp) = op
@@ -277,5 +289,13 @@ mod test {
         assert_expr("2 >= 10 + 3", "(>= 2 (+ 10 3))");
         assert_expr("2 + 2 ** 3 >= 10 + 3", "(>= (+ 2 (** 2 3)) (+ 10 3))");
         assert_expr("- -2 - -2", "(- (- -2 -2))");
+    }
+
+    #[test]
+    fn parses_parenthesized_expression() {
+        assert_expr("(2 + 2)", "(+ 2 2)");
+        assert_expr("3 * (2 + 2)", "(* 3 (+ 2 2))");
+        assert_expr("(3 * (2 + 2))", "(* 3 (+ 2 2))");
+        assert_expr("3 + (3 * (2 + 2))", "(+ 3 (* 3 (+ 2 2)))");
     }
 }
