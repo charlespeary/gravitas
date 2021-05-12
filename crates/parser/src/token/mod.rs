@@ -79,6 +79,8 @@ pub(crate) enum Token<'t> {
     Arrow,
     #[token(",")]
     Comma,
+    #[token(":")]
+    Inherit,
     // EXPRESSION KEYWORDS
     #[token("if")]
     If,
@@ -539,5 +541,6 @@ mod test {
         assert_token(";;;", Token::Semicolon);
         assert_token(",", Token::Comma);
         assert_token("=>", Token::Arrow);
+        assert_token(":", Token::Inherit);
     }
 }

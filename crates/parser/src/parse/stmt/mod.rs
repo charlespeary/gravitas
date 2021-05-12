@@ -7,6 +7,7 @@ use std::fmt;
 
 pub(crate) type Stmt = Node<Box<StmtKind>>;
 
+pub(crate) mod class;
 pub(crate) mod fun;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,6 +23,12 @@ pub(crate) enum StmtKind {
         name: Symbol,
         params: Params,
         body: Expr,
+    },
+    ClassDeclaration {
+        name: Symbol,
+        super_class: Option<Symbol>,
+        properties: Vec<Stmt>,
+        methods: Vec<Stmt>,
     },
 }
 
@@ -48,6 +55,14 @@ impl fmt::Display for StmtKind {
                     body
                 )?;
             }
+            ClassDeclaration {
+                name,
+                super_class,
+                methods,
+                properties,
+            } => {
+                write!(f, "")?;
+            }
         }
 
         Ok(())
@@ -58,6 +73,7 @@ impl<'t> Parser<'t> {
         match self.peek() {
             Token::Let => self.parse_variable_declaration(),
             Token::Function => self.parse_fun_declaration(),
+            Token::Class => self.parse_class_declaration(),
             _ => self.parse_expression_stmt(),
         }
     }

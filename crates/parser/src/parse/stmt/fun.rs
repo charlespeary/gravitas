@@ -5,6 +5,7 @@ use crate::{
         error::{Forbidden, ParseErrorCause},
     },
     parse::{
+        expr::Expr,
         stmt::{Stmt, StmtKind},
         Node, ParseResult, Parser, StmtResult, Symbol,
     },

@@ -21,7 +21,7 @@ declarationStatement -> classDeclaration
 classDeclaration     -> 'class' IDENTIFIER (':' IDENTIFIER)? '{' declarationStatement* '}'
 
 functionDeclaration  -> 'fn' IDENTIFIER '(' IDENTIFIER* ')' blockExpression
-                      | => expression ';'
+                      | => expression
 
 variableDeclaration  -> 'let' IDENTIFIER '=' expression ';'
 ```

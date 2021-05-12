@@ -42,9 +42,11 @@ pub(crate) mod test {
 
         use crate::{
             common::error::ParseErrorCause,
-            parse::{expr::Expr, stmt::Stmt, Parser, Symbol},
+            parse::{expr::Expr, stmt::Stmt, Parser, Span, Symbol},
         };
         use lasso::Key;
+
+        pub(crate) const DUMMY_SPAN: Span = 0..0;
 
         pub(crate) fn expr(input: &str) -> Expr {
             let mut parser = Parser::new(input);
