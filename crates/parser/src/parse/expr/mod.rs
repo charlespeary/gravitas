@@ -1,3 +1,4 @@
+use crate::common::error::Forbidden;
 use crate::token::constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS};
 use crate::{
     common::{
@@ -52,7 +53,7 @@ pub(crate) enum ExprKind {
     },
     Continue,
     Call {
-        calee: Expr,
+        callee: Expr,
         args: Vec<Expr>,
     },
     Index {
@@ -117,6 +118,18 @@ impl fmt::Display for ExprKind {
             Continue => {
                 write!(f, "continue")?;
             }
+            Call { callee, args } => {
+                write!(f, "{}", callee)?;
+                write!(f, "(")?;
+                let count = args.len().saturating_sub(1);
+                for (index, arg) in args.iter().enumerate() {
+                    write!(f, "{}", arg)?;
+                    if index < count {
+                        write!(f, ",")?;
+                    }
+                }
+                write!(f, ")")?;
+            }
             _ => {
                 write!(f, "NOT YET IMPLEMENTED!")?;
             }
@@ -162,9 +175,39 @@ impl<'t> Parser<'t> {
         loop {
             let operator = match self.peek() {
                 Token::Operator(operator) => operator,
-                Token::Eof | Token::Semicolon => break,
+                Token::Eof | Token::Semicolon | Token::Comma => break,
                 _ => return Err(ParseErrorCause::UnexpectedToken),
             };
+
+            if let Some((l_bp, ())) = operator.postfix_bp() {
+                if l_bp < min_bp {
+                    break;
+                }
+
+                // call expr
+                if operator == Operator::RoundBracketOpen {
+                    let open_parenthesis = self.expect(OPEN_PARENTHESIS)?.span();
+                    let mut args: Vec<Expr> = Vec::new();
+                    loop {
+                        let next = self.peek();
+                        if next == CLOSE_PARENTHESIS || !next.is_expr() {
+                            break;
+                        }
+                        let arg = self.parse_expression()?;
+                        args.push(arg);
+
+                        if self.peek() == Token::Comma {
+                            self.expect(Token::Comma)?;
+                        }
+                    }
+                    let close_parenthesis = self.expect(CLOSE_PARENTHESIS)?.span();
+                    lhs = Expr::boxed(
+                        ExprKind::Call { callee: lhs, args },
+                        combine(&open_parenthesis, &close_parenthesis),
+                    );
+                }
+                continue;
+            }
 
             let (l_bp, r_bp) = match operator.infix_bp() {
                 Some(bp) => bp,
@@ -297,5 +340,13 @@ mod test {
         assert_expr("3 * (2 + 2)", "(* 3 (+ 2 2))");
         assert_expr("(3 * (2 + 2))", "(* 3 (+ 2 2))");
         assert_expr("3 + (3 * (2 + 2))", "(+ 3 (* 3 (+ 2 2)))");
+    }
+
+    #[test]
+    fn parses_call_expression() {
+        assert_expr("foo()", "$symbol()");
+        assert_expr("foo(2)", "$symbol(2)");
+        assert_expr("foo(2,3)", "$symbol(2,3)");
+        assert_expr("foo() + bar()", "(+ $symbol() $symbol())");
     }
 }

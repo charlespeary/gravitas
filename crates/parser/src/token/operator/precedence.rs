@@ -2,6 +2,7 @@ use crate::token::{Operator, Operator::*};
 
 pub(crate) type InfixBindingPower = (u8, u8);
 pub(crate) type PrefixBindingPower = ((), u8);
+pub(crate) type PostfixBindingPower = (u8, ());
 
 impl Operator {
     pub(crate) fn infix_bp(&self) -> Option<InfixBindingPower> {
@@ -18,6 +19,13 @@ impl Operator {
     pub(crate) fn prefix_bp(&self) -> Option<PrefixBindingPower> {
         Some(match self {
             Plus | Minus | Bang => ((), 5),
+            _ => return None,
+        })
+    }
+
+    pub(crate) fn postfix_bp(&self) -> Option<PostfixBindingPower> {
+        Some(match self {
+            Operator::RoundBracketOpen => (11, ()),
             _ => return None,
         })
     }
