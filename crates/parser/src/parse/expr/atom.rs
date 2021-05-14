@@ -3,7 +3,7 @@ use crate::{
         expr::{Expr, ExprKind},
         ExprResult, Node, Number, Parser, Symbol,
     },
-    token::Token,
+    token::{operator::Operator, Token},
 };
 use std::fmt;
 

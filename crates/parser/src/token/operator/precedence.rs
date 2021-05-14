@@ -25,7 +25,7 @@ impl Operator {
 
     pub(crate) fn postfix_bp(&self) -> Option<PostfixBindingPower> {
         Some(match self {
-            Operator::RoundBracketOpen => (11, ()),
+            Operator::RoundBracketOpen | Operator::SquareBracketOpen => (11, ()),
             _ => return None,
         })
     }

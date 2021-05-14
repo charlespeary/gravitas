@@ -1,5 +1,5 @@
 use crate::common::error::Forbidden;
-use crate::token::constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS};
+use crate::token::constants::{CLOSE_PARENTHESIS, CLOSE_SQUARE, OPEN_PARENTHESIS, OPEN_SQUARE};
 use crate::{
     common::{
         combine,
@@ -55,6 +55,9 @@ pub(crate) enum ExprKind {
     Call {
         callee: Expr,
         args: Vec<Expr>,
+    },
+    Array {
+        values: Vec<Expr>,
     },
     Index {
         target: Expr,
@@ -130,6 +133,23 @@ impl fmt::Display for ExprKind {
                 }
                 write!(f, ")")?;
             }
+            Index { target, position } => {
+                write!(f, "{}", target)?;
+                write!(f, "[")?;
+                write!(f, "{}", position)?;
+                write!(f, "]")?;
+            }
+            Array { values } => {
+                write!(f, "[")?;
+                let count = values.len().saturating_sub(1);
+                for (index, value) in values.iter().enumerate() {
+                    write!(f, "{}", value)?;
+                    if index < count {
+                        write!(f, ",")?;
+                    }
+                }
+                write!(f, "]")?;
+            }
             _ => {
                 write!(f, "NOT YET IMPLEMENTED!")?;
             }
@@ -160,6 +180,7 @@ impl<'t> Parser<'t> {
                 Expr::new(expr.kind, combine(&open_paren, &close_paren))
             }
             Token::Operator(Operator::CurlyBracketOpen) => self.parse_block_expr()?,
+            Token::Operator(Operator::SquareBracketOpen) => self.parse_array_expr()?,
             Token::Operator(op) => {
                 let ((), r_bp) = op
                     .prefix_bp()
@@ -206,6 +227,19 @@ impl<'t> Parser<'t> {
                         combine(&open_parenthesis, &close_parenthesis),
                     );
                 }
+
+                if operator == Operator::SquareBracketOpen {
+                    let start = self.expect(OPEN_SQUARE)?.span();
+                    let index_position = self.parse_expression()?;
+                    let end = self.expect(CLOSE_SQUARE)?.span();
+                    lhs = Expr::boxed(
+                        ExprKind::Index {
+                            target: lhs,
+                            position: index_position,
+                        },
+                        combine(&start, &end),
+                    );
+                }
                 continue;
             }
 
@@ -234,10 +268,41 @@ impl<'t> Parser<'t> {
 
         Ok(lhs)
     }
+
+    pub(super) fn parse_array_expr(&mut self) -> ExprResult {
+        let start = self.expect(OPEN_SQUARE)?.span();
+        let mut values: Vec<Expr> = Vec::new();
+
+        loop {
+            let next = self.peek();
+            if next == CLOSE_SQUARE || !next.is_expr() {
+                break;
+            }
+
+            let value = self.parse_expression()?;
+            values.push(value);
+
+            let next = self.peek();
+            if next != CLOSE_SQUARE {
+                self.expect(Token::Comma)?;
+                if self.peek() == CLOSE_SQUARE {
+                    return Err(ParseErrorCause::NotAllowed(Forbidden::TrailingComma));
+                }
+            }
+        }
+
+        let end = self.expect(CLOSE_SQUARE)?.span();
+
+        Ok(Expr::boxed(
+            ExprKind::Array { values },
+            combine(&start, &end),
+        ))
+    }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::common::error::{Forbidden, ParseErrorCause};
     use crate::common::test::parser::*;
 
     #[test]
@@ -337,6 +402,7 @@ mod test {
     #[test]
     fn parses_parenthesized_expression() {
         assert_expr("(2 + 2)", "(+ 2 2)");
+        assert_expr("(((2)))", "2");
         assert_expr("3 * (2 + 2)", "(* 3 (+ 2 2))");
         assert_expr("(3 * (2 + 2))", "(* 3 (+ 2 2))");
         assert_expr("3 + (3 * (2 + 2))", "(+ 3 (* 3 (+ 2 2)))");
@@ -348,5 +414,22 @@ mod test {
         assert_expr("foo(2)", "$symbol(2)");
         assert_expr("foo(2,3)", "$symbol(2,3)");
         assert_expr("foo() + bar()", "(+ $symbol() $symbol())");
+    }
+
+    #[test]
+    fn parses_index_expression() {
+        assert_expr("foo[0]", "$symbol[0]");
+        assert_expr("foo[1 + 2]", "$symbol[(+ 1 2)]");
+    }
+
+    #[test]
+    fn parses_array_expression() {
+        assert_expr("[]", "[]");
+        assert_expr("[1,2,3]", "[1,2,3]");
+
+        assert_expr_error(
+            "[1,2,]",
+            ParseErrorCause::NotAllowed(Forbidden::TrailingComma),
+        );
     }
 }
