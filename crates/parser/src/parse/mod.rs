@@ -131,6 +131,7 @@ impl<'t> Parser<'t> {
         let mut errors = Vec::new();
 
         while self.peek() != Token::Eof {
+            dbg!("??");
             match self.parse_stmt() {
                 Ok(stmt) => {
                     ast.push(stmt);

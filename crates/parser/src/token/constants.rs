@@ -23,3 +23,4 @@ pub(crate) const OPEN_SQUARE: Token = Token::Operator(Operator::SquareBracketOpe
 pub(crate) const CLOSE_SQUARE: Token = Token::Operator(Operator::SquareBracketClose);
 
 pub(crate) const DOT: Token = Token::Operator(Operator::Dot);
+pub(crate) const ASSIGN: Token = Token::Operator(Operator::Assign);

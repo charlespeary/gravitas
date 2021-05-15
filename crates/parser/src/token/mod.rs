@@ -1,3 +1,4 @@
+use derive_more::Display;
 use itertools::{peek_nth, PeekNth};
 use lazy_static::lazy_static;
 use logos::Span;
@@ -64,7 +65,7 @@ fn lex_error<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Filter<()> {
     }
 }
 
-#[derive(Logos, Debug, PartialEq, Clone, Copy)]
+#[derive(Logos, Debug, PartialEq, Clone, Copy, Display)]
 pub(crate) enum Token<'t> {
     // DECLARATION KEYWORDS
     #[token("fn")]
@@ -74,12 +75,16 @@ pub(crate) enum Token<'t> {
     #[token("let")]
     Let,
     #[token(";")]
+    #[display(fmt = ";")]
     Semicolon,
     #[token("=>")]
+    #[display(fmt = "=>")]
     Arrow,
     #[token(",")]
+    #[display(fmt = ",")]
     Comma,
     #[token(":")]
+    #[display(fmt = ":")]
     Inherit,
     // EXPRESSION KEYWORDS
     #[token("if")]

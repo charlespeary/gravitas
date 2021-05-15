@@ -7,12 +7,13 @@ pub(crate) type PostfixBindingPower = (u8, ());
 impl Operator {
     pub(crate) fn infix_bp(&self) -> Option<InfixBindingPower> {
         Some(match self {
-            And | Or => (1, 2),
-            Less | LessEqual | Greater | GreaterEqual | Compare | BangCompare => (3, 4),
-            Plus | Minus => (5, 6),
-            Multiply | Divide | Modulo => (7, 8),
-            Exponent => (9, 10),
-            Dot => (11, 12),
+            Assign => (0, 1),
+            And | Or => (2, 3),
+            Less | LessEqual | Greater | GreaterEqual | Compare | BangCompare => (4, 5),
+            Plus | Minus => (6, 7),
+            Multiply | Divide | Modulo => (8, 9),
+            Exponent => (10, 11),
+            Dot => (12, 13),
             _ => return None,
         })
     }

@@ -1,6 +1,6 @@
 use crate::common::error::Forbidden;
 use crate::token::constants::{
-    CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
+    ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
 };
 use crate::{
     common::{
@@ -83,6 +83,11 @@ pub enum ExprKind {
     Property {
         target: Expr,
         paths: Vec<PathSegment>,
+    },
+    // a = b
+    Assignment {
+        target: Expr,
+        value: Expr,
     },
 }
 
@@ -176,6 +181,9 @@ impl fmt::Display for ExprKind {
                 for path in paths {
                     write!(f, ".$symbol")?;
                 }
+            }
+            Assignment { target, value } => {
+                write!(f, "{}={}", target, value)?;
             }
         }
         Ok(())
@@ -297,6 +305,14 @@ impl<'t> Parser<'t> {
                 continue;
             }
 
+            if operator == Operator::Assign {
+                self.expect(ASSIGN)?;
+                let value = self.parse_expression()?;
+                let span = combine(&lhs.span, &value.span);
+                lhs = Expr::boxed(ExprKind::Assignment { target: lhs, value }, span);
+                continue;
+            }
+
             // Advance and construct spanned operator
             let op = {
                 let lexeme = self.advance()?;
@@ -348,7 +364,6 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use crate::common::error::{Expect, Forbidden, ParseErrorCause};
-    use crate::common::test::lexer::assert_error;
     use crate::common::test::parser::*;
 
     #[test]
@@ -486,5 +501,11 @@ mod test {
         assert_expr("foo.bar.property.prop", "$symbol.$symbol.$symbol.$symbol");
 
         assert_expr_error("foo.", ParseErrorCause::Expected(Expect::Identifier));
+    }
+
+    #[test]
+    fn parses_assignment_expression() {
+        assert_expr("a = b", "$symbol=$symbol");
+        assert_expr("a = a + 1", "$symbol=(+ $symbol 1)");
     }
 }
