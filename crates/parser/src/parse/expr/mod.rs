@@ -1,5 +1,7 @@
 use crate::common::error::Forbidden;
-use crate::token::constants::{CLOSE_PARENTHESIS, CLOSE_SQUARE, OPEN_PARENTHESIS, OPEN_SQUARE};
+use crate::token::constants::{
+    CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
+};
 use crate::{
     common::{
         combine,
@@ -25,43 +27,62 @@ pub(crate) type PathSegment = Node<Symbol>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ExprKind {
+    // 1, false, "foo", foo
     Atom(AtomicValue),
+    // 2 + 2, foo <= 10
     Binary {
         lhs: Expr,
         op: Node<BinaryOperator>,
         rhs: Expr,
     },
+    // -foo, !false
     Unary {
         op: Node<UnaryOperator>,
         rhs: Expr,
     },
+    // { }, { 2 } , { let x = 10; } { let x = 10; 10 }
     Block {
         stmts: Vec<Stmt>,
         return_expr: Option<Expr>,
     },
+    // if true { 10 } else { 15 }
     If {
         condition: Expr,
         body: Expr,
         else_expr: Option<Expr>,
     },
+    // while true { }
     While {
         condition: Expr,
         body: Expr,
     },
+    // break, break 5
     Break {
         return_expr: Option<Expr>,
     },
+    // continue
     Continue,
+    // foo(), bar(10, 10)
     Call {
         callee: Expr,
         args: Vec<Expr>,
     },
+    // [], [1, 2, 3]
     Array {
         values: Vec<Expr>,
     },
+    // foo[10]
     Index {
         target: Expr,
         position: Expr,
+    },
+    // foo.bar, foo.bar.property
+    // The target is an expression because we are not limited
+    // only to identifiers. We can also call methods on literals
+    // e.g "foo".toUppercase()
+    Property {
+        target: Expr,
+        paths: Vec<PathSegment>,
     },
 }
 
@@ -150,8 +171,11 @@ impl fmt::Display for ExprKind {
                 }
                 write!(f, "]")?;
             }
-            _ => {
-                write!(f, "NOT YET IMPLEMENTED!")?;
+            Property { target, paths } => {
+                write!(f, "{}", target)?;
+                for path in paths {
+                    write!(f, ".$symbol")?;
+                }
             }
         }
         Ok(())
@@ -252,6 +276,27 @@ impl<'t> Parser<'t> {
                 break;
             }
 
+            if operator == Operator::Dot {
+                let mut paths = Vec::new();
+
+                while self.peek() == DOT {
+                    let dot = self.expect(DOT)?.span();
+                    let (symbol, lexeme) = self.expect_identifier()?;
+                    let path = PathSegment::new(symbol, combine(&dot, &lexeme.span()));
+                    paths.push(path);
+                }
+
+                let last_segment_span = paths
+                    .last()
+                    .map(|p| &p.span)
+                    .ok_or(ParseErrorCause::Expected(Expect::Identifier))?;
+
+                let span = combine(&lhs.span, last_segment_span);
+
+                lhs = Expr::boxed(ExprKind::Property { target: lhs, paths }, span);
+                continue;
+            }
+
             // Advance and construct spanned operator
             let op = {
                 let lexeme = self.advance()?;
@@ -302,7 +347,8 @@ impl<'t> Parser<'t> {
 
 #[cfg(test)]
 mod test {
-    use crate::common::error::{Forbidden, ParseErrorCause};
+    use crate::common::error::{Expect, Forbidden, ParseErrorCause};
+    use crate::common::test::lexer::assert_error;
     use crate::common::test::parser::*;
 
     #[test]
@@ -431,5 +477,14 @@ mod test {
             "[1,2,]",
             ParseErrorCause::NotAllowed(Forbidden::TrailingComma),
         );
+    }
+
+    #[test]
+    fn parses_property_expression() {
+        assert_expr("foo.bar", "$symbol.$symbol");
+        assert_expr("foo.bar.property", "$symbol.$symbol.$symbol");
+        assert_expr("foo.bar.property.prop", "$symbol.$symbol.$symbol.$symbol");
+
+        assert_expr_error("foo.", ParseErrorCause::Expected(Expect::Identifier));
     }
 }

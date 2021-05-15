@@ -68,6 +68,7 @@ impl fmt::Display for StmtKind {
         Ok(())
     }
 }
+
 impl<'t> Parser<'t> {
     pub(crate) fn parse_stmt(&mut self) -> StmtResult {
         match self.peek() {

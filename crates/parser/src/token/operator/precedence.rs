@@ -12,6 +12,7 @@ impl Operator {
             Plus | Minus => (5, 6),
             Multiply | Divide | Modulo => (7, 8),
             Exponent => (9, 10),
+            Dot => (11, 12),
             _ => return None,
         })
     }

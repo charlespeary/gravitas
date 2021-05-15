@@ -21,3 +21,5 @@ pub(crate) const CLOSE_PARENTHESIS: Token = Token::Operator(Operator::RoundBrack
 
 pub(crate) const OPEN_SQUARE: Token = Token::Operator(Operator::SquareBracketOpen);
 pub(crate) const CLOSE_SQUARE: Token = Token::Operator(Operator::SquareBracketClose);
+
+pub(crate) const DOT: Token = Token::Operator(Operator::Dot);
