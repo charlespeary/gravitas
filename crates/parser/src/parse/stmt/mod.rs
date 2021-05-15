@@ -5,13 +5,13 @@ use crate::{
 };
 use std::fmt;
 
-pub(crate) type Stmt = Node<Box<StmtKind>>;
+pub type Stmt = Node<Box<StmtKind>>;
 
 pub(crate) mod class;
 pub(crate) mod fun;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum StmtKind {
+pub enum StmtKind {
     Expression {
         expr: Expr,
     },

@@ -22,11 +22,11 @@ use std::fmt::Formatter;
 pub(crate) mod atom;
 pub(crate) mod control_flow;
 
-pub(crate) type Expr = Node<Box<ExprKind>>;
-pub(crate) type PathSegment = Node<Symbol>;
+pub type Expr = Node<Box<ExprKind>>;
+pub type PathSegment = Node<Symbol>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum ExprKind {
+pub enum ExprKind {
     // 1, false, "foo", foo
     Atom(AtomicValue),
     // 2 + 2, foo <= 10

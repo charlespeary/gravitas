@@ -200,14 +200,14 @@ impl<'t> Iterator for Source<'t> {
 pub(crate) struct Lexer<'t> {
     // Logos lexer that lexes our source input
     inner: PeekNth<Source<'t>>,
-    pub(crate) current: Option<Lexeme<'t>>,
+    current_span: Option<Span>,
 }
 
 impl<'t> Lexer<'t> {
     pub(crate) fn new(input: &'t str) -> Self {
         Self {
             inner: peek_nth(Source::new(input)),
-            current: None,
+            current_span: None,
         }
     }
 
@@ -227,9 +227,8 @@ impl<'t> Lexer<'t> {
         self.inner.peek_nth(nth).copied()
     }
 
-    pub(crate) fn current_lexeme(&self) -> Lexeme {
-        self.current
-            .expect("Tried to access current lexeme before iterator started")
+    pub(crate) fn current_span(&self) -> Span {
+        self.current_span.clone().unwrap()
     }
 }
 
@@ -239,7 +238,7 @@ impl<'t> Iterator for Lexer<'t> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.inner.next() {
             Some(lexeme) => {
-                self.current = Some(lexeme);
+                self.current_span = Some(lexeme.span());
                 Some(lexeme)
             }
             None => None,

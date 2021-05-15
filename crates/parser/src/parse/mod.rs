@@ -14,13 +14,15 @@ pub(crate) mod stmt;
 
 pub(crate) struct Parser<'t> {
     lexer: Lexer<'t>,
-    errors: Vec<ParseError>,
     symbols: Rodeo,
 }
 
-pub struct AST;
+pub struct Program {
+    pub ast: Vec<Stmt>,
+    pub symbols: Rodeo,
+}
 
-pub(crate) type ParserOutput<'t> = Result<AST, &'t [ParseError]>;
+pub(crate) type ParserOutput = Result<Program, Vec<ParseError>>;
 pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
 pub(crate) type StmtResult<'t> = ParseResult<'t, Stmt>;
@@ -73,7 +75,6 @@ impl<'t> Parser<'t> {
     pub(crate) fn new(input: &'t str) -> Self {
         Self {
             lexer: Lexer::new(input),
-            errors: vec![],
             symbols: Rodeo::new(),
         }
     }
@@ -125,8 +126,38 @@ impl<'t> Parser<'t> {
         Err(ParseErrorCause::Expected(Expect::Identifier))
     }
 
-    pub(crate) fn parse(&mut self) {
-        self.parse_expression();
+    pub(crate) fn parse(mut self) -> ParserOutput {
+        let mut ast = Vec::new();
+        let mut errors = Vec::new();
+
+        while self.peek() != Token::Eof {
+            match self.parse_stmt() {
+                Ok(stmt) => {
+                    ast.push(stmt);
+                }
+                Err(cause) => {
+                    let parse_error = ParseError {
+                        cause,
+                        span: self.lexer.current_span(),
+                    };
+                    errors.push(parse_error);
+
+                    // discard every expression until we encounter a new statement
+                    while self.peek().is_stmt() {
+                        self.advance();
+                    }
+                }
+            }
+        }
+
+        if !errors.is_empty() {
+            Err(errors)
+        } else {
+            Ok(Program {
+                ast,
+                symbols: self.symbols,
+            })
+        }
     }
 
     fn construct_node<T>(&mut self, val: T) -> ParseResult<Node<T>> {

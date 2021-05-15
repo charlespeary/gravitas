@@ -17,7 +17,7 @@ pub(crate) enum Forbidden {
 }
 
 #[derive(Debug)]
-pub(crate) struct ParseError {
+pub struct ParseError {
     pub(crate) span: Span,
     pub(crate) cause: ParseErrorCause,
 }

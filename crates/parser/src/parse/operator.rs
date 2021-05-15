@@ -28,7 +28,7 @@ macro_rules! impl_double_ended_conversion {
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub(crate) enum BinaryOperator {
+pub enum BinaryOperator {
     // +
     Addition,
     // -
@@ -78,13 +78,13 @@ impl_double_ended_conversion!(
     ]
 );
 
-impl FromStr for BinaryOperator {
-    type Err = ParseErrorCause;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Operator::from_str(s)?.try_into()
-    }
-}
+// impl FromStr for BinaryOperator {
+//     type Err = ParseErrorCause;
+//
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         Operator::from_str(s)?.try_into()
+//     }
+// }
 
 impl fmt::Display for BinaryOperator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -93,7 +93,7 @@ impl fmt::Display for BinaryOperator {
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub(crate) enum UnaryOperator {
+pub enum UnaryOperator {
     Negate,
     Not,
 }
@@ -108,22 +108,5 @@ impl_double_ended_conversion!(
 impl fmt::Display for UnaryOperator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Operator::from(*self))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::token::{constants::BINARY_OPERATORS, operator::Operator};
-    use quickcheck::{Arbitrary, Gen};
-    use std::convert::TryFrom;
-
-    impl Arbitrary for BinaryOperator {
-        fn arbitrary(g: &mut Gen) -> Self {
-            BinaryOperator::try_from(
-                Operator::from_str(g.choose(&BINARY_OPERATORS).unwrap()).unwrap(),
-            )
-            .unwrap()
-        }
     }
 }
