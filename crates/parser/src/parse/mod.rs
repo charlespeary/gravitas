@@ -133,7 +133,6 @@ impl<'t> Parser<'t> {
         let mut errors = Vec::new();
 
         while self.peek() != Token::Eof {
-            dbg!("??");
             match self.parse_stmt() {
                 Ok(stmt) => {
                     ast.push(stmt);
@@ -143,13 +142,15 @@ impl<'t> Parser<'t> {
                         cause,
                         span: self.lexer.current_span(),
                     };
-                    dbg!(&parse_error);
                     errors.push(parse_error);
 
                     // discard every expression until we encounter a new statement
-                    dbg!(self.peek());
-                    while self.peek().is_expr() {
-                        self.advance();
+                    loop {
+                        let next = self.peek();
+                        if next.is_stmt() || next == Token::Eof {
+                            break;
+                        }
+                        self.advance().unwrap();
                     }
                 }
             }

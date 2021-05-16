@@ -59,7 +59,11 @@ impl ParseError {
 
         match &self.cause {
             EndOfInput => Diagnostic::error().with_message("unexpected end of input"),
-            UnexpectedToken { .. } => Diagnostic::error().with_message("todo"),
+            UnexpectedToken { .. } => Diagnostic::error()
+                .with_message("Encountered unexpected token")
+                .with_labels(vec![
+                    Label::primary(file_id, span).with_message("wasn't expected")
+                ]),
             Expected(e) => Diagnostic::error()
                 .with_message(format!("Expected {}", e))
                 .with_labels(vec![

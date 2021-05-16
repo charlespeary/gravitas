@@ -67,6 +67,9 @@ pub enum ExprKind {
         callee: Expr,
         args: Vec<Expr>,
     },
+    Return {
+        value: Option<Expr>,
+    },
     // [], [1, 2, 3]
     Array {
         values: Vec<Expr>,
@@ -159,6 +162,14 @@ impl fmt::Display for ExprKind {
                 }
                 write!(f, ")")?;
             }
+            Return { value } => match value {
+                Some(value) => {
+                    write!(f, "return {}", value)?;
+                }
+                None => {
+                    write!(f, "return")?;
+                }
+            },
             Index { target, position } => {
                 write!(f, "{}", target)?;
                 write!(f, "[")?;
@@ -205,6 +216,7 @@ impl<'t> Parser<'t> {
             Token::While => self.parse_while_expr()?,
             Token::Break => self.parse_break_expr()?,
             Token::Continue => self.parse_continue_expr()?,
+            Token::Return => self.parse_return_expr()?,
             Token::Operator(Operator::RoundBracketOpen) => {
                 let open_paren = self.expect(OPEN_PARENTHESIS)?.span();
                 let expr = self.parse_expression()?;
@@ -225,13 +237,7 @@ impl<'t> Parser<'t> {
             _ => self.parse_atom_expr()?,
         };
 
-        loop {
-            let operator = match self.peek() {
-                Token::Operator(operator) => operator,
-                Token::Eof | Token::Semicolon | Token::Comma => break,
-                _ => return Err(ParseErrorCause::UnexpectedToken),
-            };
-
+        while let Token::Operator(operator) = self.peek() {
             if let Some((l_bp, ())) = operator.postfix_bp() {
                 if l_bp < min_bp {
                     break;
@@ -358,6 +364,23 @@ impl<'t> Parser<'t> {
             ExprKind::Array { values },
             combine(&start, &end),
         ))
+    }
+
+    pub(super) fn parse_return_expr(&mut self) -> ExprResult {
+        let return_keyword = self.expect(Token::Return)?.span();
+        let value = if self.peek().is_expr() {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        let span = if let Some(expr) = &value {
+            combine(&return_keyword, &expr.span)
+        } else {
+            return_keyword
+        };
+
+        Ok(Expr::boxed(ExprKind::Return { value }, span))
     }
 }
 
@@ -507,5 +530,12 @@ mod test {
     fn parses_assignment_expression() {
         assert_expr("a = b", "$symbol = $symbol");
         assert_expr("a = a + 1", "$symbol = (+ $symbol 1)");
+    }
+
+    #[test]
+    fn parses_return_expression() {
+        assert_expr("return", "return");
+        assert_expr("return 5", "return 5");
+        assert_expr("return 5 + 5", "return (+ 5 5)");
     }
 }

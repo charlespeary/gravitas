@@ -22,7 +22,6 @@ impl<'t> Parser<'t> {
             if next == CLOSE_BRACKET || next == Token::Eof {
                 break;
             }
-
             match self.parse_expr_or_stmt()? {
                 ExprOrStmt::Expr(expr) => {
                     return_expr = Some(expr);

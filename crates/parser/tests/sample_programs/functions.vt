@@ -1,0 +1,13 @@
+fn foo() {}
+
+fn bar(a, b, c) {
+     return a + b + c;
+}
+
+fn closureA(a, b) => a + b
+fn closureB() => 5
+
+let a = foo();
+let b = bar(5, 10, 15);
+let c = closureA(3, 6);
+let d = closureB();
