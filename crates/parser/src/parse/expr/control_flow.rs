@@ -1,3 +1,4 @@
+use crate::parse::utils::ExprOrStmt;
 use crate::{
     common::combine,
     parse::{
@@ -15,23 +16,22 @@ impl<'t> Parser<'t> {
     pub(super) fn parse_block_expr(&mut self) -> ExprResult {
         let open_bracket = self.expect(OPEN_BRACKET)?.span();
         let mut stmts: Vec<Stmt> = vec![];
+        let mut return_expr = None;
         loop {
             let next = self.peek();
             if next == CLOSE_BRACKET || next == Token::Eof {
                 break;
             }
 
-            if next.is_stmt() {
-                stmts.push(self.parse_stmt()?);
-            } else {
-                break;
+            match self.parse_expr_or_stmt()? {
+                ExprOrStmt::Expr(expr) => {
+                    return_expr = Some(expr);
+                }
+                ExprOrStmt::Stmt(stmt) => {
+                    stmts.push(stmt);
+                }
             }
         }
-        let return_expr = if self.peek().is_expr() {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
 
         let close_bracket = self.expect(CLOSE_BRACKET)?.span();
         let span = combine(&open_bracket, &close_bracket);
@@ -159,6 +159,10 @@ mod test {
         assert_expr(
             "while x < 10 { let x = x + 1; }",
             "while (< $symbol 10) { let $symbol = (+ $symbol 1); }",
+        );
+        assert_expr(
+            "while foo < 20 { foo = foo + 1; }",
+            "while (< $symbol 20) { $symbol = (+ $symbol 1); }",
         );
     }
 

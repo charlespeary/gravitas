@@ -11,12 +11,14 @@ use std::ops::Range;
 pub(crate) mod expr;
 pub(crate) mod operator;
 pub(crate) mod stmt;
+pub(crate) mod utils;
 
 pub(crate) struct Parser<'t> {
     lexer: Lexer<'t>,
     symbols: Rodeo,
 }
 
+#[derive(Debug)]
 pub struct Program {
     pub ast: Vec<Stmt>,
     pub symbols: Rodeo,
@@ -141,10 +143,12 @@ impl<'t> Parser<'t> {
                         cause,
                         span: self.lexer.current_span(),
                     };
+                    dbg!(&parse_error);
                     errors.push(parse_error);
 
                     // discard every expression until we encounter a new statement
-                    while self.peek().is_stmt() {
+                    dbg!(self.peek());
+                    while self.peek().is_expr() {
                         self.advance();
                     }
                 }

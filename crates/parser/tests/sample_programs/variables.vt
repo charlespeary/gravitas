@@ -1,1 +1,10 @@
-let x = 10
+let a = 10;
+let b = a;
+let c = "foo";
+let d = false;
+let e = true;
+let f = 2 + 2;
+let g = 20 ** 3 + 10 * 5 / 10;
+let h = 2 + 2 * 10;
+a = b;
+c = b;

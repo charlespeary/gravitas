@@ -183,7 +183,7 @@ impl fmt::Display for ExprKind {
                 }
             }
             Assignment { target, value } => {
-                write!(f, "{}={}", target, value)?;
+                write!(f, "{} = {}", target, value)?;
             }
         }
         Ok(())
@@ -505,7 +505,7 @@ mod test {
 
     #[test]
     fn parses_assignment_expression() {
-        assert_expr("a = b", "$symbol=$symbol");
-        assert_expr("a = a + 1", "$symbol=(+ $symbol 1)");
+        assert_expr("a = b", "$symbol = $symbol");
+        assert_expr("a = a + 1", "$symbol = (+ $symbol 1)");
     }
 }
