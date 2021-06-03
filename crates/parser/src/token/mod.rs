@@ -86,6 +86,9 @@ pub(crate) enum Token<'t> {
     #[token(":")]
     #[display(fmt = ":")]
     Inherit,
+    #[token("|")]
+    #[display(fmt = "|")]
+    Bar,
     // EXPRESSION KEYWORDS
     #[token("if")]
     If,
@@ -147,7 +150,8 @@ impl<'t> Token<'t> {
             | Token::For
             | Token::If
             | Token::Return
-            | Token::While => true,
+            | Token::While
+            | Token::Bar => true,
             _ => false,
         }
     }

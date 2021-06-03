@@ -10,6 +10,7 @@ use std::ops::Range;
 
 pub(crate) mod expr;
 pub(crate) mod operator;
+pub(crate) mod pieces;
 pub(crate) mod stmt;
 pub(crate) mod utils;
 

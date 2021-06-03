@@ -58,14 +58,20 @@ impl<'t> Parser<'t> {
 
 #[cfg(test)]
 mod test {
-    use crate::common::error::{Expect, ParseErrorCause};
-    use crate::common::test::parser::{symbol, DUMMY_SPAN};
-    use crate::parse::expr::atom::AtomicValue;
-    use crate::parse::expr::{Expr, ExprKind};
-    use crate::parse::stmt::fun::{Param, Params};
-    use crate::parse::stmt::{Stmt, StmtKind};
-    use crate::parse::Parser;
-    use crate::token::constants::{CLOSE_BRACKET, OPEN_BRACKET};
+
+    use crate::{
+        common::{
+            error::{Expect, ParseErrorCause},
+            test::parser::{symbol, DUMMY_SPAN},
+        },
+        parse::{
+            expr::{atom::AtomicValue, Expr, ExprKind},
+            pieces::{Param, Params},
+            stmt::{Stmt, StmtKind},
+            Parser,
+        },
+        token::constants::{CLOSE_BRACKET, OPEN_BRACKET},
+    };
 
     fn assert_class_error(input: &str, expected: ParseErrorCause) {
         let mut parser = Parser::new(input);

@@ -1,6 +1,6 @@
 use crate::{
     common::combine,
-    parse::{expr::Expr, stmt::fun::Params, Node, Parser, Span, StmtResult, Symbol},
+    parse::{expr::Expr, pieces::Params, Node, Parser, Span, StmtResult, Symbol},
     token::{operator::Operator, Token},
 };
 use std::fmt;

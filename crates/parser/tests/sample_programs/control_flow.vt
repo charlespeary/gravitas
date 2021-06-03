@@ -11,6 +11,10 @@ while foo < 30 {
     if foo == 25 {
         continue;
     };
+
+    if foo == 30 {
+        break 30;
+    }
 };
 
 

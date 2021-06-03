@@ -29,7 +29,7 @@ variableDeclaration  -> 'let' IDENTIFIER '=' expression ';'
 ### Expressions
 
 ```text
-lambda              -> 
+closure              -> '|' IDENTIFIER* '|' '=>' expression
 
 expression          -> assignment | controlFlowExpression
 

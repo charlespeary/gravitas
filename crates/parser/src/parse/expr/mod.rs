@@ -1,4 +1,5 @@
 use crate::common::error::Forbidden;
+use crate::parse::pieces::Params;
 use crate::token::constants::{
     ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
 };
@@ -91,6 +92,12 @@ pub enum ExprKind {
     Assignment {
         target: Expr,
         value: Expr,
+    },
+    // (a,b) => a + b
+    // (a,b) => { }
+    Closure {
+        params: Params,
+        body: Expr,
     },
 }
 
@@ -196,6 +203,10 @@ impl fmt::Display for ExprKind {
             Assignment { target, value } => {
                 write!(f, "{} = {}", target, value)?;
             }
+            Closure { params, body } => {
+                let params_count = params.kind.len();
+                write!(f, "|{}| => {}", params_count, body)?;
+            }
         }
         Ok(())
     }
@@ -217,6 +228,7 @@ impl<'t> Parser<'t> {
             Token::Break => self.parse_break_expr()?,
             Token::Continue => self.parse_continue_expr()?,
             Token::Return => self.parse_return_expr()?,
+            Token::Bar => self.parse_closure_expression()?,
             Token::Operator(Operator::RoundBracketOpen) => {
                 let open_paren = self.expect(OPEN_PARENTHESIS)?.span();
                 let expr = self.parse_expression()?;
@@ -382,6 +394,14 @@ impl<'t> Parser<'t> {
 
         Ok(Expr::boxed(ExprKind::Return { value }, span))
     }
+
+    pub(super) fn parse_closure_expression(&mut self) -> ExprResult {
+        let params = self.parse_params()?;
+        self.expect(Token::Arrow)?;
+        let body = self.parse_expression()?;
+        let span = combine(&params.span, &body.span);
+        Ok(Expr::boxed(ExprKind::Closure { params, body }, span))
+    }
 }
 
 #[cfg(test)]
@@ -537,5 +557,14 @@ mod test {
         assert_expr("return", "return");
         assert_expr("return 5", "return 5");
         assert_expr("return 5 + 5", "return (+ 5 5)");
+    }
+
+    #[test]
+    fn parses_closure_expression() {
+        assert_expr("|| => 10", "|0| => 10");
+        assert_expr(
+            "|a,b,c| => a + b + c",
+            "|3| => (+ (+ $symbol $symbol) $symbol)",
+        );
     }
 }
