@@ -1,0 +1,15 @@
+fn brutesort(arr) {
+    while x < arr.len() {
+        while y < arr.len() {
+            let a = arr[x];
+            let b = arr[y];
+            if a > b {
+                arr[x] = b;
+                arr[y] = a;
+            }
+        }
+    }
+    return arr;
+}
+
+print(brutesort([3,5,1,0,1,20]));

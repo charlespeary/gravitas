@@ -1,0 +1,19 @@
+fn fb(n) {
+    if n % 3 == 0 {
+        print("Fizz");
+    }
+
+    if n % 5 == 0 {
+        print("Buzz");
+    }
+
+    if !(n % 3 == 0 or  n % 5 == 0) {
+        print(n);
+    }
+}
+
+let i = 0;
+while i <= 100 {
+    fb(i);
+    i = i + 1;
+};

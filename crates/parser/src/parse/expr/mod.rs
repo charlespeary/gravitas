@@ -195,7 +195,7 @@ impl fmt::Display for ExprKind {
             }
             Property { target, paths } => {
                 write!(f, "{}", target)?;
-                for path in paths {
+                for _ in paths {
                     write!(f, ".$symbol")?;
                 }
             }

@@ -8,3 +8,7 @@ let a = foo();
 let b = bar(5, 10, 15);
 let closure_a = |a, b| => a + b;
 let closure_b = || => 10;
+let closure_c = |a| => { 5 };
+let closure_d = |a| => {
+    return |b| => a + b;
+};

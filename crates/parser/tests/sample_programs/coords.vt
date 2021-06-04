@@ -1,0 +1,16 @@
+class Point {
+    fn init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    fn add(point) {
+        return Point(this.x + point.x, this.y + point.y);
+    }
+}
+
+
+let a = Point(10, 10);
+let b = Point(32, 5);
+let c = a.add(b);
+print(c);

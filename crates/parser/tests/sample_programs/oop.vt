@@ -1,0 +1,28 @@
+class A {
+    fn inherited() {
+        return "I am inherited!";
+    }
+}
+
+class B : A { }
+
+class C {
+    let a = 10;
+    let b = 20;
+}
+
+class D {
+    let foo = 20;
+
+    fn internal() {
+        return this.foo + 10;
+    }
+}
+
+let a = A();
+let b = B();
+b.inherited();
+let c = C();
+c.a + c.b;
+let d = D();
+d.internal();
