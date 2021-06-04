@@ -44,6 +44,9 @@ pub enum ParseErrorCause {
     Expected(Expect),
     NotAllowed(Forbidden),
     UsedBeforeInitialization,
+    UsedOutsideLoop,
+    CantInheritFromItself,
+    SuperclassDoesntExist,
 }
 
 impl CompilerDiagnostic for ParseError {
@@ -65,6 +68,19 @@ impl CompilerDiagnostic for ParseError {
                 ]),
             UsedBeforeInitialization => Diagnostic::error()
                 .with_message("Variable was used before initialization")
+                .with_labels(vec![Label::primary(file_id, span)]),
+            UsedOutsideLoop => Diagnostic::error()
+                .with_message("Break or continue must be used inside loops")
+                .with_labels(vec![
+                    Label::primary(file_id, span).with_message("...but was used here")
+                ]),
+            CantInheritFromItself => Diagnostic::error()
+                .with_message("Class can't inherit from itself")
+                .with_labels(vec![
+                    Label::primary(file_id, span).with_message("...but it did here")
+                ]),
+            SuperclassDoesntExist => Diagnostic::error()
+                .with_message("Tried to inherit from a superclass that doesn't exist")
                 .with_labels(vec![Label::primary(file_id, span)]),
             _ => Diagnostic::error(),
         }
