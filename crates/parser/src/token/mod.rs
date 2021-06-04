@@ -260,10 +260,10 @@ mod test {
     use quickcheck_macros::quickcheck;
 
     use crate::{
-        common::test::lexer::{
+        token::{operator::Operator, Lexeme, Lexer, Token},
+        utils::test::lexer::{
             assert_empty, assert_error, assert_token, assert_tokens, first_token, op,
         },
-        token::{operator::Operator, Lexeme, Lexer, Token},
     };
 
     #[test]

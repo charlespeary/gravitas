@@ -1,11 +1,11 @@
 use crate::{
-    common::combine,
     parse::{
         expr::Expr,
         stmt::{Stmt, StmtKind},
         ParseResult, Parser,
     },
     token::Token,
+    utils::combine,
 };
 
 pub(crate) enum ExprOrStmt {

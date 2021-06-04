@@ -41,8 +41,8 @@ pub(crate) mod test {
     pub(crate) mod parser {
 
         use crate::{
-            common::error::ParseErrorCause,
             parse::{expr::Expr, stmt::Stmt, Parser, Span, Symbol},
+            utils::error::ParseErrorCause,
         };
         use lasso::Key;
 

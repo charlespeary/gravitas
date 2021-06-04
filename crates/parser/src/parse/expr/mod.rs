@@ -1,8 +1,4 @@
 use crate::{
-    common::{
-        combine,
-        error::{Expect, Forbidden, ParseErrorCause},
-    },
     parse::{
         expr::atom::AtomicValue,
         operator::{BinaryOperator, UnaryOperator},
@@ -14,6 +10,10 @@ use crate::{
         ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
     },
     token::{operator::Operator, Token},
+    utils::{
+        combine,
+        error::{Expect, Forbidden, ParseErrorCause},
+    },
 };
 use std::convert::TryInto;
 use std::fmt;
@@ -405,8 +405,8 @@ impl<'t> Parser<'t> {
 
 #[cfg(test)]
 mod test {
-    use crate::common::error::{Expect, Forbidden, ParseErrorCause};
-    use crate::common::test::parser::*;
+    use crate::utils::error::{Expect, Forbidden, ParseErrorCause};
+    use crate::utils::test::parser::*;
 
     #[test]
     fn parses_simple_binary_expression() {

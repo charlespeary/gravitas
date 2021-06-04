@@ -1,7 +1,7 @@
 use crate::{
-    common::error::{Expect, ParseError, ParseErrorCause},
     parse::{expr::Expr, stmt::Stmt},
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
+    utils::error::{Expect, ParseError, ParseErrorCause},
 };
 use lasso::{Rodeo, Spur};
 use std::{fmt, mem::discriminant, ops::Range};

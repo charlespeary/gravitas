@@ -1,4 +1,4 @@
-use crate::{common::error::ParseErrorCause, token::operator::Operator};
+use crate::{token::operator::Operator, utils::error::ParseErrorCause};
 use std::fmt;
 
 macro_rules! impl_double_ended_conversion {

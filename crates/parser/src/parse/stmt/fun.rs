@@ -1,10 +1,10 @@
 use crate::{
-    common::combine,
     parse::{
         stmt::{Stmt, StmtKind},
         Parser, StmtResult,
     },
     token::{constants::OPEN_BRACKET, Token},
+    utils::combine,
 };
 
 impl<'t> Parser<'t> {
@@ -33,10 +33,6 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use crate::{
-        common::{
-            error::{Expect, ParseErrorCause},
-            test::parser::symbol,
-        },
         parse::{
             expr::{atom::AtomicValue, Expr, ExprKind},
             pieces::{Param, Params},
@@ -45,6 +41,10 @@ mod test {
         },
         token::constants::OPEN_PARENTHESIS,
         token::Token,
+        utils::{
+            error::{Expect, ParseErrorCause},
+            test::parser::symbol,
+        },
     };
 
     #[test]

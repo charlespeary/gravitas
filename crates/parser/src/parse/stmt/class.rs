@@ -1,5 +1,4 @@
 use crate::{
-    common::combine,
     parse::{
         stmt::{Stmt, StmtKind},
         Parser, StmtResult,
@@ -8,6 +7,7 @@ use crate::{
         constants::{CLOSE_BRACKET, OPEN_BRACKET},
         Token,
     },
+    utils::combine,
 };
 
 impl<'t> Parser<'t> {
@@ -62,10 +62,6 @@ impl<'t> Parser<'t> {
 mod test {
 
     use crate::{
-        common::{
-            error::{Expect, ParseErrorCause},
-            test::parser::{symbol, DUMMY_SPAN},
-        },
         parse::{
             expr::{atom::AtomicValue, Expr, ExprKind},
             pieces::{Param, Params},
@@ -73,6 +69,10 @@ mod test {
             Parser,
         },
         token::constants::{CLOSE_BRACKET, OPEN_BRACKET},
+        utils::{
+            error::{Expect, ParseErrorCause},
+            test::parser::{symbol, DUMMY_SPAN},
+        },
     };
 
     fn assert_class_error(input: &str, expected: ParseErrorCause) {

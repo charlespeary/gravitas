@@ -1,12 +1,12 @@
 use crate::{
-    common::{
-        combine,
-        error::{Forbidden, ParseErrorCause},
-    },
     parse::{Node, ParseResult, Parser, Symbol},
     token::{
         constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS},
         Token,
+    },
+    utils::{
+        combine,
+        error::{Forbidden, ParseErrorCause},
     },
 };
 
@@ -61,7 +61,7 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::common::test::parser::symbol;
+    use crate::utils::test::parser::symbol;
 
     fn assert_args(input: &str, args: Params) {
         let mut parser = Parser::new(input);

@@ -4,11 +4,12 @@ use codespan_reporting::{
     term,
     term::termcolor::{ColorChoice, StandardStream},
 };
+use common::CompilerDiagnostic;
 use std::{fs, path::Path};
 
-pub(crate) mod common;
 pub(crate) mod parse;
 pub(crate) mod token;
+pub(crate) mod utils;
 
 pub type ParseResult = Result<Program, ()>;
 

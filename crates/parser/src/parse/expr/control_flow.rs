@@ -1,6 +1,5 @@
 use crate::parse::utils::ExprOrStmt;
 use crate::{
-    common::combine,
     parse::{
         expr::{Expr, ExprKind},
         stmt::Stmt,
@@ -10,6 +9,7 @@ use crate::{
         constants::{CLOSE_BRACKET, OPEN_BRACKET},
         Token,
     },
+    utils::combine,
 };
 
 impl<'t> Parser<'t> {
@@ -107,11 +107,11 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use crate::{
-        common::{
+        token::constants::{CLOSE_BRACKET, OPEN_BRACKET},
+        utils::{
             error::{Expect, ParseErrorCause},
             test::parser::{assert_expr, assert_expr_error},
         },
-        token::constants::{CLOSE_BRACKET, OPEN_BRACKET},
     };
 
     #[test]

@@ -1,7 +1,7 @@
 use crate::{
-    common::combine,
     parse::{expr::Expr, pieces::Params, Node, Parser, StmtResult, Symbol},
     token::{operator::Operator, Token},
+    utils::combine,
 };
 use std::fmt;
 
@@ -113,11 +113,11 @@ impl<'t> Parser<'t> {
 mod test {
 
     use crate::{
-        common::{
+        token::Token,
+        utils::{
             error::{Expect, ParseErrorCause},
             test::parser::{assert_stmt, assert_stmt_error},
         },
-        token::Token,
     };
 
     #[test]
