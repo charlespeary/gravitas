@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 parser = { path = "../parser" }
+common = { path = "../common" }
+codespan-reporting = "0.11.1"

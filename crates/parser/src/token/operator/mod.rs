@@ -6,7 +6,7 @@ use std::str::FromStr;
 pub(crate) mod precedence;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub(crate) enum Operator {
+pub enum Operator {
     Plus,
     Minus,
     Multiply,

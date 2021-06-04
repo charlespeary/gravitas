@@ -1,20 +1,16 @@
-use crate::parse::Parser;
-pub use crate::parse::Program;
-use crate::utils::error::ParseError;
+use crate::parse::{Parser, ParserOutput};
 use std::{fs, path::Path};
 
-pub(crate) mod parse;
+pub mod parse;
 pub(crate) mod token;
 pub mod utils;
 
-pub type ParseResult = Result<Program, Vec<ParseError>>;
-
-pub fn parse(code: &str) -> ParseResult {
+pub fn parse(code: &str) -> ParserOutput {
     let parser = Parser::new(code);
     parser.parse()
 }
 
-pub fn parse_file<P: AsRef<Path>>(path: P) -> ParseResult {
+pub fn parse_file<P: AsRef<Path>>(path: P) -> ParserOutput {
     let code = fs::read_to_string(path).unwrap();
     parse(&code)
 }

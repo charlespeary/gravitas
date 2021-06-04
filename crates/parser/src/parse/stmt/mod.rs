@@ -1,8 +1,9 @@
 use crate::{
-    parse::{expr::Expr, pieces::Params, Node, Parser, StmtResult, Symbol},
+    parse::{expr::Expr, pieces::Params, Node, Parser, StmtResult},
     token::{operator::Operator, Token},
     utils::combine,
 };
+use common::Symbol;
 use std::fmt;
 
 pub type Stmt = Node<Box<StmtKind>>;

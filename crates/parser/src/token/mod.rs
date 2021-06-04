@@ -5,7 +5,7 @@ use logos::Span;
 use logos::{Filter, Logos};
 use regex::Regex;
 
-use crate::parse::Symbol;
+use common::Symbol;
 use operator::{lex_operator, Operator};
 
 pub(crate) mod constants;
@@ -66,7 +66,7 @@ fn lex_error<'t>(lex: &mut logos::Lexer<'t, Token<'t>>) -> Filter<()> {
 }
 
 #[derive(Logos, Debug, PartialEq, Clone, Copy, Display)]
-pub(crate) enum Token<'t> {
+pub enum Token<'t> {
     // DECLARATION KEYWORDS
     #[token("fn")]
     Function,

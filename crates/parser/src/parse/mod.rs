@@ -3,33 +3,30 @@ use crate::{
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
     utils::error::{Expect, ParseError, ParseErrorCause},
 };
-use lasso::{Rodeo, Spur};
+use common::Symbol;
+use lasso::Rodeo;
 use std::{fmt, mem::discriminant, ops::Range};
 
-pub(crate) mod expr;
+pub mod expr;
 pub(crate) mod operator;
 pub(crate) mod pieces;
-pub(crate) mod stmt;
-pub(crate) mod utils;
+pub mod stmt;
+pub mod utils;
 
 pub(crate) struct Parser<'t> {
     lexer: Lexer<'t>,
     symbols: Rodeo,
 }
 
-#[derive(Debug)]
-pub struct Program {
-    pub ast: Vec<Stmt>,
-    pub symbols: Rodeo,
-}
-
-pub(crate) type ParserOutput = Result<Program, Vec<ParseError>>;
+pub type Ast = Vec<Stmt>;
+pub type Program = (Ast, Rodeo);
+pub type ProgramErrors = (Vec<ParseError>, Rodeo);
+pub(crate) type ParserOutput = Result<Program, ProgramErrors>;
 pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
 pub(crate) type StmtResult<'t> = ParseResult<'t, Stmt>;
 
 pub type Number = f64;
-pub type Symbol = Spur;
 pub type Span = Range<usize>;
 
 #[derive(Debug, Clone)]
@@ -156,12 +153,9 @@ impl<'t> Parser<'t> {
         }
 
         if !errors.is_empty() {
-            Err(errors)
+            Err((errors, self.symbols))
         } else {
-            Ok(Program {
-                ast,
-                symbols: self.symbols,
-            })
+            Ok((ast, self.symbols))
         }
     }
 

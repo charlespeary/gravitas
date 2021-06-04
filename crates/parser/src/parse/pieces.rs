@@ -1,5 +1,5 @@
 use crate::{
-    parse::{Node, ParseResult, Parser, Symbol},
+    parse::{Node, ParseResult, Parser},
     token::{
         constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS},
         Token,
@@ -9,6 +9,7 @@ use crate::{
         error::{Forbidden, ParseErrorCause},
     },
 };
+use common::Symbol;
 
 pub(crate) type Param = Node<Symbol>;
 // (a, b, c)

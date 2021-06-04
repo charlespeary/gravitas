@@ -1,11 +1,11 @@
 use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use common::CompilerDiagnostic;
+use common::{CompilerDiagnostic, Symbol, Symbols};
 use logos::Span;
 use std::fmt::{self, Formatter};
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Expect {
+pub enum Expect {
     Identifier,
     Literal,
     Expression,
@@ -27,26 +27,27 @@ impl fmt::Display for Expect {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Forbidden {
+pub enum Forbidden {
     TrailingComma,
 }
 
 #[derive(Debug)]
 pub struct ParseError {
-    pub(crate) span: Span,
-    pub(crate) cause: ParseErrorCause,
+    pub span: Span,
+    pub cause: ParseErrorCause,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum ParseErrorCause {
+pub enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
     Expected(Expect),
     NotAllowed(Forbidden),
+    UsedBeforeInitialization,
 }
 
 impl CompilerDiagnostic for ParseError {
-    fn report(&self, file_id: usize) -> Diagnostic<usize> {
+    fn report(&self, file_id: usize, symbols: &Symbols) -> Diagnostic<usize> {
         use ParseErrorCause::*;
         let span = self.span.clone();
 
@@ -62,6 +63,9 @@ impl CompilerDiagnostic for ParseError {
                 .with_labels(vec![
                     Label::primary(file_id, span.end..span.end + 1).with_message("but found")
                 ]),
+            UsedBeforeInitialization => Diagnostic::error()
+                .with_message("Variable was used before initialization")
+                .with_labels(vec![Label::primary(file_id, span)]),
             _ => Diagnostic::error(),
         }
     }

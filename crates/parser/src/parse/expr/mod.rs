@@ -4,7 +4,7 @@ use crate::{
         operator::{BinaryOperator, UnaryOperator},
         pieces::Params,
         stmt::Stmt,
-        ExprResult, Node, Parser, Symbol,
+        ExprResult, Node, Parser,
     },
     token::constants::{
         ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
@@ -15,11 +15,12 @@ use crate::{
         error::{Expect, Forbidden, ParseErrorCause},
     },
 };
+use common::Symbol;
 use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Formatter;
 
-pub(crate) mod atom;
+pub mod atom;
 pub(crate) mod control_flow;
 
 pub type Expr = Node<Box<ExprKind>>;
