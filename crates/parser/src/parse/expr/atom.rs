@@ -1,9 +1,9 @@
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
-        ExprResult, Node, Number, Parser, Symbol,
+        ExprResult, Number, Parser, Symbol,
     },
-    token::{operator::Operator, Token},
+    token::Token,
 };
 use std::fmt;
 
@@ -26,10 +26,10 @@ impl fmt::Display for AtomicValue {
             Number(val) => {
                 write!(f, "{}", val)?;
             }
-            Text(val) => {
+            Text(_) => {
                 write!(f, "$symbol")?;
             }
-            Identifier(val) => {
+            Identifier(_) => {
                 write!(f, "$symbol")?;
             }
         }
@@ -41,7 +41,6 @@ impl fmt::Display for AtomicValue {
 impl<'t> Parser<'t> {
     pub(super) fn parse_atom_expr(&mut self) -> ExprResult {
         let lexeme = self.advance()?;
-        let span = lexeme.span();
 
         let val = match lexeme.token {
             Token::Bool(val) => AtomicValue::Boolean(val),

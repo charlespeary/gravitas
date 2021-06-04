@@ -1,7 +1,5 @@
 use crate::{common::error::ParseErrorCause, token::operator::Operator};
-use std::convert::TryInto;
 use std::fmt;
-use std::str::FromStr;
 
 macro_rules! impl_double_ended_conversion {
     ($from: ty, $to: ty, [$($operator: path => $binary_operator: path),*]) => {

@@ -4,9 +4,7 @@ use crate::{
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
 };
 use lasso::{Rodeo, Spur};
-use std::fmt;
-use std::mem::discriminant;
-use std::ops::Range;
+use std::{fmt, mem::discriminant, ops::Range};
 
 pub(crate) mod expr;
 pub(crate) mod operator;

@@ -1,7 +1,6 @@
 use logos::Lexer;
 
-use crate::common::error::ParseErrorCause;
-use crate::token::Token;
+use crate::{common::error::ParseErrorCause, token::Token};
 use std::str::FromStr;
 
 pub(crate) mod precedence;
@@ -93,7 +92,7 @@ pub(crate) fn lex_operator<'t>(lex: &mut Lexer<'t, Token<'t>>) -> Option<Operato
 mod test {
     use crate::{
         common::test::lexer::{assert_token, op},
-        token::{operator::Operator, Token},
+        token::operator::Operator,
     };
 
     #[test]

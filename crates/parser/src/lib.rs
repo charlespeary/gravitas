@@ -1,9 +1,8 @@
-use crate::parse::{Parser, ParserOutput, Program};
-use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use crate::parse::{Parser, Program};
 use codespan_reporting::{
-    diagnostic::{Diagnostic, Label},
+    files::SimpleFiles,
     term,
+    term::termcolor::{ColorChoice, StandardStream},
 };
 use std::{fs, path::Path};
 

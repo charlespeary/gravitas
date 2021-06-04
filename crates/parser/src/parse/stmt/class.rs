@@ -1,7 +1,9 @@
-use crate::common::combine;
-use crate::parse::stmt::{Stmt, StmtKind};
 use crate::{
-    parse::{Parser, StmtResult, Symbol},
+    common::combine,
+    parse::{
+        stmt::{Stmt, StmtKind},
+        Parser, StmtResult,
+    },
     token::{
         constants::{CLOSE_BRACKET, OPEN_BRACKET},
         Token,

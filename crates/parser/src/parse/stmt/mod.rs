@@ -1,6 +1,6 @@
 use crate::{
     common::combine,
-    parse::{expr::Expr, pieces::Params, Node, Parser, Span, StmtResult, Symbol},
+    parse::{expr::Expr, pieces::Params, Node, Parser, StmtResult, Symbol},
     token::{operator::Operator, Token},
 };
 use std::fmt;
@@ -40,10 +40,10 @@ impl fmt::Display for StmtKind {
             Expression { expr } => {
                 write!(f, "{};", expr)?;
             }
-            VariableDeclaration { name, expr } => {
+            VariableDeclaration { expr, .. } => {
                 write!(f, "let $symbol = {};", expr)?;
             }
-            FunctionDeclaration { name, params, body } => {
+            FunctionDeclaration { params, body, .. } => {
                 write!(
                     f,
                     "fn $symbol({}) {}",
@@ -61,7 +61,12 @@ impl fmt::Display for StmtKind {
                 methods,
                 properties,
             } => {
-                write!(f, "")?;
+                write!(f, "class $symbol")?;
+                if super_class.is_some() {
+                    write!(" : $symbol")?;
+                }
+                write!(f, "methods({}) ", methods.len())?;
+                write!(f, "properties({})", properties.len())?;
             }
         }
 

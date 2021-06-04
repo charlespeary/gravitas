@@ -42,7 +42,7 @@ impl<'t> Parser<'t> {
         let condition = self.parse_expression()?;
         let body = self.parse_block_expr()?;
         let else_expr = if self.peek() == Token::Else {
-            let else_keyword = self.advance()?;
+            self.advance()?;
             let else_body = if self.peek() == Token::If {
                 self.parse_if_expr()?
             } else {

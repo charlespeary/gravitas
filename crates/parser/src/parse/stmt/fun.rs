@@ -1,17 +1,10 @@
 use crate::{
-    common::{
-        combine,
-        error::{Forbidden, ParseErrorCause},
-    },
+    common::combine,
     parse::{
-        expr::Expr,
         stmt::{Stmt, StmtKind},
-        Node, ParseResult, Parser, StmtResult, Symbol,
+        Parser, StmtResult,
     },
-    token::{
-        constants::{CLOSE_PARENTHESIS, OPEN_BRACKET, OPEN_PARENTHESIS},
-        Token,
-    },
+    token::{constants::OPEN_BRACKET, Token},
 };
 
 impl<'t> Parser<'t> {
@@ -39,18 +32,18 @@ impl<'t> Parser<'t> {
 
 #[cfg(test)]
 mod test {
-    use crate::parse::expr::atom::AtomicValue;
-    use crate::parse::expr::{Expr, ExprKind};
-    use crate::parse::pieces::{Param, Params};
-    use crate::parse::stmt::{Stmt, StmtKind};
-    use crate::parse::Symbol;
-    use crate::token::constants::OPEN_PARENTHESIS;
     use crate::{
         common::{
-            error::{Expect, Forbidden, ParseErrorCause},
+            error::{Expect, ParseErrorCause},
             test::parser::symbol,
         },
-        parse::Parser,
+        parse::{
+            expr::{atom::AtomicValue, Expr, ExprKind},
+            pieces::{Param, Params},
+            stmt::{Stmt, StmtKind},
+            Parser, Symbol,
+        },
+        token::constants::OPEN_PARENTHESIS,
         token::Token,
     };
 

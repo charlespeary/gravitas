@@ -1,18 +1,17 @@
-use crate::common::error::Forbidden;
-use crate::parse::pieces::Params;
-use crate::token::constants::{
-    ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
-};
 use crate::{
     common::{
         combine,
-        error::{Expect, ParseErrorCause},
+        error::{Expect, Forbidden, ParseErrorCause},
     },
     parse::{
         expr::atom::AtomicValue,
         operator::{BinaryOperator, UnaryOperator},
+        pieces::Params,
         stmt::Stmt,
-        ExprResult, Node, Parser, Span, Symbol,
+        ExprResult, Node, Parser, Symbol,
+    },
+    token::constants::{
+        ASSIGN, CLOSE_PARENTHESIS, CLOSE_SQUARE, DOT, OPEN_PARENTHESIS, OPEN_SQUARE,
     },
     token::{operator::Operator, Token},
 };
