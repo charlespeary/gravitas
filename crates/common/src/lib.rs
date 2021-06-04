@@ -1,9 +1,5 @@
-use lasso::{Rodeo, Spur};
+use codespan_reporting::diagnostic::Diagnostic;
 
-pub type RodeoInterner = Rodeo<Spur>;
-
-pub trait Interner {
-    fn get_or_intern<K>(&mut self, str: &str) -> K
-    where
-        Self: Sized;
+pub trait CompilerDiagnostic {
+    fn report(&self, file_id: usize) -> Diagnostic<usize>;
 }

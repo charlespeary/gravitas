@@ -18,6 +18,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "analyzer"
+version = "0.1.0"
+dependencies = [
+ "parser",
+]
+
+[[package]]
 name = "ansi_term"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -84,6 +91,9 @@ dependencies = [
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "analyzer",
+ "codespan-reporting",
+ "common",
  "parser",
  "rustyline",
  "structopt",

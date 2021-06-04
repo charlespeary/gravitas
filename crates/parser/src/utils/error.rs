@@ -1,15 +1,14 @@
 use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
+use common::CompilerDiagnostic;
 use logos::Span;
-use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{self, Formatter};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Expect {
     Identifier,
     Literal,
     Expression,
-    Statement,
     Token(Token<'static>),
 }
 
@@ -19,7 +18,6 @@ impl fmt::Display for Expect {
             Expect::Identifier => "identifier".to_owned(),
             Expect::Literal => "literal".to_owned(),
             Expect::Expression => "expression".to_owned(),
-            Expect::Statement => "statement".to_owned(),
             Expect::Token(t) => format!("{}", t),
         };
 
@@ -44,15 +42,11 @@ pub(crate) enum ParseErrorCause {
     EndOfInput,
     UnexpectedToken,
     Expected(Expect),
-    ExpectedOneOf(Vec<Token<'static>>),
     NotAllowed(Forbidden),
-    // Lexer
-    TooMuchDots,
-    InvalidNumber,
 }
 
-impl ParseError {
-    pub(crate) fn report(&self, file_id: usize) -> Diagnostic<usize> {
+impl CompilerDiagnostic for ParseError {
+    fn report(&self, file_id: usize) -> Diagnostic<usize> {
         use ParseErrorCause::*;
         let span = self.span.clone();
 
@@ -68,8 +62,6 @@ impl ParseError {
                 .with_labels(vec![
                     Label::primary(file_id, span.end..span.end + 1).with_message("but found")
                 ]),
-            ExpectedOneOf { .. } => Diagnostic::error(),
-
             _ => Diagnostic::error(),
         }
     }

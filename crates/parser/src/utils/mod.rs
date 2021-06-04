@@ -1,6 +1,6 @@
 use crate::parse::Span;
 
-pub(crate) mod error;
+pub mod error;
 
 #[cfg(test)]
 pub(crate) mod test {
@@ -18,7 +18,7 @@ pub(crate) mod test {
         }
 
         pub(crate) fn first_token(code: &str) -> Token {
-            (tokens(code)[0]).clone()
+            tokens(code)[0]
         }
 
         pub(crate) fn assert_error(code: &str) {

@@ -1,6 +1,7 @@
 use crate::options::Vtas;
 use structopt::StructOpt;
 
+pub(crate) mod compiler;
 pub(crate) mod options;
 pub(crate) mod repl;
 

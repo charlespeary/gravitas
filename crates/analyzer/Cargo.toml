@@ -1,5 +1,5 @@
 [package]
-name = "cli"
+name = "analyzer"
 version = "0.1.0"
 authors = ["Sniadek <karolgruszka9@gmail.com>"]
 edition = "2018"
@@ -8,8 +8,3 @@ edition = "2018"
 
 [dependencies]
 parser = { path = "../parser" }
-analyzer = { path = "../analyzer" }
-common = { path = "../common" }
-structopt = "0.3.21"
-rustyline = "8.2.0"
-codespan-reporting = "0.11.1"

@@ -1,3 +1,4 @@
+use crate::compiler::compile;
 use parser::parse;
 use rustyline::{error::ReadlineError, Editor};
 use structopt::StructOpt;
@@ -17,7 +18,7 @@ impl Repl {
             match readline {
                 Ok(line) => {
                     rl.add_history_entry(line.as_str());
-                    let program = parse(&line);
+                    let program = compile(&line);
                 }
                 Err(ReadlineError::Interrupted) => {
                     println!("CTRL-C");
