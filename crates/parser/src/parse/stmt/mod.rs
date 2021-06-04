@@ -56,14 +56,14 @@ impl fmt::Display for StmtKind {
                 )?;
             }
             ClassDeclaration {
-                name,
                 super_class,
                 methods,
                 properties,
+                ..
             } => {
                 write!(f, "class $symbol")?;
                 if super_class.is_some() {
-                    write!(" : $symbol")?;
+                    write!(f, " : $symbol")?;
                 }
                 write!(f, "methods({}) ", methods.len())?;
                 write!(f, "properties({})", properties.len())?;
