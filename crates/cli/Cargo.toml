@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 parser = { path = "../parser" }
+structopt = "0.3.21"
+rustyline = "8.2.0"
