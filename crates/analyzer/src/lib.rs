@@ -17,6 +17,7 @@ pub struct Analyzer {
     variables: HashMap<Symbol, bool>,
     classes: HashSet<Symbol>,
     in_loop: bool,
+    in_class: bool,
 }
 
 impl Analyzer {
@@ -26,19 +27,17 @@ impl Analyzer {
         }
     }
 
-    fn error(&mut self, span: Span, cause: ParseErrorCause) -> AnalyzerResult {
-        Err(ParseError { span, cause })
-    }
-
     fn visit_expr(&mut self, expr: &Expr) -> AnalyzerResult {
         use ExprKind::*;
-        let expr_span = expr.span.clone();
+        let span = expr.span.clone();
+
+        let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
 
         match &*expr.kind {
             Atom(value) => {
                 if let AtomicValue::Identifier(ident) = value {
                     if !self.variables.contains_key(ident) {
-                        return self.error(expr_span, ParseErrorCause::UsedBeforeInitialization);
+                        return err(ParseErrorCause::UsedBeforeInitialization);
                     }
                 }
             }
@@ -65,12 +64,12 @@ impl Analyzer {
             }
             Continue => {
                 if !self.in_loop {
-                    return self.error(expr_span, ParseErrorCause::UsedOutsideLoop);
+                    return err(ParseErrorCause::UsedOutsideLoop);
                 }
             }
             Break { return_expr } => {
                 if !self.in_loop {
-                    return self.error(expr_span, ParseErrorCause::UsedOutsideLoop);
+                    return err(ParseErrorCause::UsedOutsideLoop);
                 }
 
                 if let Some(expr) = return_expr {
@@ -80,20 +79,28 @@ impl Analyzer {
             Array { values } => {}
             Index { target, position } => {}
             Property { target, paths } => {}
+            Super | This => {
+                if !self.in_class {
+                    return err(ParseErrorCause::UsedOutsideClass);
+                }
+            }
         }
         Ok(())
     }
 
     fn visit_stmt(&mut self, stmt: &Stmt) -> AnalyzerResult {
-        let stmt_span = stmt.span.clone();
+        use StmtKind::*;
+
+        let span = stmt.span.clone();
+        let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
 
         match &*stmt.kind {
-            StmtKind::VariableDeclaration { name, expr } => {
+            VariableDeclaration { name, expr } => {
                 self.variables.insert(*name, false);
                 self.visit_expr(expr)?;
                 self.variables.insert(*name, true);
             }
-            StmtKind::ClassDeclaration {
+            ClassDeclaration {
                 name,
                 super_class,
                 methods,
@@ -103,16 +110,28 @@ impl Analyzer {
 
                 if let Some(supclass) = super_class {
                     if supclass == name {
-                        return self.error(stmt_span, ParseErrorCause::CantInheritFromItself);
+                        return err(ParseErrorCause::CantInheritFromItself);
                     }
 
                     if !self.classes.contains(supclass) {
-                        return self.error(stmt_span, ParseErrorCause::SuperclassDoesntExist);
+                        return err(ParseErrorCause::SuperclassDoesntExist);
                     }
                 }
+
+                self.in_class = true;
+
+                for property in properties {
+                    self.visit_stmt(property)?;
+                }
+
+                for method in methods {
+                    self.visit_stmt(method)?;
+                }
+
+                self.in_class = false;
             }
-            StmtKind::FunctionDeclaration { body, params, name } => {}
-            StmtKind::Expression { expr } => {
+            FunctionDeclaration { body, params, name } => {}
+            Expression { expr } => {
                 self.visit_expr(expr)?;
             }
         }

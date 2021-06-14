@@ -45,6 +45,7 @@ pub enum ParseErrorCause {
     NotAllowed(Forbidden),
     UsedBeforeInitialization,
     UsedOutsideLoop,
+    UsedOutsideClass,
     CantInheritFromItself,
     SuperclassDoesntExist,
 }
@@ -82,7 +83,10 @@ impl CompilerDiagnostic for ParseError {
             SuperclassDoesntExist => Diagnostic::error()
                 .with_message("Tried to inherit from a superclass that doesn't exist")
                 .with_labels(vec![Label::primary(file_id, span)]),
-            _ => Diagnostic::error(),
+            UsedOutsideClass => Diagnostic::error()
+                .with_message("Use of 'super' || 'this' is forbidden outside class methods")
+                .with_labels(vec![Label::primary(file_id, span)]),
+            _ => Diagnostic::error().with_message("TODO"),
         }
     }
 }
