@@ -1,4 +1,5 @@
 use common::Symbol;
+use fun::Function;
 use parser::parse::ProgramErrors;
 use parser::{
     parse::{
@@ -10,12 +11,15 @@ use parser::{
 };
 use std::collections::{HashMap, HashSet};
 
+pub(crate) mod fun;
+
 pub type AnalyzerResult = Result<(), ParseError>;
 
 #[derive(Default)]
 pub struct Analyzer {
     variables: HashMap<Symbol, bool>,
     classes: HashSet<Symbol>,
+    functions: HashMap<Symbol, Function>,
     in_loop: bool,
     in_class: bool,
 }
@@ -36,8 +40,13 @@ impl Analyzer {
         match &*expr.kind {
             Atom(value) => {
                 if let AtomicValue::Identifier(ident) = value {
-                    if !self.variables.contains_key(ident) {
-                        return err(ParseErrorCause::UsedBeforeInitialization);
+                    match self.variables.get(ident) {
+                        Some(false) => {
+                            return err(ParseErrorCause::UsedBeforeInitialization(*ident));
+                        }
+                        _ => {
+                            return err(ParseErrorCause::NotDefined(*ident));
+                        }
                     }
                 }
             }
@@ -53,7 +62,13 @@ impl Analyzer {
                 body,
                 else_expr,
             } => {}
-            Call { callee, args } => {}
+            Call { callee, args } => {
+                if let Atom(AtomicValue::Identifier(callee_name)) = *callee.kind {
+                    if !self.functions.contains_key(&callee_name) {
+                        return err(ParseErrorCause::NotDefined(callee_name));
+                    }
+                };
+            }
             Closure { params, body } => {}
             Return { value } => {}
             While { condition, body } => {
@@ -130,7 +145,9 @@ impl Analyzer {
 
                 self.in_class = false;
             }
-            FunctionDeclaration { body, params, name } => {}
+            FunctionDeclaration { body, params, name } => {
+                self.declare_function(*name, params.kind.len());
+            }
             Expression { expr } => {
                 self.visit_expr(expr)?;
             }

@@ -6,26 +6,23 @@ use codespan_reporting::{
         termcolor::{ColorChoice, StandardStream},
     },
 };
-use common::CompilerDiagnostic;
-use lasso::Rodeo;
-use parser::{
-    parse,
-    parse::{Program, ProgramErrors},
-};
+use common::{CompilerDiagnostic, Symbols};
+use parser::parse;
 use std::path::Path;
 
-fn show_errors(errors: Vec<impl CompilerDiagnostic>, symbols: Rodeo, code: &str) {
+fn show_errors(errors: Vec<impl CompilerDiagnostic>, symbols: Symbols, code: &str) {
     let mut files = SimpleFiles::new();
     let file_id = files.add("test.vt", code);
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
+    let reader = symbols.into_reader();
 
     for err in errors {
         term::emit(
             &mut writer.lock(),
             &config,
             &files,
-            &err.report(file_id, &symbols),
+            &err.report(file_id, &reader),
         )
         .unwrap();
     }
