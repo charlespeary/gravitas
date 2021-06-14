@@ -41,9 +41,10 @@ pub(crate) mod test {
     pub(crate) mod parser {
 
         use crate::{
-            parse::{expr::Expr, stmt::Stmt, Parser, Span, Symbol},
+            parse::{expr::Expr, stmt::Stmt, Parser, Span},
             utils::error::ParseErrorCause,
         };
+        use common::Symbol;
         use lasso::Key;
 
         pub(crate) const DUMMY_SPAN: Span = 0..0;

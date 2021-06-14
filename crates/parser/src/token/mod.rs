@@ -72,6 +72,10 @@ pub enum Token<'t> {
     Function,
     #[token("class")]
     Class,
+    #[token("this")]
+    This,
+    #[token("super")]
+    Super,
     #[token("let")]
     Let,
     #[token(";")]
@@ -151,6 +155,8 @@ impl<'t> Token<'t> {
             | Token::If
             | Token::Return
             | Token::While
+            | Token::Super
+            | Token::This
             | Token::Bar => true,
             _ => false,
         }
@@ -474,6 +480,8 @@ mod test {
         assert_token("for", For);
         assert_token("break", Break);
         assert_token("continue", Continue);
+        assert_token("this", This);
+        assert_token("super", Super);
     }
 
     #[test]
