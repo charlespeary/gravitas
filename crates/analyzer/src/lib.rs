@@ -1,11 +1,11 @@
 use common::Symbol;
 use fun::Function;
-use parser::parse::ProgramErrors;
+use parser::parse::AstRef;
 use parser::{
     parse::{
         expr::{atom::AtomicValue, Expr, ExprKind},
         stmt::{Stmt, StmtKind},
-        Program, Span,
+        Span,
     },
     utils::error::{ParseError, ParseErrorCause},
 };
@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 pub(crate) mod fun;
 
-pub type AnalyzerResult = Result<(), ParseError>;
+pub type AnalyzerResult<E> = Result<(), E>;
 
 #[derive(Default)]
 pub struct Analyzer {
@@ -31,11 +31,11 @@ impl Analyzer {
         }
     }
 
-    fn err(&mut self, span: Span, cause: ParseErrorCause) -> AnalyzerResult {
+    fn err(&mut self, span: Span, cause: ParseErrorCause) -> AnalyzerResult<ParseError> {
         Err(ParseError { span, cause })
     }
 
-    fn visit_expr(&mut self, expr: &Expr) -> AnalyzerResult {
+    fn visit_expr(&mut self, expr: &Expr) -> AnalyzerResult<ParseError> {
         use ExprKind::*;
         let span = expr.span.clone();
 
@@ -48,7 +48,8 @@ impl Analyzer {
                         Some(false) => {
                             return err(ParseErrorCause::UsedBeforeInitialization(*ident));
                         }
-                        _ => {
+                        Some(true) => {}
+                        None => {
                             return err(ParseErrorCause::NotDefined(*ident));
                         }
                     }
@@ -66,16 +67,7 @@ impl Analyzer {
                 body,
                 else_expr,
             } => {}
-            Call { callee, args } => {
-                if let Atom(AtomicValue::Identifier(callee_name)) = *callee.kind {
-                    if !self.functions.contains_key(&callee_name) {
-                        return self.err(
-                            callee.span.clone(),
-                            ParseErrorCause::NotDefined(callee_name),
-                        );
-                    }
-                };
-            }
+            Call { callee, args } => {}
             Closure { params, body } => {}
             Return { value } => {}
             While { condition, body } => {
@@ -110,7 +102,7 @@ impl Analyzer {
         Ok(())
     }
 
-    fn visit_stmt(&mut self, stmt: &Stmt) -> AnalyzerResult {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> AnalyzerResult<ParseError> {
         use StmtKind::*;
 
         let span = stmt.span.clone();
@@ -162,7 +154,7 @@ impl Analyzer {
         Ok(())
     }
 
-    pub fn analyze(&mut self, (ast, symbols): &Program) -> Result<(), Vec<ParseError>> {
+    pub fn analyze(&mut self, ast: AstRef) -> AnalyzerResult<Vec<ParseError>> {
         let mut errors: Vec<ParseError> = Vec::new();
 
         for stmt in ast {
@@ -179,10 +171,8 @@ impl Analyzer {
     }
 }
 
-pub fn analyze(program: Program) -> Result<Program, ProgramErrors> {
+pub fn analyze(ast: AstRef) -> AnalyzerResult<Vec<ParseError>> {
     let mut analyzer = Analyzer::new();
-    match analyzer.analyze(&program) {
-        Ok(_) => Ok(program),
-        Err(errors) => Err((errors, program.1)),
-    }
+    analyzer.analyze(&ast)?;
+    Ok(())
 }

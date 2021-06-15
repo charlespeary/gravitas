@@ -7,10 +7,13 @@ use codespan_reporting::{
     },
 };
 use common::{CompilerDiagnostic, Symbols};
-use parser::parse;
+use parser::{
+    parse,
+    parse::{Ast, Program},
+};
 use std::path::Path;
 
-fn show_errors(errors: Vec<impl CompilerDiagnostic>, symbols: Symbols, code: &str) {
+pub(crate) fn log_errors(errors: Vec<impl CompilerDiagnostic>, symbols: Symbols, code: &str) {
     let mut files = SimpleFiles::new();
     let file_id = files.add("test.vt", code);
     let writer = StandardStream::stderr(ColorChoice::Always);
@@ -28,10 +31,16 @@ fn show_errors(errors: Vec<impl CompilerDiagnostic>, symbols: Symbols, code: &st
     }
 }
 
-pub(crate) fn compile(code: &str) {
-    let x = parse(code)
-        .and_then(analyze)
-        .map_err(|(errors, symbols)| show_errors(errors, symbols, code));
+pub(crate) fn compile(code: &str) -> Program {
+    parse(code)
+        .and_then(|(ast, symbols)| {
+            if let Err(errors) = analyze(&ast) {
+                return Err((errors, symbols));
+            }
+            Ok((ast, symbols))
+        })
+        .map_err(|(errors, symbols)| log_errors(errors, symbols, code))
+        .expect("Compilation failed. See above errors to find out what went wrong.")
 }
 
 pub(crate) fn compile_file<P: AsRef<Path>>(path: P) {}
