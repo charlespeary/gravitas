@@ -226,18 +226,6 @@ impl<'t> Lexer<'t> {
         }
     }
 
-    pub(crate) fn span(&mut self) -> Option<Span> {
-        self.inner.peek().map(|l| l.span())
-    }
-
-    pub(crate) fn slice(&mut self) -> Option<&str> {
-        self.inner.peek().map(|l| l.slice)
-    }
-
-    pub(crate) fn peek(&mut self) -> Option<Lexeme> {
-        self.peek_nth(0)
-    }
-
     pub(crate) fn peek_nth(&mut self, nth: usize) -> Option<Lexeme> {
         self.inner.peek_nth(nth).copied()
     }
@@ -275,18 +263,6 @@ mod test {
     #[test]
     fn lexer_peeks() {
         let mut lexer = Lexer::new("2 + 4");
-        let two_l = Lexeme {
-            slice: "2",
-            token: Token::Number(2.0),
-            span_start: 0,
-            span_end: 1,
-            intern_key: None,
-        };
-
-        assert_eq!(lexer.peek().unwrap(), two_l);
-        // and it doesn't advance further
-        assert_eq!(lexer.peek().unwrap(), two_l);
-        // it can also peek nth lexeme
 
         assert_eq!(
             lexer.peek_nth(1).unwrap(),
@@ -311,22 +287,6 @@ mod test {
         assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
         // we get None if we peek too far
         assert!(lexer.peek_nth(3).is_none());
-    }
-
-    #[test]
-    fn lexer_returns_current_text_slice() {
-        let mut lexer = Lexer::new("2 + 4");
-        assert_eq!(lexer.slice(), Some("2"));
-        // and it does so without advancing
-        assert_eq!(lexer.slice(), Some("2"));
-    }
-
-    #[test]
-    fn lexer_returns_current_span() {
-        let mut lexer = Lexer::new("2 + 4");
-        assert_eq!(lexer.span(), Some(0..1));
-        // and it does so without advancing
-        assert_eq!(lexer.span(), Some(0..1));
     }
 
     #[test]

@@ -13,16 +13,6 @@ pub(crate) enum ExprOrStmt {
     Stmt(Stmt),
 }
 
-impl ExprOrStmt {
-    pub(crate) fn is_stmt(&self) -> bool {
-        matches!(self, ExprOrStmt::Stmt(_))
-    }
-
-    pub(crate) fn is_expr(&self) -> bool {
-        matches!(self, ExprOrStmt::Expr(_))
-    }
-}
-
 impl<'t> Parser<'t> {
     pub(super) fn parse_expr_or_stmt(&mut self) -> ParseResult<ExprOrStmt> {
         if self.peek().is_stmt() {
@@ -46,6 +36,15 @@ impl<'t> Parser<'t> {
 
 #[cfg(test)]
 mod test {
+    use crate::{
+        parse::{
+            expr::{atom::AtomicValue, ExprKind},
+            operator::BinaryOperator,
+            Node,
+        },
+        utils::test::parser::DUMMY_SPAN,
+    };
+
     use super::*;
 
     fn parse(input: &str) -> ExprOrStmt {
@@ -55,7 +54,47 @@ mod test {
 
     #[test]
     fn parse_expr_or_stmt() {
-        assert!(parse("2+2").is_expr());
-        assert!(parse("2+2;").is_stmt());
+        if let ExprOrStmt::Expr(expr) = parse("2+3") {
+            assert_eq!(
+                expr,
+                Expr::boxed(
+                    ExprKind::Binary {
+                        lhs: Expr::boxed(ExprKind::Atom(AtomicValue::Number(2.0)), DUMMY_SPAN),
+                        op: Node::new(BinaryOperator::Addition, DUMMY_SPAN),
+                        rhs: Expr::boxed(ExprKind::Atom(AtomicValue::Number(3.0)), DUMMY_SPAN)
+                    },
+                    DUMMY_SPAN
+                )
+            )
+        } else {
+            panic!("Expected expression!");
+        }
+
+        if let ExprOrStmt::Stmt(stmt) = parse("3+2;") {
+            assert_eq!(
+                stmt,
+                Stmt::boxed(
+                    StmtKind::Expression {
+                        expr: Expr::boxed(
+                            ExprKind::Binary {
+                                lhs: Expr::boxed(
+                                    ExprKind::Atom(AtomicValue::Number(3.0)),
+                                    DUMMY_SPAN
+                                ),
+                                op: Node::new(BinaryOperator::Addition, DUMMY_SPAN),
+                                rhs: Expr::boxed(
+                                    ExprKind::Atom(AtomicValue::Number(2.0)),
+                                    DUMMY_SPAN
+                                )
+                            },
+                            DUMMY_SPAN
+                        )
+                    },
+                    DUMMY_SPAN
+                )
+            )
+        } else {
+            panic!("Expected statement!");
+        }
     }
 }
