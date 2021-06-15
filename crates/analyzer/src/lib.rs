@@ -1,17 +1,13 @@
 use common::Symbol;
-use fun::Function;
-use parser::parse::AstRef;
 use parser::{
     parse::{
         expr::{atom::AtomicValue, Expr, ExprKind},
         stmt::{Stmt, StmtKind},
-        Span,
+        AstRef,
     },
     utils::error::{ParseError, ParseErrorCause},
 };
 use std::collections::{HashMap, HashSet};
-
-pub(crate) mod fun;
 
 pub type AnalyzerResult<E> = Result<(), E>;
 
@@ -19,7 +15,6 @@ pub type AnalyzerResult<E> = Result<(), E>;
 pub struct Analyzer {
     variables: HashMap<Symbol, bool>,
     classes: HashSet<Symbol>,
-    functions: HashMap<Symbol, Function>,
     in_loop: bool,
     in_class: bool,
 }
@@ -31,10 +26,6 @@ impl Analyzer {
         }
     }
 
-    fn err(&mut self, span: Span, cause: ParseErrorCause) -> AnalyzerResult<ParseError> {
-        Err(ParseError { span, cause })
-    }
-
     fn visit_expr(&mut self, expr: &Expr) -> AnalyzerResult<ParseError> {
         use ExprKind::*;
         let span = expr.span.clone();
@@ -42,34 +33,19 @@ impl Analyzer {
         let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
 
         match &*expr.kind {
-            Atom(value) => {
-                if let AtomicValue::Identifier(ident) = value {
-                    match self.variables.get(ident) {
-                        Some(false) => {
-                            return err(ParseErrorCause::UsedBeforeInitialization(*ident));
-                        }
-                        Some(true) => {}
-                        None => {
-                            return err(ParseErrorCause::NotDefined(*ident));
-                        }
-                    }
+            Atom(AtomicValue::Identifier(ident)) => match self.variables.get(ident) {
+                Some(false) => {
+                    return err(ParseErrorCause::UsedBeforeInitialization(*ident));
                 }
-            }
-            Unary { rhs, op } => {}
-            Binary { lhs, op, rhs } => {
+                Some(true) => {}
+                None => {
+                    return err(ParseErrorCause::NotDefined(*ident));
+                }
+            },
+            Binary { lhs, rhs, .. } => {
                 self.visit_expr(lhs)?;
                 self.visit_expr(rhs)?;
             }
-            Assignment { target, value } => {}
-            Block { stmts, return_expr } => {}
-            If {
-                condition,
-                body,
-                else_expr,
-            } => {}
-            Call { callee, args } => {}
-            Closure { params, body } => {}
-            Return { value } => {}
             While { condition, body } => {
                 self.visit_expr(condition)?;
                 self.in_loop = true;
@@ -90,14 +66,12 @@ impl Analyzer {
                     self.visit_expr(expr)?;
                 }
             }
-            Array { values } => {}
-            Index { target, position } => {}
-            Property { target, paths } => {}
             Super | This => {
                 if !self.in_class {
                     return err(ParseErrorCause::UsedOutsideClass);
                 }
             }
+            _ => {}
         }
         Ok(())
     }
@@ -144,8 +118,10 @@ impl Analyzer {
 
                 self.in_class = false;
             }
-            FunctionDeclaration { body, params, name } => {
-                self.declare_function(*name, params.kind.len());
+            FunctionDeclaration { body, name, .. } => {
+                self.variables.insert(*name, false);
+                self.visit_expr(body)?;
+                self.variables.insert(*name, true);
             }
             Expression { expr } => {
                 self.visit_expr(expr)?;
