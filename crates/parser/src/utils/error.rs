@@ -92,7 +92,7 @@ impl CompilerDiagnostic for ParseError {
                 .with_message("Tried to inherit from a superclass that doesn't exist")
                 .with_labels(vec![Label::primary(file_id, span)]),
             UsedOutsideClass => Diagnostic::error()
-                .with_message("Use of 'super' || 'this' is forbidden outside class methods")
+                .with_message("Use of 'super' or 'this' is forbidden outside class methods")
                 .with_labels(vec![Label::primary(file_id, span)]),
             NotDefined(identifier) => {
                 let msg = format!(

@@ -31,6 +31,10 @@ impl Analyzer {
         }
     }
 
+    fn err(&mut self, span: Span, cause: ParseErrorCause) -> AnalyzerResult {
+        Err(ParseError { span, cause })
+    }
+
     fn visit_expr(&mut self, expr: &Expr) -> AnalyzerResult {
         use ExprKind::*;
         let span = expr.span.clone();
@@ -65,7 +69,10 @@ impl Analyzer {
             Call { callee, args } => {
                 if let Atom(AtomicValue::Identifier(callee_name)) = *callee.kind {
                     if !self.functions.contains_key(&callee_name) {
-                        return err(ParseErrorCause::NotDefined(callee_name));
+                        return self.err(
+                            callee.span.clone(),
+                            ParseErrorCause::NotDefined(callee_name),
+                        );
                     }
                 };
             }
