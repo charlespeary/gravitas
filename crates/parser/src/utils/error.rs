@@ -31,7 +31,7 @@ pub enum Forbidden {
     TrailingComma,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub span: Span,
     pub cause: ParseErrorCause,
@@ -43,12 +43,12 @@ pub enum ParseErrorCause {
     UnexpectedToken,
     Expected(Expect),
     NotAllowed(Forbidden),
-    UsedBeforeInitialization(Symbol),
+    UsedBeforeInitialization,
     UsedOutsideLoop,
     UsedOutsideClass,
     CantInheritFromItself,
     SuperclassDoesntExist,
-    NotDefined(Symbol),
+    NotDefined,
 }
 
 impl CompilerDiagnostic for ParseError {
@@ -68,16 +68,9 @@ impl CompilerDiagnostic for ParseError {
                 .with_labels(vec![
                     Label::primary(file_id, span.end..span.end + 1).with_message("but found")
                 ]),
-            UsedBeforeInitialization(identifier) => {
-                let msg = format!(
-                    "'{}' was used before initialization",
-                    reader.resolve(identifier)
-                );
-
-                Diagnostic::error()
-                    .with_message(msg)
-                    .with_labels(vec![Label::primary(file_id, span)])
-            }
+            UsedBeforeInitialization => Diagnostic::error()
+                .with_message("Variable was used before initialization")
+                .with_labels(vec![Label::primary(file_id, span)]),
             UsedOutsideLoop => Diagnostic::error()
                 .with_message("Break or continue must be used inside loops")
                 .with_labels(vec![
@@ -94,15 +87,9 @@ impl CompilerDiagnostic for ParseError {
             UsedOutsideClass => Diagnostic::error()
                 .with_message("Use of 'super' or 'this' is forbidden outside class methods")
                 .with_labels(vec![Label::primary(file_id, span)]),
-            NotDefined(identifier) => {
-                let msg = format!(
-                    "'{}' was used but it's not definied anywhere",
-                    reader.resolve(identifier)
-                );
-                Diagnostic::error()
-                    .with_message(msg)
-                    .with_labels(vec![Label::primary(file_id, span)])
-            }
+            NotDefined => Diagnostic::error()
+                .with_message("Variable was used but it's not defined anywhere")
+                .with_labels(vec![Label::primary(file_id, span)]),
             _ => Diagnostic::error().with_message("TODO"),
         }
     }

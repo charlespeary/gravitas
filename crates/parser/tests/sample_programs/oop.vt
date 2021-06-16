@@ -4,7 +4,11 @@ class A {
     }
 }
 
-class B : A { }
+class B : A { 
+    fn supercall() {
+        super.inherited();
+    }
+}
 
 class C {
     let a = 10;
@@ -22,6 +26,7 @@ class D {
 let a = A();
 let b = B();
 b.inherited();
+b.supercall();
 let c = C();
 c.a + c.b;
 let d = D();
