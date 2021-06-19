@@ -1,7 +1,7 @@
 use crate::Opcode;
 use common::{Number, Symbol};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Constant {
     Number(Number),
     String(Symbol),
@@ -18,10 +18,7 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn read(&self, index: ConstantIndex) -> Constant {
-        self.constants
-            .get(index)
-            .expect("Constant out of bounds.")
-            .clone()
+        *self.constants.get(index).expect("Constant out of bounds.")
     }
 
     pub fn write(&mut self, constant: Constant) -> ConstantIndex {
