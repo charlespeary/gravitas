@@ -1,11 +1,11 @@
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
-        ExprResult, Number, Parser,
+        ExprResult, Parser,
     },
     token::Token,
 };
-use common::Symbol;
+use common::{Number, Symbol};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]

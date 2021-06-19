@@ -5,6 +5,7 @@ pub trait CompilerDiagnostic: Sized {
     fn report(&self, file_id: usize, reader: &SymbolsReader) -> Diagnostic<usize>;
 }
 
+pub type Number = f64;
 pub type Symbol = Spur;
 pub type Symbols = Rodeo;
 pub type SymbolsReader = RodeoReader;

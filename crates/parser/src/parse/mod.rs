@@ -27,7 +27,6 @@ pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
 pub(crate) type StmtResult<'t> = ParseResult<'t, Stmt>;
 
-pub type Number = f64;
 pub type Span = Range<usize>;
 
 #[derive(Debug, Clone)]

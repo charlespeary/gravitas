@@ -1,4 +1,4 @@
-pub enum Constant {}
+pub mod chunk;
 
 // Each opcode is described with e.g (Address, Number) which means that
 // first Address followed by a Number will be popped from the stack.
@@ -6,7 +6,7 @@ pub enum Constant {}
 #[derive(Debug, Clone, Copy)]
 pub enum Opcode {
     // Literals e.g number, string, bool
-    Constant(u8),
+    Constant(u16),
     // ! (Bool)
     Not,
     // - (Number)
@@ -57,13 +57,4 @@ pub enum Opcode {
     Asg,
     // Call function or method, (Callable)
     Call,
-}
-
-#[cfg(test)]
-
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }
