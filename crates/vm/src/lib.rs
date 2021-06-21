@@ -60,10 +60,11 @@ impl VM {
 
             let tick = match next {
                 Constant(index) => self.op_constant(index),
+                Add => self.op_add(),
                 _ => {
                     todo!();
                 }
-            };
+            }?;
 
             self.ip += 1;
         }
