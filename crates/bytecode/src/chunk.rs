@@ -9,11 +9,12 @@ pub enum Constant {
 }
 
 pub type ConstantIndex = usize;
+pub type OpcodeIndex = usize;
 
 #[derive(Debug, Clone, Default)]
 pub struct Chunk {
-    pub codes: Vec<Opcode>,
-    pub constants: Vec<Constant>,
+    opcodes: Vec<Opcode>,
+    constants: Vec<Constant>,
 }
 
 impl Chunk {
@@ -31,6 +32,16 @@ impl Chunk {
         self.constants.push(constant);
         length
     }
+
+    pub fn write_opcode(&mut self, opcode: Opcode) -> OpcodeIndex {
+        let length = self.opcodes.len();
+        self.opcodes.push(opcode);
+        length
+    }
+
+    pub fn read_opcode(&self, index: OpcodeIndex) -> Opcode {
+        self.opcodes[index]
+    }
 }
 
 #[cfg(test)]
@@ -40,7 +51,7 @@ mod test {
     #[test]
     fn read_from_chunk() {
         let chunk = Chunk {
-            codes: vec![],
+            opcodes: vec![],
             constants: vec![
                 Constant::Number(10.0),
                 Constant::Bool(false),
@@ -60,5 +71,15 @@ mod test {
         assert_eq!(chunk.write(Constant::Bool(true)), 0);
         assert_eq!(chunk.write(Constant::Number(32.0)), 1);
         assert_eq!(chunk.write(Constant::Bool(false)), 2)
+    }
+
+    #[test]
+    fn write_and_read_opcodes() {
+        let mut chunk = Chunk::default();
+        let first = chunk.write_opcode(Opcode::Add);
+        assert_eq!(first, 0);
+        assert_eq!(chunk.read_opcode(0), chunk.read_opcode(first));
+        assert_eq!(chunk.read_opcode(0), Opcode::Add);
+        assert_eq!(chunk.read_opcode(first), Opcode::Add);
     }
 }
