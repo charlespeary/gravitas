@@ -81,7 +81,7 @@ impl VM {
 mod test {
     use super::*;
     use bytecode::chunk::Constant;
-    use lasso::Rodeo;
+    use lasso::{Key, Rodeo, Spur};
 
     fn empty_vm() -> VM {
         new_vm(Chunk::default())
@@ -105,9 +105,17 @@ mod test {
 
     #[test]
     fn op_constant() {
-        assert_program(
-            Chunk::new(vec![Opcode::Constant(0)], vec![Constant::Number(10.0)]),
-            RuntimeValue::Number(10.0),
-        );
+        fn assert_constant(constant: Constant) {
+            assert_program(
+                Chunk::new(vec![Opcode::Constant(0)], vec![constant]),
+                RuntimeValue::from(constant),
+            );
+        }
+
+        assert_constant(Constant::Bool(false));
+        assert_constant(Constant::Bool(true));
+        assert_constant(Constant::String(Spur::try_from_usize(0).unwrap()));
+        assert_constant(Constant::Number(std::f64::MAX));
+        assert_constant(Constant::Number(std::f64::MIN));
     }
 }
