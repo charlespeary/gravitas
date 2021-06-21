@@ -1,3 +1,5 @@
+use chunk::ConstantIndex;
+
 pub mod chunk;
 
 // Each opcode is described with e.g (Address, Number) which means that
@@ -6,7 +8,7 @@ pub mod chunk;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Opcode {
     // Literals e.g number, string, bool
-    Constant(u16),
+    Constant(ConstantIndex),
     // ! (Bool)
     Not,
     // - (Number)

@@ -25,10 +25,6 @@ impl Chunk {
     pub fn write(&mut self, constant: Constant) -> ConstantIndex {
         let length = self.constants.len();
 
-        if length > std::u16::MAX as usize {
-            panic!("This program got too big!");
-        };
-
         self.constants.push(constant);
         length
     }
@@ -41,6 +37,10 @@ impl Chunk {
 
     pub fn read_opcode(&self, index: OpcodeIndex) -> Opcode {
         self.opcodes[index]
+    }
+
+    pub fn opcodes_len(&self) -> usize {
+        self.opcodes.len()
     }
 }
 
