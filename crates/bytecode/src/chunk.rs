@@ -18,6 +18,10 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    pub fn new(opcodes: Vec<Opcode>, constants: Vec<Constant>) -> Self {
+        Self { opcodes, constants }
+    }
+
     pub fn read(&self, index: ConstantIndex) -> Constant {
         *self.constants.get(index).expect("Constant out of bounds.")
     }
