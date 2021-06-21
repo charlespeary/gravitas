@@ -61,6 +61,7 @@ impl VM {
             let tick = match next {
                 Constant(index) => self.op_constant(index),
                 Add => self.op_add(),
+                Sub => self.op_sub(),
                 _ => {
                     todo!();
                 }
