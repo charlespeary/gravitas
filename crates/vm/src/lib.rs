@@ -11,11 +11,13 @@ pub(crate) mod arithmetic;
 pub(crate) mod call_frame;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
+pub(crate) mod stack;
 
 pub type ProgramOutput = Result<RuntimeValue, RuntimeError>;
 pub type MachineResult<T> = Result<T, RuntimeError>;
 pub type OperationResult = MachineResult<()>;
 
+#[derive(Debug)]
 pub(crate) struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) code: Chunk,
@@ -32,13 +34,6 @@ impl VM {
             symbols,
             ip: 0,
             code,
-        }
-    }
-
-    fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {
-        match self.operands.pop() {
-            Some(value) => Ok(value),
-            None => self.error(RuntimeErrorCause::PoppedFromEmptyStack),
         }
     }
 
@@ -87,7 +82,7 @@ mod test {
         new_vm(Chunk::default())
     }
 
-    fn new_vm(code: Chunk) -> VM {
+    pub(crate) fn new_vm(code: Chunk) -> VM {
         let symbols = Rodeo::new().into_reader();
         VM::new(symbols, code)
     }
