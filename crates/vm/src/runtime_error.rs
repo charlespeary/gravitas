@@ -1,7 +1,9 @@
+#[derive(Clone, Copy, Debug)]
 pub struct RuntimeError {
-    cause: RuntimeErrorCause,
+    pub cause: RuntimeErrorCause,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum RuntimeErrorCause {
     PoppedFromEmptyStack,
 }

@@ -1,3 +1,3 @@
-use crate::{TickResult, VM};
+use crate::{OperationResult, VM};
 
 impl VM {}

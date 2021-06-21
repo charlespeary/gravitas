@@ -1,7 +1,7 @@
 use bytecode::chunk::Constant;
 use common::{Number, Symbol};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RuntimeValue {
     Number(Number),
     String(Symbol),

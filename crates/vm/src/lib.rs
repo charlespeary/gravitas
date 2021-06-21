@@ -6,20 +6,20 @@ use call_frame::CallFrame;
 use common::SymbolsReader;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
-use stack::Stack;
 
 pub(crate) mod arithmetic;
 pub(crate) mod call_frame;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
-pub(crate) mod stack;
 
 pub type ProgramOutput = Result<RuntimeValue, RuntimeError>;
-pub type TickResult<T> = Result<T, RuntimeError>;
+pub type MachineResult<T> = Result<T, RuntimeError>;
+pub type OperationResult = MachineResult<()>;
+
 pub(crate) struct VM {
-    pub(crate) operands: Stack<RuntimeValue>,
+    pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) code: Chunk,
-    pub(crate) call_stack: Stack<CallFrame>,
+    pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) symbols: SymbolsReader,
     pub(crate) ip: usize,
 }
@@ -27,19 +27,26 @@ pub(crate) struct VM {
 impl VM {
     pub fn new(symbols: SymbolsReader, code: Chunk) -> Self {
         Self {
-            operands: Stack::new(),
-            call_stack: Stack::new(),
+            operands: Vec::new(),
+            call_stack: Vec::new(),
             symbols,
             ip: 0,
             code,
         }
     }
 
-    fn error<T>(&mut self, cause: RuntimeErrorCause) -> TickResult<T> {
+    fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {
+        match self.operands.pop() {
+            Some(value) => Ok(value),
+            None => self.error(RuntimeErrorCause::PoppedFromEmptyStack),
+        }
+    }
+
+    fn error<T>(&mut self, cause: RuntimeErrorCause) -> MachineResult<T> {
         Err(RuntimeError { cause })
     }
 
-    fn op_constant(&mut self, index: ConstantIndex) -> TickResult<RuntimeValue> {
+    fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
         let item = self.code.read(index);
         let value = RuntimeValue::from(item);
         self.operands.push(value);
@@ -66,12 +73,13 @@ impl VM {
             self.ip += 1;
         }
 
-        self.operands.pop()
+        self.pop_operand()
     }
 }
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use bytecode::chunk::Constant;
     use lasso::Rodeo;
 
@@ -84,7 +92,11 @@ mod test {
         VM::new(symbols, code)
     }
 
-    use super::*;
+    pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
+        let mut vm = new_vm(code);
+        assert_eq!(vm.run().unwrap(), expected_outcome);
+    }
+
     #[test]
     fn vm_runs() {
         let mut vm = empty_vm();
@@ -93,9 +105,9 @@ mod test {
 
     #[test]
     fn op_constant() {
-        let code = Chunk::new(vec![Opcode::Constant(0)], vec![Constant::Number(10.0)]);
-        let mut vm = new_vm(code);
-
-        let res = vm.run().unwrap();
+        assert_program(
+            Chunk::new(vec![Opcode::Constant(0)], vec![Constant::Number(10.0)]),
+            RuntimeValue::Number(10.0),
+        );
     }
 }
