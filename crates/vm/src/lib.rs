@@ -1,7 +1,4 @@
-use bytecode::{
-    chunk::{Chunk, ConstantIndex},
-    Opcode,
-};
+use bytecode::{chunk::Chunk, Opcode};
 use call_frame::CallFrame;
 use common::SymbolsReader;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
@@ -41,13 +38,6 @@ impl VM {
         Err(RuntimeError { cause })
     }
 
-    fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
-        let item = self.code.read(index);
-        let value = RuntimeValue::from(item);
-        self.operands.push(value);
-        Ok(())
-    }
-
     pub fn run(&mut self) -> ProgramOutput {
         loop {
             if self.ip + 1 > self.code.opcodes_len() {
@@ -83,8 +73,7 @@ impl VM {
 #[cfg(test)]
 mod test {
     use super::*;
-    use bytecode::chunk::Constant;
-    use lasso::{Key, Rodeo, Spur};
+    use lasso::Rodeo;
 
     fn empty_vm() -> VM {
         new_vm(Chunk::default())
@@ -104,21 +93,5 @@ mod test {
     fn vm_runs() {
         let mut vm = empty_vm();
         vm.run();
-    }
-
-    #[test]
-    fn op_constant() {
-        fn assert_constant(constant: Constant) {
-            assert_program(
-                Chunk::new(vec![Opcode::Constant(0)], vec![constant]),
-                RuntimeValue::from(constant),
-            );
-        }
-
-        assert_constant(Constant::Bool(false));
-        assert_constant(Constant::Bool(true));
-        assert_constant(Constant::String(Spur::try_from_usize(0).unwrap()));
-        assert_constant(Constant::Number(std::f64::MAX));
-        assert_constant(Constant::Number(std::f64::MIN));
     }
 }

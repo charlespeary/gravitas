@@ -1,8 +1,21 @@
 use std::ops::Neg;
 
+use bytecode::chunk::ConstantIndex;
+
 use crate::{runtime_value::RuntimeValue, OperationResult, VM};
 
 impl VM {
+    // Start of stuff that doesn't belong to any particular group
+
+    pub(crate) fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
+        let item = self.code.read(index);
+        let value = RuntimeValue::from(item);
+        self.operands.push(value);
+        Ok(())
+    }
+
+    // End of stuff that doesn't belong to any particular group
+
     // Start of unary expressions
 
     pub(crate) fn op_neg(&mut self) -> OperationResult {
@@ -71,7 +84,33 @@ mod test {
         Opcode,
     };
 
-    use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, test::new_vm};
+    use lasso::{Key, Spur};
+
+    use crate::{
+        runtime_error::RuntimeErrorCause,
+        runtime_value::RuntimeValue,
+        test::{assert_program, new_vm},
+    };
+
+    // Start of stuff that doesn't belong to any particular group
+
+    #[test]
+    fn op_constant() {
+        fn assert_constant(constant: Constant) {
+            assert_program(
+                Chunk::new(vec![Opcode::Constant(0)], vec![constant]),
+                RuntimeValue::from(constant),
+            );
+        }
+
+        assert_constant(Constant::Bool(false));
+        assert_constant(Constant::Bool(true));
+        assert_constant(Constant::String(Spur::try_from_usize(0).unwrap()));
+        assert_constant(Constant::Number(std::f64::MAX));
+        assert_constant(Constant::Number(std::f64::MIN));
+    }
+
+    // End of stuff that doesn't belong to any particular group
 
     // Start of unary expressions
 
