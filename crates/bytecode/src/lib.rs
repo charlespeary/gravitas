@@ -23,8 +23,6 @@ pub enum Opcode {
     Mul,
     // ** (Number, Number)
     Pow,
-    // √ (Number)
-    Sqr,
     // % (Number, Number)
     Mod,
     // == (Any, Any)

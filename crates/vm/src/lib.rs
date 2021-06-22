@@ -62,6 +62,11 @@ impl VM {
                 Constant(index) => self.op_constant(index),
                 Add => self.op_add(),
                 Sub => self.op_sub(),
+                Mul => self.op_mul(),
+                Div => self.op_div(),
+                Mod => self.op_mod(),
+                Pow => self.op_pow(),
+
                 _ => {
                     todo!();
                 }
