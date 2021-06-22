@@ -89,7 +89,7 @@ mod test {
     use crate::{
         runtime_error::RuntimeErrorCause,
         runtime_value::RuntimeValue,
-        test::{assert_program, new_vm},
+        test::{assert_program, create_two_operand_assertion, new_vm},
     };
 
     // Start of stuff that doesn't belong to any particular group
@@ -169,13 +169,13 @@ mod test {
     // Start of binary expressions
 
     fn assert_arithmetic_op(opcode: Opcode) -> impl Fn(f64, f64, f64) {
-        move |a: f64, b: f64, expected: f64| {
-            let mut vm = new_vm(Chunk::new(
-                vec![Opcode::Constant(0), Opcode::Constant(1), opcode],
-                vec![Constant::Number(a), Constant::Number(b)],
-            ));
-
-            assert_eq!(vm.run().unwrap(), RuntimeValue::Number(expected));
+        let assertion = create_two_operand_assertion(opcode);
+        move |a: f64, b: f64, e: f64| {
+            assertion(
+                Constant::Number(a),
+                Constant::Number(b),
+                RuntimeValue::Number(e),
+            )
         }
     }
 

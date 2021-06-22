@@ -6,6 +6,7 @@ use runtime_value::RuntimeValue;
 
 pub(crate) mod basic_expr;
 pub(crate) mod call_frame;
+pub(crate) mod eq_ord;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
 pub(crate) mod stack;
@@ -58,6 +59,7 @@ impl VM {
                 Pow => self.op_pow(),
                 Neg => self.op_neg(),
                 Not => self.op_not(),
+                Eq => self.op_eq(),
                 _ => {
                     todo!();
                 }
@@ -73,6 +75,7 @@ impl VM {
 #[cfg(test)]
 mod test {
     use super::*;
+    use bytecode::chunk::Constant;
     use lasso::Rodeo;
 
     fn empty_vm() -> VM {
@@ -87,6 +90,32 @@ mod test {
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
         let mut vm = new_vm(code);
         assert_eq!(vm.run().unwrap(), expected_outcome);
+    }
+
+    pub(crate) fn create_failable_two_operand_assertion(
+        opcode: Opcode,
+    ) -> impl Fn(Constant, Constant, RuntimeErrorCause) {
+        move |a: Constant, b: Constant, expected: RuntimeErrorCause| {
+            let mut vm = new_vm(Chunk::new(
+                vec![Opcode::Constant(0), Opcode::Constant(1), opcode],
+                vec![a, b],
+            ));
+
+            assert_eq!(vm.run().unwrap_err().cause, expected);
+        }
+    }
+
+    pub(crate) fn create_two_operand_assertion(
+        opcode: Opcode,
+    ) -> impl Fn(Constant, Constant, RuntimeValue) {
+        move |a: Constant, b: Constant, expected: RuntimeValue| {
+            let mut vm = new_vm(Chunk::new(
+                vec![Opcode::Constant(0), Opcode::Constant(1), opcode],
+                vec![a, b],
+            ));
+
+            assert_eq!(vm.run().unwrap(), expected);
+        }
     }
 
     #[test]
