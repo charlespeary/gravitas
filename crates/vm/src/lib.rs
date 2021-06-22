@@ -7,7 +7,7 @@ use common::SymbolsReader;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
 
-pub(crate) mod arithmetic;
+pub(crate) mod basic_expr;
 pub(crate) mod call_frame;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
@@ -66,7 +66,8 @@ impl VM {
                 Div => self.op_div(),
                 Mod => self.op_mod(),
                 Pow => self.op_pow(),
-
+                Neg => self.op_neg(),
+                Not => self.op_not(),
                 _ => {
                     todo!();
                 }

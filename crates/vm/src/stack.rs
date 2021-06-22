@@ -18,6 +18,15 @@ impl VM {
             _ => self.error(RuntimeErrorCause::ExpectedNumber),
         }
     }
+
+    pub(crate) fn pop_bool(&mut self) -> MachineResult<bool> {
+        let operand = self.pop_operand()?;
+
+        match operand {
+            RuntimeValue::Bool(bool) => Ok(bool),
+            _ => self.error(RuntimeErrorCause::ExpectedBool),
+        }
+    }
 }
 
 #[cfg(test)]

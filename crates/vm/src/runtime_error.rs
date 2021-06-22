@@ -7,4 +7,5 @@ pub struct RuntimeError {
 pub enum RuntimeErrorCause {
     PoppedFromEmptyStack,
     ExpectedNumber,
+    ExpectedBool,
 }

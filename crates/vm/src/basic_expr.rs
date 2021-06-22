@@ -1,6 +1,25 @@
+use std::ops::Neg;
+
 use crate::{runtime_value::RuntimeValue, OperationResult, VM};
 
 impl VM {
+    // Start of unary expressions
+
+    pub(crate) fn op_neg(&mut self) -> OperationResult {
+        let a = self.pop_number()?;
+        self.operands.push(RuntimeValue::Number(a.neg()));
+        Ok(())
+    }
+
+    pub(crate) fn op_not(&mut self) -> OperationResult {
+        let a = self.pop_bool()?;
+        self.operands.push(RuntimeValue::Bool(!a));
+        Ok(())
+    }
+
+    // End of unary expressions
+
+    // Start of binary expressions
     pub(crate) fn op_add(&mut self) -> OperationResult {
         let a = self.pop_number()?;
         let b = self.pop_number()?;
@@ -42,6 +61,7 @@ impl VM {
         self.operands.push(RuntimeValue::Number(a.powf(b)));
         Ok(())
     }
+    // End of binary expressions
 }
 
 #[cfg(test)]
@@ -52,6 +72,62 @@ mod test {
     };
 
     use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, test::new_vm};
+
+    // Start of unary expressions
+
+    #[test]
+    fn op_neg() {
+        // Accept only booleans
+        let mut vm = new_vm(Chunk::new(
+            vec![Opcode::Constant(0), Opcode::Neg],
+            vec![Constant::Bool(true)],
+        ));
+
+        assert_eq!(
+            vm.run().unwrap_err().cause,
+            RuntimeErrorCause::ExpectedNumber
+        );
+
+        let assert_neg = |a, e| {
+            let mut vm = new_vm(Chunk::new(
+                vec![Opcode::Constant(0), Opcode::Neg],
+                vec![Constant::Number(a)],
+            ));
+            assert_eq!(vm.run().unwrap(), RuntimeValue::Number(e));
+        };
+
+        assert_neg(1.0, -1.0);
+        assert_neg(-1.0, 1.0);
+        assert_neg(0.0, 0.0);
+        assert_neg(std::f64::MAX, std::f64::MIN);
+        assert_neg(std::f64::MIN, std::f64::MAX);
+    }
+
+    #[test]
+    fn op_not() {
+        // Accept only booleans
+        let mut vm = new_vm(Chunk::new(
+            vec![Opcode::Constant(0), Opcode::Not],
+            vec![Constant::Number(10.0)],
+        ));
+
+        assert_eq!(vm.run().unwrap_err().cause, RuntimeErrorCause::ExpectedBool);
+
+        let assert_not = |a, e| {
+            let mut vm = new_vm(Chunk::new(
+                vec![Opcode::Constant(0), Opcode::Not],
+                vec![Constant::Bool(a)],
+            ));
+            assert_eq!(vm.run().unwrap(), RuntimeValue::Bool(e));
+        };
+
+        assert_not(false, true);
+        assert_not(true, false);
+    }
+
+    // End of unary expressions
+
+    // Start of binary expressions
 
     fn assert_arithmetic_op(opcode: Opcode) -> impl Fn(f64, f64, f64) {
         move |a: f64, b: f64, expected: f64| {
@@ -163,4 +239,6 @@ mod test {
         assert_pow(std::f64::MAX, std::f64::MAX, std::f64::INFINITY);
         assert_pow(std::f64::MIN, std::f64::MIN, 0.0);
     }
+
+    // End of binary expressions
 }
