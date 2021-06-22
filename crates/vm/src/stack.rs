@@ -10,6 +10,12 @@ impl VM {
         }
     }
 
+    pub(crate) fn pop_two_operands(&mut self) -> MachineResult<(RuntimeValue, RuntimeValue)> {
+        let a = self.pop_operand()?;
+        let b = self.pop_operand()?;
+        Ok((a, b))
+    }
+
     pub(crate) fn pop_number(&mut self) -> MachineResult<Number> {
         let operand = self.pop_operand()?;
 

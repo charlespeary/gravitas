@@ -2,7 +2,28 @@ use std::ops::Neg;
 
 use bytecode::chunk::ConstantIndex;
 
-use crate::{runtime_value::RuntimeValue, OperationResult, VM};
+use crate::{
+    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
+    VM,
+};
+
+impl RuntimeValue {
+    pub(crate) fn add(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a + b)),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    // TODO: This pattern matching will be used in many places
+    // It'd be nice to have it somewhere as a helper function
+    pub(crate) fn sub(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a - b)),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+}
 
 impl VM {
     // Start of stuff that doesn't belong to any particular group
@@ -34,16 +55,16 @@ impl VM {
 
     // Start of binary expressions
     pub(crate) fn op_add(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a + b));
+        let (a, b) = self.pop_two_operands()?;
+        let result = a.add(b, self)?;
+        self.operands.push(result);
         Ok(())
     }
 
     pub(crate) fn op_sub(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a - b));
+        let (a, b) = self.pop_two_operands()?;
+        let result = a.sub(b, self)?;
+        self.operands.push(result);
         Ok(())
     }
 

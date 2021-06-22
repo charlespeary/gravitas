@@ -1,15 +1,25 @@
-use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, OperationResult, VM};
+use crate::{
+    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
+    VM,
+};
+
+impl RuntimeValue {
+    pub(crate) fn eq(&self, other: &RuntimeValue, vm: &mut VM) -> MachineResult<bool> {
+        Ok(match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a == b,
+            (RuntimeValue::String(a), RuntimeValue::String(b)) => a == b,
+            (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a == b,
+            _ => return vm.error(RuntimeErrorCause::MismatchedTypes),
+        })
+    }
+}
 
 impl VM {
     pub(crate) fn op_eq(&mut self) -> OperationResult {
         let a = self.pop_operand()?;
         let b = self.pop_operand()?;
-        let result = match (a, b) {
-            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a == b,
-            (RuntimeValue::String(a), RuntimeValue::String(b)) => a == b,
-            (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a == b,
-            _ => return self.error(RuntimeErrorCause::MismatchedTypes),
-        };
+        let result = a.eq(&b, self)?;
+
         self.operands.push(RuntimeValue::Bool(result));
         Ok(())
     }
