@@ -23,6 +23,50 @@ impl RuntimeValue {
             _ => vm.error(RuntimeErrorCause::ExpectedNumber),
         }
     }
+
+    pub(crate) fn mul(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a * b)),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    pub(crate) fn div(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a / b)),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    pub(crate) fn modulo(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a % b)),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    pub(crate) fn pow(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => {
+                Ok(RuntimeValue::Number(a.powf(b)))
+            }
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    pub(crate) fn not(self, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match self {
+            RuntimeValue::Bool(a) => Ok(RuntimeValue::Bool(!a)),
+            _ => vm.error(RuntimeErrorCause::ExpectedBool),
+        }
+    }
+
+    pub(crate) fn neg(self, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match self {
+            RuntimeValue::Number(a) => Ok(RuntimeValue::Number(a.neg())),
+            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
 }
 
 impl VM {
@@ -40,14 +84,16 @@ impl VM {
     // Start of unary expressions
 
     pub(crate) fn op_neg(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a.neg()));
+        let a = self.pop_operand()?;
+        let res = a.neg(self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_not(&mut self) -> OperationResult {
-        let a = self.pop_bool()?;
-        self.operands.push(RuntimeValue::Bool(!a));
+        let a = self.pop_operand()?;
+        let res = a.not(self)?;
+        self.operands.push(res);
         Ok(())
     }
 
@@ -56,45 +102,46 @@ impl VM {
     // Start of binary expressions
     pub(crate) fn op_add(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
-        let result = a.add(b, self)?;
-        self.operands.push(result);
+        let res = a.add(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_sub(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
-        let result = a.sub(b, self)?;
-        self.operands.push(result);
+        let res = a.sub(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_mul(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a * b));
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.mul(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_div(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a / b));
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.div(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_mod(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a % b));
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.modulo(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
 
     pub(crate) fn op_pow(&mut self) -> OperationResult {
-        let a = self.pop_number()?;
-        let b = self.pop_number()?;
-        self.operands.push(RuntimeValue::Number(a.powf(b)));
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.pow(b, self)?;
+        self.operands.push(res);
         Ok(())
     }
+
     // End of binary expressions
 }
 
