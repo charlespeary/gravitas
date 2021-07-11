@@ -1,5 +1,3 @@
-use common::Number;
-
 use crate::{runtime_error::RuntimeErrorCause, MachineResult, RuntimeValue, VM};
 
 impl VM {
@@ -23,7 +21,7 @@ mod test {
     use bytecode::chunk::Chunk;
     use lasso::Spur;
 
-    use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, test::new_vm};
+    use crate::{runtime_value::RuntimeValue, test::new_vm};
 
     #[test]
     fn pop_operand() {

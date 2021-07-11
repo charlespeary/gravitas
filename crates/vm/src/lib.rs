@@ -65,6 +65,8 @@ impl VM {
                 Le => self.op_le(),
                 Gt => self.op_gt(),
                 Ge => self.op_ge(),
+                Or => self.op_or(),
+                And => self.op_and(),
                 _ => {
                     todo!();
                 }

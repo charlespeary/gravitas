@@ -54,6 +54,20 @@ impl RuntimeValue {
         }
     }
 
+    pub(crate) fn and(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => Ok(RuntimeValue::Bool(a && b)),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
+        }
+    }
+
+    pub(crate) fn or(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
+        match (self, other) {
+            (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => Ok(RuntimeValue::Bool(a || b)),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
+        }
+    }
+
     pub(crate) fn not(self, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match self {
             RuntimeValue::Bool(a) => Ok(RuntimeValue::Bool(!a)),
@@ -138,6 +152,20 @@ impl VM {
     pub(crate) fn op_pow(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.pow(b, self)?;
+        self.operands.push(res);
+        Ok(())
+    }
+
+    pub(crate) fn op_and(&mut self) -> OperationResult {
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.and(b, self)?;
+        self.operands.push(res);
+        Ok(())
+    }
+
+    pub(crate) fn op_or(&mut self) -> OperationResult {
+        let (a, b) = self.pop_two_operands()?;
+        let res = a.or(b, self)?;
         self.operands.push(res);
         Ok(())
     }
@@ -358,6 +386,64 @@ mod test {
         assert_pow(0.0, 0.0, 1.0);
         assert_pow(std::f64::MAX, std::f64::MAX, std::f64::INFINITY);
         assert_pow(std::f64::MIN, std::f64::MIN, 0.0);
+    }
+
+    #[test]
+    fn op_or() {
+        let assert_or = create_two_operand_assertion(Opcode::Or);
+
+        assert_or(
+            Constant::Bool(false),
+            Constant::Bool(true),
+            RuntimeValue::Bool(true),
+        );
+
+        assert_or(
+            Constant::Bool(true),
+            Constant::Bool(false),
+            RuntimeValue::Bool(true),
+        );
+
+        assert_or(
+            Constant::Bool(false),
+            Constant::Bool(false),
+            RuntimeValue::Bool(false),
+        );
+
+        assert_or(
+            Constant::Bool(true),
+            Constant::Bool(true),
+            RuntimeValue::Bool(true),
+        );
+    }
+
+    #[test]
+    fn op_and() {
+        let assert_and = create_two_operand_assertion(Opcode::And);
+
+        assert_and(
+            Constant::Bool(false),
+            Constant::Bool(true),
+            RuntimeValue::Bool(false),
+        );
+
+        assert_and(
+            Constant::Bool(true),
+            Constant::Bool(false),
+            RuntimeValue::Bool(false),
+        );
+
+        assert_and(
+            Constant::Bool(false),
+            Constant::Bool(false),
+            RuntimeValue::Bool(false),
+        );
+
+        assert_and(
+            Constant::Bool(true),
+            Constant::Bool(true),
+            RuntimeValue::Bool(true),
+        );
     }
 
     // End of binary expressions
