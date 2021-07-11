@@ -6,7 +6,5 @@ pub struct RuntimeError {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RuntimeErrorCause {
     PoppedFromEmptyStack,
-    ExpectedNumber,
-    ExpectedBool,
     MismatchedTypes,
 }

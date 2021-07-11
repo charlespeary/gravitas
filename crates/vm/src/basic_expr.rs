@@ -11,7 +11,7 @@ impl RuntimeValue {
     pub(crate) fn add(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a + b)),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
@@ -20,28 +20,28 @@ impl RuntimeValue {
     pub(crate) fn sub(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a - b)),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
     pub(crate) fn mul(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a * b)),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
     pub(crate) fn div(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a / b)),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
     pub(crate) fn modulo(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => Ok(RuntimeValue::Number(a % b)),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
@@ -50,21 +50,21 @@ impl RuntimeValue {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => {
                 Ok(RuntimeValue::Number(a.powf(b)))
             }
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
     pub(crate) fn not(self, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match self {
             RuntimeValue::Bool(a) => Ok(RuntimeValue::Bool(!a)),
-            _ => vm.error(RuntimeErrorCause::ExpectedBool),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 
     pub(crate) fn neg(self, vm: &mut VM) -> MachineResult<RuntimeValue> {
         match self {
             RuntimeValue::Number(a) => Ok(RuntimeValue::Number(a.neg())),
-            _ => vm.error(RuntimeErrorCause::ExpectedNumber),
+            _ => vm.error(RuntimeErrorCause::MismatchedTypes),
         }
     }
 }
@@ -192,7 +192,7 @@ mod test {
 
         assert_eq!(
             vm.run().unwrap_err().cause,
-            RuntimeErrorCause::ExpectedNumber
+            RuntimeErrorCause::MismatchedTypes
         );
 
         let assert_neg = |a, e| {
@@ -223,7 +223,10 @@ mod test {
             vec![Constant::Number(10.0)],
         ));
 
-        assert_eq!(vm.run().unwrap_err().cause, RuntimeErrorCause::ExpectedBool);
+        assert_eq!(
+            vm.run().unwrap_err().cause,
+            RuntimeErrorCause::MismatchedTypes
+        );
 
         let assert_not = |a, e| {
             let mut vm = new_vm(Chunk::new(
@@ -277,7 +280,7 @@ mod test {
             ));
             assert_eq!(
                 vm.run().unwrap_err().cause,
-                RuntimeErrorCause::ExpectedNumber
+                RuntimeErrorCause::MismatchedTypes
             );
         };
 

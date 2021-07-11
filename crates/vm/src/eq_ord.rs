@@ -9,7 +9,7 @@ impl RuntimeValue {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a == b,
             (RuntimeValue::String(a), RuntimeValue::String(b)) => a == b,
             (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a == b,
-            _ => return vm.error(RuntimeErrorCause::MismatchedTypes),
+            _ => false,
         })
     }
 
@@ -19,7 +19,7 @@ impl RuntimeValue {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a != b,
             (RuntimeValue::String(a), RuntimeValue::String(b)) => a != b,
             (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a != b,
-            _ => return vm.error(RuntimeErrorCause::MismatchedTypes),
+            _ => false,
         })
     }
 
@@ -184,17 +184,134 @@ mod test {
     }
 
     #[test]
+    fn op_gt() {
+        let assert = create_two_operand_assertion(Opcode::Gt);
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(0.0),
+            RuntimeValue::Bool(false),
+        );
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(true),
+        );
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(5.0),
+            RuntimeValue::Bool(false),
+        );
+    }
+
+    #[test]
+    fn op_ge() {
+        let assert = create_two_operand_assertion(Opcode::Ge);
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(0.0),
+            RuntimeValue::Bool(false),
+        );
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(true),
+        );
+
+        assert(
+            Constant::Number(5.0),
+            Constant::Number(5.0),
+            RuntimeValue::Bool(true),
+        );
+    }
+
+    #[test]
+    fn op_lt() {
+        let assert = create_two_operand_assertion(Opcode::Lt);
+
+        assert(
+            Constant::Number(0.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(false),
+        );
+
+        assert(
+            Constant::Number(10.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(false),
+        );
+
+        assert(
+            Constant::Number(10.0),
+            Constant::Number(5.0),
+            RuntimeValue::Bool(true),
+        );
+    }
+
+    #[test]
+    fn op_le() {
+        let assert = create_two_operand_assertion(Opcode::Le);
+
+        assert(
+            Constant::Number(0.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(false),
+        );
+
+        assert(
+            Constant::Number(10.0),
+            Constant::Number(10.0),
+            RuntimeValue::Bool(true),
+        );
+
+        assert(
+            Constant::Number(10.0),
+            Constant::Number(5.0),
+            RuntimeValue::Bool(true),
+        );
+    }
+
+    #[test]
     fn mismatched_types() {
-        let assert_op_eq_err = |a, b| {
-            let assert = create_failable_two_operand_assertion(Opcode::Eq);
+        let assert_err = |opcode, a, b| {
+            let assert = create_failable_two_operand_assertion(opcode);
             assert(a, b, RuntimeErrorCause::MismatchedTypes);
         };
 
-        // can't compare numbers with strings
-        assert_op_eq_err(Constant::String(Spur::default()), Constant::Number(10.0));
-        // can't compare numbers with booleans
-        assert_op_eq_err(Constant::Bool(true), Constant::Number(10.0));
-        // can't compare strings with booleans
-        assert_op_eq_err(Constant::Bool(true), Constant::String(Spur::default()));
+        let number_only_operations = vec![
+            Opcode::Add,
+            Opcode::Sub,
+            Opcode::Mul,
+            Opcode::Div,
+            Opcode::Pow,
+            Opcode::Mod,
+            Opcode::Lt,
+            Opcode::Le,
+            Opcode::Gt,
+            Opcode::Ge,
+        ];
+
+        for opcode in &number_only_operations {
+            //  numbers with strings
+            assert_err(
+                *opcode,
+                Constant::String(Spur::default()),
+                Constant::Number(10.0),
+            );
+
+            //  numbers with booleans
+            assert_err(*opcode, Constant::Bool(true), Constant::Number(10.0));
+
+            //  strings with booleans
+            assert_err(
+                *opcode,
+                Constant::Bool(true),
+                Constant::String(Spur::default()),
+            );
+        }
     }
 }

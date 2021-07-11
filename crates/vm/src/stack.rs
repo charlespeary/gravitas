@@ -15,24 +15,6 @@ impl VM {
         let b = self.pop_operand()?;
         Ok((a, b))
     }
-
-    pub(crate) fn pop_number(&mut self) -> MachineResult<Number> {
-        let operand = self.pop_operand()?;
-
-        match operand {
-            RuntimeValue::Number(number) => Ok(number),
-            _ => self.error(RuntimeErrorCause::ExpectedNumber),
-        }
-    }
-
-    pub(crate) fn pop_bool(&mut self) -> MachineResult<bool> {
-        let operand = self.pop_operand()?;
-
-        match operand {
-            RuntimeValue::Bool(bool) => Ok(bool),
-            _ => self.error(RuntimeErrorCause::ExpectedBool),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -75,21 +57,5 @@ mod test {
             .unwrap()
             .eq(RuntimeValue::Number(10.0), &mut vm)
             .unwrap());
-    }
-
-    #[test]
-    fn pop_number() {
-        let mut vm = new_vm(Chunk::default());
-        vm.operands = vec![RuntimeValue::Number(10.0)];
-
-        assert!(vm.pop_number().unwrap().is_normal());
-
-        let mut vm = new_vm(Chunk::default());
-        vm.operands = vec![RuntimeValue::Bool(false)];
-
-        assert_eq!(
-            vm.pop_number().unwrap_err().cause,
-            RuntimeErrorCause::ExpectedNumber
-        );
     }
 }
