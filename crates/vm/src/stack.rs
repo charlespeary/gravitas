@@ -52,13 +52,29 @@ mod test {
             RuntimeValue::Bool(false),
             RuntimeValue::Bool(true),
         ];
-        assert_eq!(vm.pop_operand().unwrap(), RuntimeValue::Bool(true));
-        assert_eq!(vm.pop_operand().unwrap(), RuntimeValue::Bool(false));
-        assert_eq!(
-            vm.pop_operand().unwrap(),
-            RuntimeValue::String(Spur::default())
-        );
-        assert_eq!(vm.pop_operand().unwrap(), RuntimeValue::Number(10.0));
+        assert!(vm
+            .pop_operand()
+            .unwrap()
+            .eq(RuntimeValue::Bool(true), &mut vm)
+            .unwrap());
+
+        assert!(vm
+            .pop_operand()
+            .unwrap()
+            .eq(RuntimeValue::Bool(false), &mut vm)
+            .unwrap());
+
+        assert!(vm
+            .pop_operand()
+            .unwrap()
+            .eq(RuntimeValue::String(Spur::default()), &mut vm)
+            .unwrap());
+
+        assert!(vm
+            .pop_operand()
+            .unwrap()
+            .eq(RuntimeValue::Number(10.0), &mut vm)
+            .unwrap());
     }
 
     #[test]

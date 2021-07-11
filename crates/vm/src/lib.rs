@@ -60,6 +60,11 @@ impl VM {
                 Neg => self.op_neg(),
                 Not => self.op_not(),
                 Eq => self.op_eq(),
+                Ne => self.op_ne(),
+                Lt => self.op_lt(),
+                Le => self.op_le(),
+                Gt => self.op_gt(),
+                Ge => self.op_ge(),
                 _ => {
                     todo!();
                 }
@@ -89,7 +94,7 @@ mod test {
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
         let mut vm = new_vm(code);
-        assert_eq!(vm.run().unwrap(), expected_outcome);
+        assert!(vm.run().unwrap().eq(expected_outcome, &mut vm).unwrap());
     }
 
     pub(crate) fn create_failable_two_operand_assertion(
@@ -114,7 +119,9 @@ mod test {
                 vec![a, b],
             ));
 
-            assert_eq!(vm.run().unwrap(), expected);
+            let result = vm.run().unwrap();
+
+            assert!(result.eq(expected, &mut vm).unwrap());
         }
     }
 

@@ -200,7 +200,12 @@ mod test {
                 vec![Opcode::Constant(0), Opcode::Neg],
                 vec![Constant::Number(a)],
             ));
-            assert_eq!(vm.run().unwrap(), RuntimeValue::Number(e));
+
+            assert!(vm
+                .run()
+                .unwrap()
+                .eq(RuntimeValue::Number(e), &mut vm)
+                .unwrap())
         };
 
         assert_neg(1.0, -1.0);
@@ -225,7 +230,12 @@ mod test {
                 vec![Opcode::Constant(0), Opcode::Not],
                 vec![Constant::Bool(a)],
             ));
-            assert_eq!(vm.run().unwrap(), RuntimeValue::Bool(e));
+
+            assert!(vm
+                .run()
+                .unwrap()
+                .eq(RuntimeValue::Bool(e), &mut vm)
+                .unwrap())
         };
 
         assert_not(false, true);
