@@ -1,12 +1,21 @@
-use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, OperationResult, VM};
+use common::Address;
+
+use crate::{
+    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
+    VM,
+};
 
 impl VM {
+    fn expect_address(&mut self, value: RuntimeValue) -> MachineResult<Address> {
+        match value {
+            RuntimeValue::Number(distance) => Ok(distance),
+            _ => self.error(RuntimeErrorCause::ExpectedAddressValue),
+        }
+    }
+
     pub(crate) fn op_jif(&mut self) -> OperationResult {
         let (jump_value, condition) = self.pop_two_operands()?;
-        let distance = match jump_value {
-            RuntimeValue::Number(distance) => distance,
-            _ => return self.error(RuntimeErrorCause::ExpectedAddressValue),
-        };
+        let distance = self.expect_address(jump_value)?;
 
         if condition.eq(RuntimeValue::Bool(false), self)? {
             self.move_pointer(distance as isize)?;
@@ -15,7 +24,14 @@ impl VM {
         Ok(())
     }
 
-    // pub(crate) fn op_jf(&mut self) -> OperationResult {}
+    pub(crate) fn op_jf(&mut self) -> OperationResult {
+        let jump_value = self.pop_operand()?;
+        let distance = self.expect_address(jump_value)?;
+        assert!(distance.is_sign_positive());
+        self.move_pointer(distance as isize)?;
+
+        Ok(())
+    }
 
     // pub(crate) fn op_jb(&mut self) -> OperationResult {}
 }
@@ -52,7 +68,20 @@ mod test {
         Ok(())
     }
 
-    fn op_jf() {}
+    #[test]
+    fn op_jf() -> OperationResult {
+        let code = Chunk::new(
+            vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Jf],
+            vec![Constant::Number(127.0), Constant::Number(10.0)],
+        );
+
+        let mut vm = new_vm(code);
+        assert_eq!(vm.ip, 0);
+        assert!(vm.run()?.eq(RuntimeValue::Number(127.0), &mut vm)?);
+        assert_eq!(vm.ip, 12);
+
+        Ok(())
+    }
 
     fn op_jb() {}
 }

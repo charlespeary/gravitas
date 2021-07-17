@@ -71,6 +71,10 @@ impl VM {
                     self.op_jif()?;
                     continue;
                 }
+                Jf => {
+                    self.op_jf()?;
+                    continue;
+                }
                 _ => {
                     todo!();
                 }
