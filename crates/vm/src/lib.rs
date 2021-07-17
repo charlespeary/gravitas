@@ -7,6 +7,7 @@ use runtime_value::RuntimeValue;
 pub(crate) mod basic_expr;
 pub(crate) mod call_frame;
 pub(crate) mod eq_ord;
+pub(crate) mod flow_control;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
 pub(crate) mod stack;
@@ -46,7 +47,6 @@ impl VM {
             }
 
             let next = self.code.read_opcode(self.ip);
-
             use Opcode::*;
 
             let tick = match next {
@@ -67,15 +67,34 @@ impl VM {
                 Ge => self.op_ge(),
                 Or => self.op_or(),
                 And => self.op_and(),
+                Jif => {
+                    self.op_jif()?;
+                    continue;
+                }
                 _ => {
                     todo!();
                 }
             }?;
 
-            self.ip += 1;
+            self.move_pointer(1)?;
         }
 
         self.pop_operand()
+    }
+
+    pub(crate) fn move_pointer(&mut self, distance: isize) -> OperationResult {
+        if distance.is_positive() {
+            self.ip += distance as usize;
+            Ok(())
+        } else {
+            match self.ip.checked_sub(distance as usize) {
+                Some(new_ip) => {
+                    self.ip = new_ip;
+                    Ok(())
+                }
+                None => self.error(RuntimeErrorCause::StackOverflow),
+            }
+        }
     }
 }
 

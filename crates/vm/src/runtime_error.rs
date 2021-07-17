@@ -7,4 +7,6 @@ pub struct RuntimeError {
 pub enum RuntimeErrorCause {
     PoppedFromEmptyStack,
     MismatchedTypes,
+    StackOverflow,
+    ExpectedAddressValue,
 }
