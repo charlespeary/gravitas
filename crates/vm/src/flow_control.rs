@@ -24,16 +24,13 @@ impl VM {
         Ok(())
     }
 
-    pub(crate) fn op_jf(&mut self) -> OperationResult {
+    pub(crate) fn op_jp(&mut self) -> OperationResult {
         let jump_value = self.pop_operand()?;
         let distance = self.expect_address(jump_value)?;
-        assert!(distance.is_sign_positive());
         self.move_pointer(distance as isize)?;
 
         Ok(())
     }
-
-    // pub(crate) fn op_jb(&mut self) -> OperationResult {}
 }
 
 #[cfg(test)]
@@ -43,7 +40,10 @@ mod test {
         Opcode,
     };
 
-    use crate::{runtime_value::RuntimeValue, test::new_vm, OperationResult};
+    use crate::{
+        runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, test::new_vm,
+        OperationResult,
+    };
 
     #[test]
     fn op_jif() -> OperationResult {
@@ -69,19 +69,39 @@ mod test {
     }
 
     #[test]
-    fn op_jf() -> OperationResult {
+    fn op_jp_forwards() -> OperationResult {
         let code = Chunk::new(
-            vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Jf],
+            vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Jp],
             vec![Constant::Number(127.0), Constant::Number(10.0)],
         );
 
         let mut vm = new_vm(code);
         assert_eq!(vm.ip, 0);
+        // opcodes advance the pointer to 0, 1, and 2 and then we have a jump that advances by another 10 so 12
         assert!(vm.run()?.eq(RuntimeValue::Number(127.0), &mut vm)?);
         assert_eq!(vm.ip, 12);
 
         Ok(())
     }
 
-    fn op_jb() {}
+    #[test]
+    fn op_jp_backwards() -> OperationResult {
+        let code = Chunk::new(
+            vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Jp],
+            vec![Constant::Number(127.0), Constant::Number(-3.0)],
+        );
+
+        let mut vm = new_vm(code);
+        assert_eq!(vm.ip, 0);
+        // opcodes advance the pointer to 0, 1, and 2 and then we have a jump that retreats by 3 so -1
+        // and that will cause a stack overflow
+        // If we'd like to just test it to come back to a normal value then it would cause an infinite loop
+        // therefore we have to crash the VM in order to check if its doing its job correctly
+        assert_eq!(
+            vm.run().unwrap_err().cause,
+            RuntimeErrorCause::StackOverflow
+        );
+
+        Ok(())
+    }
 }

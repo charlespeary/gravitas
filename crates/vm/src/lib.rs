@@ -71,8 +71,8 @@ impl VM {
                     self.op_jif()?;
                     continue;
                 }
-                Jf => {
-                    self.op_jf()?;
+                Jp => {
+                    self.op_jp()?;
                     continue;
                 }
                 _ => {
@@ -87,11 +87,13 @@ impl VM {
     }
 
     pub(crate) fn move_pointer(&mut self, distance: isize) -> OperationResult {
+        use std::ops::Neg;
+
         if distance.is_positive() {
             self.ip += distance as usize;
             Ok(())
         } else {
-            match self.ip.checked_sub(distance as usize) {
+            match self.ip.checked_sub(distance.neg() as usize) {
                 Some(new_ip) => {
                     self.ip = new_ip;
                     Ok(())

@@ -43,10 +43,8 @@ pub enum Opcode {
     And,
     // jump if false (Usize, Bool)
     Jif,
-    // jump forward (Usize)
-    Jf,
-    // jump back (Usize)
-    Jb,
+    // jump (Isize)
+    Jp,
     // return
     Rtr,
     // pop n values from stack (Usize)
