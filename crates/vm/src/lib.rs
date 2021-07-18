@@ -8,6 +8,7 @@ pub(crate) mod basic_expr;
 pub(crate) mod call;
 pub(crate) mod eq_ord;
 pub(crate) mod flow_control;
+pub(crate) mod memory;
 pub(crate) mod runtime_error;
 pub(crate) mod runtime_value;
 pub(crate) mod stack;
@@ -103,6 +104,7 @@ impl VM {
                 return Ok(TickOutcome::BreakFromLoop);
             }
             Call => self.op_call(),
+            Pop => self.op_pop(),
             _ => {
                 todo!();
             }

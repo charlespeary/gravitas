@@ -9,7 +9,7 @@ impl VM {
     fn expect_address(&mut self, value: RuntimeValue) -> MachineResult<Address> {
         match value {
             RuntimeValue::Number(distance) => Ok(distance),
-            _ => self.error(RuntimeErrorCause::ExpectedAddressValue),
+            _ => self.error(RuntimeErrorCause::ExpectedUsize),
         }
     }
 
