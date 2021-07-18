@@ -1,21 +1,9 @@
-use common::Address;
-
-use crate::{
-    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
-    VM,
-};
+use crate::{runtime_value::RuntimeValue, OperationResult, VM};
 
 impl VM {
-    fn expect_address(&mut self, value: RuntimeValue) -> MachineResult<Address> {
-        match value {
-            RuntimeValue::Number(distance) => Ok(distance),
-            _ => self.error(RuntimeErrorCause::ExpectedUsize),
-        }
-    }
-
     pub(crate) fn op_jif(&mut self) -> OperationResult {
-        let (jump_value, condition) = self.pop_two_operands()?;
-        let distance = self.expect_address(jump_value)?;
+        let distance = self.pop_number()?;
+        let condition = self.pop_operand()?;
 
         if condition.eq(RuntimeValue::Bool(false), self)? {
             self.move_pointer(distance as isize)?;
@@ -25,8 +13,7 @@ impl VM {
     }
 
     pub(crate) fn op_jp(&mut self) -> OperationResult {
-        let jump_value = self.pop_operand()?;
-        let distance = self.expect_address(jump_value)?;
+        let distance = self.pop_number()?;
         self.move_pointer(distance as isize)?;
 
         Ok(())

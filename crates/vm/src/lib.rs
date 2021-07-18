@@ -105,6 +105,8 @@ impl VM {
             }
             Call => self.op_call(),
             Pop => self.op_pop(),
+            Get => self.op_get(),
+            Asg => self.op_asg(),
             _ => {
                 todo!();
             }

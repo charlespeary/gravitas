@@ -1,6 +1,15 @@
+use common::Number;
+
 use crate::{runtime_error::RuntimeErrorCause, MachineResult, RuntimeValue, VM};
 
 impl VM {
+    pub(crate) fn pop_number(&mut self) -> MachineResult<Number> {
+        match self.pop_operand()? {
+            RuntimeValue::Number(num) => Ok(num),
+            _ => return self.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
     pub(crate) fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {
         match self.operands.pop() {
             Some(value) => Ok(value),

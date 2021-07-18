@@ -8,6 +8,6 @@ pub enum RuntimeErrorCause {
     PoppedFromEmptyStack,
     MismatchedTypes,
     StackOverflow,
-    ExpectedUsize,
+    ExpectedNumber,
     NotCallable,
 }
