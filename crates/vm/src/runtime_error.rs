@@ -9,4 +9,5 @@ pub enum RuntimeErrorCause {
     MismatchedTypes,
     StackOverflow,
     ExpectedAddressValue,
+    NotCallable,
 }

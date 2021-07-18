@@ -121,12 +121,8 @@ mod test {
             let a = Constant::Number(a);
             let b = Constant::Number(b);
 
-            // bidirectional equality
-            // a == b
-            assert(b, a, RuntimeValue::Bool(a == b));
-
-            // b == a
-            assert(a, b, RuntimeValue::Bool(b == a));
+            let aeb = a == b;
+            assert(b, a, RuntimeValue::Bool(aeb));
         };
 
         assert_numbers(0.0, 0.0);

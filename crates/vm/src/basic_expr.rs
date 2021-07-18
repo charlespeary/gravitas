@@ -1,6 +1,6 @@
 use std::ops::Neg;
 
-use bytecode::chunk::ConstantIndex;
+use bytecode::chunk::{Chunk, ConstantIndex};
 
 use crate::{
     runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
@@ -87,7 +87,7 @@ impl VM {
     // Start of stuff that doesn't belong to any particular group
 
     pub(crate) fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
-        let item = self.code.read(index);
+        let item = self.current_frame().chunk.read(index);
         let value = RuntimeValue::from(item);
         self.operands.push(value);
         Ok(())
@@ -194,7 +194,7 @@ mod test {
     fn op_constant() {
         fn assert_constant(constant: Constant) {
             assert_program(
-                Chunk::new(vec![Opcode::Constant(0)], vec![constant]),
+                Chunk::new(vec![Opcode::Constant(0)], vec![constant.clone()]),
                 RuntimeValue::from(constant),
             );
         }

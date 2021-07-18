@@ -1,11 +1,11 @@
 use bytecode::{chunk::Chunk, Opcode};
-use call_frame::CallFrame;
+use call::CallFrame;
 use common::SymbolsReader;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
 
 pub(crate) mod basic_expr;
-pub(crate) mod call_frame;
+pub(crate) mod call;
 pub(crate) mod eq_ord;
 pub(crate) mod flow_control;
 pub(crate) mod runtime_error;
@@ -16,23 +16,34 @@ pub type ProgramOutput = Result<RuntimeValue, RuntimeError>;
 pub type MachineResult<T> = Result<T, RuntimeError>;
 pub type OperationResult = MachineResult<()>;
 
+#[derive(PartialEq)]
+pub enum TickOutcome {
+    FinishProgram,
+    BreakFromLoop,
+    ContinueExecution,
+}
+
 #[derive(Debug)]
 pub(crate) struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
-    pub(crate) code: Chunk,
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) symbols: SymbolsReader,
     pub(crate) ip: usize,
 }
 
 impl VM {
-    pub fn new(symbols: SymbolsReader, code: Chunk) -> Self {
+    pub fn new(symbols: SymbolsReader, chunk: Chunk) -> Self {
+        let initial_frame = CallFrame {
+            stack_start: 0,
+            name: symbols.get("global").expect("It comes prepacked"),
+            chunk,
+        };
+
         Self {
             operands: Vec::new(),
-            call_stack: Vec::new(),
+            call_stack: vec![initial_frame],
             symbols,
             ip: 0,
-            code,
         }
     }
 
@@ -40,49 +51,74 @@ impl VM {
         Err(RuntimeError { cause })
     }
 
-    pub fn run(&mut self) -> ProgramOutput {
-        loop {
-            if self.ip + 1 > self.code.opcodes_len() {
-                break;
-            }
+    pub fn current_frame(&self) -> &CallFrame {
+        self.call_stack.last().expect("Callstack is empty")
+    }
 
-            let next = self.code.read_opcode(self.ip);
-            use Opcode::*;
+    pub fn end_frame(&mut self) {
+        self.call_stack.pop();
+    }
 
-            let tick = match next {
-                Constant(index) => self.op_constant(index),
-                Add => self.op_add(),
-                Sub => self.op_sub(),
-                Mul => self.op_mul(),
-                Div => self.op_div(),
-                Mod => self.op_mod(),
-                Pow => self.op_pow(),
-                Neg => self.op_neg(),
-                Not => self.op_not(),
-                Eq => self.op_eq(),
-                Ne => self.op_ne(),
-                Lt => self.op_lt(),
-                Le => self.op_le(),
-                Gt => self.op_gt(),
-                Ge => self.op_ge(),
-                Or => self.op_or(),
-                And => self.op_and(),
-                Jif => {
-                    self.op_jif()?;
-                    continue;
-                }
-                Jp => {
-                    self.op_jp()?;
-                    continue;
-                }
-                _ => {
-                    todo!();
-                }
-            }?;
+    pub fn tick(&mut self) -> MachineResult<TickOutcome> {
+        let has_next_opcode = self.ip < self.current_frame().chunk.opcodes_len();
 
-            self.move_pointer(1)?;
+        if !has_next_opcode && !self.call_stack.is_empty() {
+            self.end_frame();
         }
 
+        // we finish the program if no next opcode and callstack is empty
+        if !has_next_opcode && self.call_stack.is_empty() {
+            return Ok(TickOutcome::FinishProgram);
+        }
+
+        let ip = self.ip - self.current_frame().stack_start;
+
+        let next = self.current_frame().chunk.read_opcode(ip);
+        use Opcode::*;
+
+        match next {
+            Constant(index) => self.op_constant(index),
+            Add => self.op_add(),
+            Sub => self.op_sub(),
+            Mul => self.op_mul(),
+            Div => self.op_div(),
+            Mod => self.op_mod(),
+            Pow => self.op_pow(),
+            Neg => self.op_neg(),
+            Not => self.op_not(),
+            Eq => self.op_eq(),
+            Ne => self.op_ne(),
+            Lt => self.op_lt(),
+            Le => self.op_le(),
+            Gt => self.op_gt(),
+            Ge => self.op_ge(),
+            Or => self.op_or(),
+            And => self.op_and(),
+            Jif => {
+                self.op_jif()?;
+                return Ok(TickOutcome::BreakFromLoop);
+            }
+            Jp => {
+                self.op_jp()?;
+                return Ok(TickOutcome::BreakFromLoop);
+            }
+            Call => self.op_call(),
+            _ => {
+                todo!();
+            }
+        }?;
+
+        self.move_pointer(1)?;
+
+        Ok(TickOutcome::ContinueExecution)
+    }
+
+    pub fn run(&mut self) -> ProgramOutput {
+        loop {
+            if self.tick()? == TickOutcome::FinishProgram {
+                break;
+            }
+        }
         self.pop_operand()
     }
 
@@ -115,8 +151,9 @@ mod test {
     }
 
     pub(crate) fn new_vm(code: Chunk) -> VM {
-        let symbols = Rodeo::new().into_reader();
-        VM::new(symbols, code)
+        let mut symbols = Rodeo::new();
+        symbols.get_or_intern("global");
+        VM::new(symbols.into_reader(), code)
     }
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {

@@ -1,17 +1,18 @@
-use crate::Opcode;
+use crate::{callables::Function, Opcode};
 use common::{Number, Symbol};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
     Number(Number),
     String(Symbol),
     Bool(bool),
+    Function(Function),
 }
 
 pub type ConstantIndex = usize;
 pub type OpcodeIndex = usize;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Chunk {
     opcodes: Vec<Opcode>,
     constants: Vec<Constant>,
@@ -23,7 +24,10 @@ impl Chunk {
     }
 
     pub fn read(&self, index: ConstantIndex) -> Constant {
-        *self.constants.get(index).expect("Constant out of bounds.")
+        self.constants
+            .get(index)
+            .expect("Constant out of bounds.")
+            .clone()
     }
 
     pub fn write(&mut self, constant: Constant) -> ConstantIndex {

@@ -1,7 +1,7 @@
 use chunk::ConstantIndex;
 
+pub mod callables;
 pub mod chunk;
-
 // Each opcode is described with e.g (Address, Number) which means that
 // first Address followed by a Number will be popped from the stack.
 // VM will panic if the popped value is not of an expected type.
