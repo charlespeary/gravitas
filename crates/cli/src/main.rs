@@ -1,4 +1,4 @@
-use crate::options::Vtas;
+use crate::options::Gravitas;
 use structopt::StructOpt;
 
 pub(crate) mod compiler;
@@ -6,9 +6,9 @@ pub(crate) mod options;
 pub(crate) mod repl;
 
 fn main() {
-    let vtas = Vtas::from_args();
+    let gravitas = Gravitas::from_args();
 
-    match vtas {
-        Vtas::Repl(repl) => repl.run(),
+    match gravitas {
+        Gravitas::Repl(repl) => repl.run(),
     }
 }
