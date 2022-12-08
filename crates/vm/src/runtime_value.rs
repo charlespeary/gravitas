@@ -1,7 +1,10 @@
-use bytecode::{callables::Function, chunk::Constant};
+use bytecode::{
+    callables::{Class, Function},
+    chunk::Constant,
+};
 use common::{Number, Symbol};
 
-use crate::call::Callable;
+use crate::call::{Callable, ObjectInstance};
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
@@ -9,11 +12,18 @@ pub enum RuntimeValue {
     String(Symbol),
     Bool(bool),
     Callable(Callable),
+    ObjectInstance(ObjectInstance),
 }
 
 impl From<Function> for RuntimeValue {
     fn from(fun: Function) -> RuntimeValue {
         RuntimeValue::Callable(Callable::Function(fun))
+    }
+}
+
+impl From<Class> for RuntimeValue {
+    fn from(class: Class) -> RuntimeValue {
+        RuntimeValue::Callable(Callable::Class(class))
     }
 }
 
@@ -24,6 +34,7 @@ impl From<Constant> for RuntimeValue {
             Constant::String(str) => RuntimeValue::String(str),
             Constant::Bool(bl) => RuntimeValue::Bool(bl),
             Constant::Function(fun) => fun.into(),
+            Constant::Class(class) => class.into(),
         }
     }
 }

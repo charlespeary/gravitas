@@ -5,7 +5,7 @@ impl VM {
         let distance = self.pop_number()?;
         let condition = self.pop_operand()?;
 
-        if condition.eq(RuntimeValue::Bool(false), self)? {
+        if condition.eq(&RuntimeValue::Bool(false), self)? {
             self.move_pointer(distance as isize)?;
         }
 
@@ -49,7 +49,7 @@ mod test {
         );
         let mut vm = new_vm(code);
         assert_eq!(vm.ip, 0);
-        assert!(vm.run()?.eq(RuntimeValue::Number(127.0), &mut vm)?);
+        assert!(vm.run()?.eq(&RuntimeValue::Number(127.0), &mut vm)?);
         // opcodes advance the pointer to 0, 1, 2, and 3 and then we have a jump that advances by another 3 so from 3 to 6
         assert_eq!(vm.ip, 6);
         Ok(())
@@ -65,7 +65,7 @@ mod test {
         let mut vm = new_vm(code);
         assert_eq!(vm.ip, 0);
         // opcodes advance the pointer to 0, 1, and 2 and then we have a jump that advances by another 10 so 12
-        assert!(vm.run()?.eq(RuntimeValue::Number(127.0), &mut vm)?);
+        assert!(vm.run()?.eq(&RuntimeValue::Number(127.0), &mut vm)?);
         assert_eq!(vm.ip, 12);
 
         Ok(())

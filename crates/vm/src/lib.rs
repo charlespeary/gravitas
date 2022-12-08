@@ -103,10 +103,11 @@ impl VM {
                 self.op_jp()?;
                 return Ok(TickOutcome::BreakFromLoop);
             }
-            Call => self.op_call(),
             Pop => self.op_pop(),
             Get => self.op_get(),
             Asg => self.op_asg(),
+            Call => self.op_call(),
+            Return => {}
             _ => {
                 todo!();
             }
@@ -147,8 +148,11 @@ impl VM {
 #[cfg(test)]
 mod test {
     use super::*;
-    use bytecode::chunk::Constant;
-    use lasso::Rodeo;
+    use bytecode::{
+        callables::{Class, Function},
+        chunk::Constant,
+    };
+    use lasso::{Rodeo, Spur};
 
     fn empty_vm() -> VM {
         new_vm(Chunk::default())
@@ -162,7 +166,7 @@ mod test {
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
         let mut vm = new_vm(code);
-        assert!(vm.run().unwrap().eq(expected_outcome, &mut vm).unwrap());
+        assert!(vm.run().unwrap().eq(&expected_outcome, &mut vm).unwrap());
     }
 
     pub(crate) fn create_failable_two_operand_assertion(
@@ -189,7 +193,20 @@ mod test {
 
             let result = vm.run().unwrap();
 
-            assert!(result.eq(expected, &mut vm).unwrap());
+            assert!(result.eq(&expected, &mut vm).unwrap());
+        }
+    }
+
+    pub(crate) fn dummy_class() -> Class {
+        Class {
+            name: Spur::default(),
+            constructor: Function {
+                arity: 0,
+                chunk: Chunk::default(),
+                name: Spur::default(),
+            },
+            super_class: None,
+            methods: vec![],
         }
     }
 

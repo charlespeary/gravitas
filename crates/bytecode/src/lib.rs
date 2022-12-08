@@ -55,4 +55,6 @@ pub enum Opcode {
     Asg,
     // Call function or method, (Callable)
     Call,
+    // Return (Any)
+    Return,
 }

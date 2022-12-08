@@ -1,9 +1,11 @@
 use analyzer::analyze;
+use lasso::IntoReader;
 use parser::{parse, parse::Ast};
 use rustyline::{error::ReadlineError, Editor};
 use structopt::StructOpt;
 
 use crate::compiler::log_errors;
+use vm::VM;
 
 #[derive(Debug, StructOpt)]
 pub(crate) struct Repl {

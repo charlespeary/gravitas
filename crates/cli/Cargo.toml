@@ -10,6 +10,7 @@ edition = "2018"
 parser = { path = "../parser" }
 analyzer = { path = "../analyzer" }
 common = { path = "../common" }
+vm = { path = "../vm" }
 structopt = "0.3.21"
 rustyline = "8.2.0"
 codespan-reporting = "0.11.1"

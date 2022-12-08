@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bytecode::{
     callables::{Class, Function},
     chunk::Chunk,
@@ -17,6 +19,12 @@ pub(crate) struct CallFrame {
 pub enum Callable {
     Function(Function),
     Class(Class),
+}
+
+#[derive(Debug, Clone)]
+pub struct ObjectInstance {
+    class: Class,
+    pub properties: HashMap<Symbol, RuntimeValue>,
 }
 
 impl VM {

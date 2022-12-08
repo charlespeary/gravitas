@@ -232,7 +232,7 @@ mod test {
             assert!(vm
                 .run()
                 .unwrap()
-                .eq(RuntimeValue::Number(e), &mut vm)
+                .eq(&RuntimeValue::Number(e), &mut vm)
                 .unwrap())
         };
 
@@ -265,7 +265,7 @@ mod test {
             assert!(vm
                 .run()
                 .unwrap()
-                .eq(RuntimeValue::Bool(e), &mut vm)
+                .eq(&RuntimeValue::Bool(e), &mut vm)
                 .unwrap())
         };
 

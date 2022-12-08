@@ -1,4 +1,7 @@
-use crate::{callables::Function, Opcode};
+use crate::{
+    callables::{Class, Function},
+    Opcode,
+};
 use common::{Number, Symbol};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -7,6 +10,7 @@ pub enum Constant {
     String(Symbol),
     Bool(bool),
     Function(Function),
+    Class(Class),
 }
 
 pub type ConstantIndex = usize;

@@ -93,7 +93,7 @@ mod test {
         let leftover_value = vm.operands[0].clone();
 
         assert!(leftover_value
-            .eq(RuntimeValue::Bool(true), &mut vm)
+            .eq(&RuntimeValue::Bool(true), &mut vm)
             .unwrap());
 
         Ok(())
@@ -123,7 +123,7 @@ mod test {
         // the first operand on the stack is the initial value of the variable
         let first_operand = vm.operands[0].clone();
         assert!(first_operand
-            .eq(RuntimeValue::Number(127.0), &mut vm)
+            .eq(&RuntimeValue::Number(127.0), &mut vm)
             .unwrap());
 
         // execute Opcode::Asg
@@ -132,7 +132,7 @@ mod test {
         // but after the execution the first operand on the stack will change to the assigned value
         let assigned_value = vm.operands[0].clone();
         assert!(assigned_value
-            .eq(RuntimeValue::Number(7.0), &mut vm)
+            .eq(&RuntimeValue::Number(7.0), &mut vm)
             .unwrap());
 
         Ok(())

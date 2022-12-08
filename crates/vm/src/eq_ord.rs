@@ -4,23 +4,31 @@ use crate::{
 };
 
 impl RuntimeValue {
-    pub(crate) fn eq(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<bool> {
+    pub(crate) fn eq(&self, other: &RuntimeValue, vm: &mut VM) -> MachineResult<bool> {
         Ok(match (self, other) {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a == b,
             (RuntimeValue::String(a), RuntimeValue::String(b)) => a == b,
             (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a == b,
+            (RuntimeValue::ObjectInstance(a), RuntimeValue::ObjectInstance(b)) => {
+                for (a_name, a_value) in &a.properties {
+                    for (b_name, b_value) in &b.properties {
+                        let equal_name = a_name == b_name;
+                        let equal_value = a_value.eq(b_value, vm)?;
+
+                        if !equal_name && !equal_value {
+                            return Ok(false);
+                        }
+                    }
+                }
+                true
+            }
             _ => false,
         })
     }
 
     #[allow(clippy::float_cmp)]
     pub(crate) fn ne(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<bool> {
-        Ok(match (self, other) {
-            (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a != b,
-            (RuntimeValue::String(a), RuntimeValue::String(b)) => a != b,
-            (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a != b,
-            _ => false,
-        })
+        self.eq(&other, vm).map(|bool| !bool)
     }
 
     pub(crate) fn gt(self, other: RuntimeValue, vm: &mut VM) -> MachineResult<bool> {
@@ -55,7 +63,7 @@ impl RuntimeValue {
 impl VM {
     pub(crate) fn op_eq(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
-        let result = a.eq(b, self)?;
+        let result = a.eq(&b, self)?;
 
         self.operands.push(RuntimeValue::Bool(result));
         Ok(())
@@ -104,13 +112,20 @@ impl VM {
 
 #[cfg(test)]
 mod test {
-    use bytecode::{chunk::Constant, Opcode};
+    use bytecode::{
+        callables::{Class, Function},
+        chunk::{Chunk, Constant},
+        Opcode,
+    };
     use lasso::{Key, Spur};
 
     use crate::{
         runtime_error::RuntimeErrorCause,
         runtime_value::RuntimeValue,
-        test::{create_failable_two_operand_assertion, create_two_operand_assertion},
+        test::{
+            assert_program, create_failable_two_operand_assertion, create_two_operand_assertion,
+            dummy_class, new_vm,
+        },
     };
 
     #[test]
@@ -309,5 +324,21 @@ mod test {
                 Constant::String(Spur::default()),
             );
         }
+    }
+
+    #[test]
+    fn object_comparison() {
+        let code = Chunk::new(
+            vec![
+                Opcode::Eq,
+                Opcode::Call,
+                Opcode::Call,
+                Opcode::Constant(0),
+                Opcode::Constant(0),
+            ],
+            vec![Constant::Class(dummy_class())],
+        );
+
+        assert_program(code, RuntimeValue::Bool(true));
     }
 }
