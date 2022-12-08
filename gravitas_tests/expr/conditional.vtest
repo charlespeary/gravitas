@@ -1,0 +1,12 @@
+it("Empty if should equal to null", || => {
+    var empty = if true { };
+
+    assert_eq(empty, null);
+
+});
+
+it("If should equal to the last expression evaluated in the block", || => {
+    var if_expr = if true { 5 } ;
+
+    assert_eq(if_expr, 5);
+});
