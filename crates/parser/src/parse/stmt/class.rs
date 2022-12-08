@@ -25,17 +25,11 @@ impl<'t> Parser<'t> {
         self.expect(OPEN_BRACKET)?;
 
         let mut methods = Vec::new();
-        let mut properties = Vec::new();
 
         loop {
             let next = self.peek();
             if next == CLOSE_BRACKET || (next != Token::Let && next != Token::Function) {
                 break;
-            }
-
-            if self.peek() == Token::Let {
-                let property = self.parse_variable_declaration()?;
-                properties.push(property);
             }
 
             if self.peek() == Token::Function {
@@ -51,7 +45,6 @@ impl<'t> Parser<'t> {
                 name,
                 super_class,
                 methods,
-                properties,
             },
             combine(&class_keyword, &close_bracket.span()),
         ))
@@ -107,7 +100,6 @@ mod test {
         let simple_class = Stmt::boxed(
             StmtKind::ClassDeclaration {
                 methods: Vec::new(),
-                properties: Vec::new(),
                 name: symbol(0),
                 super_class: None,
             },
@@ -123,7 +115,6 @@ mod test {
             Stmt::boxed(
                 StmtKind::ClassDeclaration {
                     methods: Vec::new(),
-                    properties: Vec::new(),
                     name: symbol(0),
                     super_class: Some(symbol(1)),
                 },
@@ -140,22 +131,6 @@ mod test {
             Stmt::boxed(
                 StmtKind::ClassDeclaration {
                     methods: Vec::new(),
-                    properties: vec![
-                        Stmt::boxed(
-                            StmtKind::VariableDeclaration {
-                                name: symbol(1),
-                                expr: Expr::boxed(ExprKind::Atom(AtomicValue::Number(5.0)), 0..5),
-                            },
-                            DUMMY_SPAN,
-                        ),
-                        Stmt::boxed(
-                            StmtKind::VariableDeclaration {
-                                name: symbol(2),
-                                expr: Expr::boxed(ExprKind::Atom(AtomicValue::Number(10.0)), 0..5),
-                            },
-                            DUMMY_SPAN,
-                        ),
-                    ],
                     name: symbol(0),
                     super_class: None,
                 },
@@ -192,7 +167,6 @@ mod test {
                         },
                         DUMMY_SPAN,
                     )],
-                    properties: Vec::new(),
                     name: symbol(0),
                     super_class: None,
                 },

@@ -1,6 +1,6 @@
 use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use common::{CompilerDiagnostic, Symbol, SymbolsReader};
+use common::{CompilerDiagnostic, SymbolsReader};
 use logos::Span;
 use std::fmt::{self, Formatter};
 

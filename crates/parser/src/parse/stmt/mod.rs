@@ -28,7 +28,6 @@ pub enum StmtKind {
     ClassDeclaration {
         name: Symbol,
         super_class: Option<Symbol>,
-        properties: Vec<Stmt>,
         methods: Vec<Stmt>,
     },
 }
@@ -59,7 +58,6 @@ impl fmt::Display for StmtKind {
             ClassDeclaration {
                 super_class,
                 methods,
-                properties,
                 ..
             } => {
                 write!(f, "class $symbol")?;
@@ -67,7 +65,6 @@ impl fmt::Display for StmtKind {
                     write!(f, " : $symbol")?;
                 }
                 write!(f, "methods({}) ", methods.len())?;
-                write!(f, "properties({})", properties.len())?;
             }
         }
 
