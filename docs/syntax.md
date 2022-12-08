@@ -18,7 +18,7 @@ declarationStatement -> classDeclaration
                       | functionDeclaration
                       | variableDeclaration
 
-classDeclaration     -> 'class' IDENTIFIER (':' IDENTIFIER)? '{' declarationStatement* '}'
+classDeclaration     -> 'class' IDENTIFIER (':' IDENTIFIER)? '{' functionDeclaration* '}'
 
 functionDeclaration  -> 'fn' IDENTIFIER '(' IDENTIFIER* ')' blockExpression
                       | => expression
