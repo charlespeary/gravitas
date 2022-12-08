@@ -101,7 +101,6 @@ impl Analyzer {
                 name,
                 super_class,
                 methods,
-                properties,
             } => {
                 self.classes.insert(*name);
 
@@ -116,10 +115,6 @@ impl Analyzer {
                 }
 
                 self.in_class = true;
-
-                for property in properties {
-                    self.visit_stmt(property)?;
-                }
 
                 for method in methods {
                     self.visit_stmt(method)?;
