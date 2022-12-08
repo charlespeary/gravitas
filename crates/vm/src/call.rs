@@ -1,4 +1,7 @@
-use bytecode::{callables::Function, chunk::Chunk};
+use bytecode::{
+    callables::{Class, Function},
+    chunk::Chunk,
+};
 use common::Symbol;
 
 use crate::{OperationResult, RuntimeErrorCause, RuntimeValue, VM};
@@ -13,6 +16,7 @@ pub(crate) struct CallFrame {
 #[derive(Debug, Clone)]
 pub enum Callable {
     Function(Function),
+    Class(Class),
 }
 
 impl VM {
@@ -27,6 +31,11 @@ impl VM {
         Ok(())
     }
 
+    fn class_call(&mut self, class: Class) -> OperationResult {
+        self.function_call(class.constructor)?;
+        Ok(())
+    }
+
     pub(crate) fn op_call(&mut self) -> OperationResult {
         let callee = match self.pop_operand()? {
             RuntimeValue::Callable(callable) => callable,
@@ -35,6 +44,7 @@ impl VM {
 
         match callee {
             Callable::Function(function) => self.function_call(function),
+            Callable::Class(class) => self.class_call(class),
         }?;
 
         Ok(())
@@ -65,8 +75,6 @@ mod test {
 
     #[test]
     fn change_callframe() -> OperationResult {
-        use lasso::Spur;
-
         let mut symbols = Rodeo::new();
 
         let global_func_name = "global";

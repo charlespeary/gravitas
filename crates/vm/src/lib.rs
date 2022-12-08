@@ -25,7 +25,7 @@ pub enum TickOutcome {
 }
 
 #[derive(Debug)]
-pub(crate) struct VM {
+pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) symbols: SymbolsReader,
@@ -52,15 +52,15 @@ impl VM {
         Err(RuntimeError { cause })
     }
 
-    pub fn current_frame(&self) -> &CallFrame {
+    pub(crate) fn current_frame(&self) -> &CallFrame {
         self.call_stack.last().expect("Callstack is empty")
     }
 
-    pub fn end_frame(&mut self) {
+    pub(crate) fn end_frame(&mut self) {
         self.call_stack.pop();
     }
 
-    pub fn tick(&mut self) -> MachineResult<TickOutcome> {
+    pub(crate) fn tick(&mut self) -> MachineResult<TickOutcome> {
         let has_next_opcode = self.ip < self.current_frame().chunk.opcodes_len();
 
         if !has_next_opcode && !self.call_stack.is_empty() {
@@ -117,7 +117,7 @@ impl VM {
         Ok(TickOutcome::ContinueExecution)
     }
 
-    pub fn run(&mut self) -> ProgramOutput {
+    pub(crate) fn run(&mut self) -> ProgramOutput {
         loop {
             if self.tick()? == TickOutcome::FinishProgram {
                 break;
