@@ -5,7 +5,6 @@ use logos::Span;
 use logos::{Filter, Logos};
 use regex::Regex;
 
-use common::Symbol;
 use operator::{lex_operator, Operator};
 
 pub(crate) mod constants;
@@ -185,7 +184,6 @@ pub(crate) struct Lexeme<'t> {
     pub(crate) slice: &'t str,
     pub(crate) span_start: usize,
     pub(crate) span_end: usize,
-    pub(crate) intern_key: Option<Symbol>,
 }
 
 impl<'t> Lexeme<'t> {
@@ -207,7 +205,6 @@ impl<'t> Iterator for Source<'t> {
             slice,
             span_start: span.start,
             span_end: span.end,
-            intern_key: None,
         })
     }
 }
@@ -271,7 +268,6 @@ mod test {
                 token: Token::Operator(Operator::Plus),
                 span_start: 2,
                 span_end: 3,
-                intern_key: None
             }
         );
         let four_l = Lexeme {
@@ -279,7 +275,6 @@ mod test {
             token: Token::Number(4.0),
             span_start: 4,
             span_end: 5,
-            intern_key: None,
         };
 
         assert_eq!(lexer.peek_nth(2).unwrap(), four_l);
@@ -299,7 +294,6 @@ mod test {
                 slice: "2",
                 span_start: 0,
                 span_end: 1,
-                intern_key: None
             }
         );
         assert_eq!(
@@ -309,7 +303,6 @@ mod test {
                 slice: "+",
                 span_start: 2,
                 span_end: 3,
-                intern_key: None
             }
         );
         assert_eq!(
@@ -319,7 +312,6 @@ mod test {
                 slice: "4",
                 span_start: 4,
                 span_end: 5,
-                intern_key: None
             }
         );
     }

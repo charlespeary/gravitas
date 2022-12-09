@@ -1,7 +1,14 @@
-use chunk::ConstantIndex;
+use callables::Function;
+use chunk::{Chunk, ConstantIndex};
+use parser::parse::Ast;
+use state::GeneratorState;
 
 pub mod callables;
 pub mod chunk;
+pub(crate) mod expr;
+pub(crate) mod state;
+pub(crate) mod stmt;
+
 // Each opcode is described with e.g (Address, Number) which means that
 // first Address followed by a Number will be popped from the stack.
 // VM will panic if the popped value is not of an expected type.
@@ -57,4 +64,45 @@ pub enum Opcode {
     Call,
     // Return (Any)
     Return,
+}
+
+pub type BytecodeGenerationResult = Result<(), ()>;
+
+struct BytecodeGenerator {
+    chunk: Chunk,
+    state: GeneratorState,
+    functions: Vec<Function>,
+}
+
+impl BytecodeGenerator {
+    pub fn new() -> Self {
+        Self {
+            chunk: Chunk::default(),
+            state: GeneratorState::default(),
+            functions: vec! [
+                Function {
+                    name:
+                }
+            ],
+        }
+    }
+}
+
+pub trait BytecodeFrom<T> {
+    fn generate(&mut self, data: T) -> BytecodeGenerationResult;
+}
+
+impl BytecodeFrom<Ast> for BytecodeGenerator {
+    fn generate(&mut self, ast: Ast) -> BytecodeGenerationResult {
+        for stmt in ast {
+            self.generate(stmt)?;
+        }
+        Ok(())
+    }
+}
+
+pub fn generate_bytecode(ast: Ast) -> BytecodeGenerationResult {
+    let mut generator = BytecodeGenerator::new();
+    generator.generate(ast)?;
+    Ok(())
 }

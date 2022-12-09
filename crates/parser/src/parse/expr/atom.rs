@@ -5,15 +5,15 @@ use crate::{
     },
     token::Token,
 };
-use common::{Number, Symbol};
+use common::{Number, ProgramText};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
-    Text(Symbol),
-    Identifier(Symbol),
+    Text(ProgramText),
+    Identifier(ProgramText),
 }
 
 impl fmt::Display for AtomicValue {
@@ -48,8 +48,8 @@ impl<'t> Parser<'t> {
             Token::Number(val) => AtomicValue::Number(val),
             // It's safe to unwrap because these strings should be interned during advance()
             // If it panics then we have a bug in our code
-            Token::String(_) => AtomicValue::Text(lexeme.intern_key.unwrap()),
-            Token::Identifier(_) => AtomicValue::Identifier(lexeme.intern_key.unwrap()),
+            Token::String(str) => AtomicValue::Text(str.to_owned()),
+            Token::Identifier(identifier) => AtomicValue::Identifier(identifier.to_owned()),
             t => {
                 panic!("Encountered {:?} while parsing atom", t);
             }
@@ -64,7 +64,6 @@ pub(crate) mod test {
     use quickcheck_macros::quickcheck;
 
     use super::*;
-    use lasso::Spur;
 
     #[test]
     fn parses_atom_booleans() {
@@ -113,7 +112,7 @@ pub(crate) mod test {
         assert_eq!(
             parsed_string,
             Expr::boxed(
-                ExprKind::Atom(AtomicValue::Text(Spur::default())),
+                ExprKind::Atom(AtomicValue::Text(text.clone())),
                 0..text.len() + 2
             )
         );
@@ -128,7 +127,7 @@ pub(crate) mod test {
             assert_eq!(
                 parsed_identifier,
                 Expr::boxed(
-                    ExprKind::Atom(AtomicValue::Identifier(Spur::default())),
+                    ExprKind::Atom(AtomicValue::Identifier(identifier.to_owned())),
                     0..identifier.len(),
                 )
             );

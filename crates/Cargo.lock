@@ -68,6 +68,7 @@ name = "bytecode"
 version = "0.1.0"
 dependencies = [
  "common",
+ "parser",
 ]
 
 [[package]]
@@ -137,7 +138,6 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "codespan-reporting",
- "lasso",
 ]
 
 [[package]]
@@ -369,7 +369,6 @@ dependencies = [
  "common",
  "derive_more",
  "itertools",
- "lasso",
  "lazy_static",
  "logos",
  "logos-derive",

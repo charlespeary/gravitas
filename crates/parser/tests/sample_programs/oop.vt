@@ -10,15 +10,11 @@ class B : A {
     }
 }
 
-class C {
-    let a = 10;
-    let b = 20;
-}
+class C { }
 
 class D {
-    let foo = 20;
-
     fn internal() {
+        this.foo = 10;
         return this.foo + 10;
     }
 }

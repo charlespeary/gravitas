@@ -1,6 +1,6 @@
 use crate::token::Token;
 use codespan_reporting::diagnostic::{Diagnostic, Label};
-use common::{CompilerDiagnostic, SymbolsReader};
+use common::CompilerDiagnostic;
 use logos::Span;
 use std::fmt::{self, Formatter};
 
@@ -52,7 +52,7 @@ pub enum ParseErrorCause {
 }
 
 impl CompilerDiagnostic for ParseError {
-    fn report(&self, file_id: usize, reader: &SymbolsReader) -> Diagnostic<usize> {
+    fn report(&self, file_id: usize) -> Diagnostic<usize> {
         use ParseErrorCause::*;
         let span = self.span.clone();
 

@@ -15,7 +15,7 @@ impl<'t> Parser<'t> {
 
     pub(crate) fn parse_fun_declaration(&mut self) -> StmtResult {
         let fn_keyword = self.expect(Token::Function)?.span();
-        let (name, _) = self.expect_identifier()?;
+        let name = self.expect_identifier()?.slice.to_owned();
         let params = self.parse_params()?;
         if self.peek() != OPEN_BRACKET {
             self.expect(Token::Arrow)?;
@@ -37,14 +37,11 @@ mod test {
             expr::{atom::AtomicValue, Expr, ExprKind},
             pieces::{Param, Params},
             stmt::{Stmt, StmtKind},
-            Parser, Symbol,
+            Parser,
         },
         token::constants::OPEN_PARENTHESIS,
         token::Token,
-        utils::{
-            error::{Expect, ParseErrorCause},
-            test::parser::symbol,
-        },
+        utils::error::{Expect, ParseErrorCause},
     };
 
     #[test]
@@ -88,7 +85,7 @@ mod test {
             declaration,
             Stmt::boxed(
                 StmtKind::FunctionDeclaration {
-                    name: Symbol::default(),
+                    name: "foo".to_owned(),
                     params: Params::new(vec![], 6..8),
                     body: Expr::boxed(ExprKind::Atom(AtomicValue::Number(2.0)), 12..13)
                 },
@@ -100,9 +97,12 @@ mod test {
         let declaration = parser.parse_fun_declaration().unwrap();
         let fun_node = Stmt::boxed(
             StmtKind::FunctionDeclaration {
-                name: symbol(0),
+                name: "foo".to_owned(),
                 params: Params::new(
-                    vec![Param::new(symbol(1), 7..8), Param::new(symbol(2), 9..10)],
+                    vec![
+                        Param::new("a".to_owned(), 7..8),
+                        Param::new("b".to_owned(), 9..10),
+                    ],
                     6..10,
                 ),
                 body: Expr::boxed(

@@ -3,8 +3,6 @@ use crate::{
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
     utils::error::{Expect, ParseError, ParseErrorCause},
 };
-use common::Symbol;
-use lasso::Rodeo;
 use std::{fmt, mem::discriminant, ops::Range};
 
 pub mod expr;
@@ -15,14 +13,12 @@ pub mod utils;
 
 pub(crate) struct Parser<'t> {
     lexer: Lexer<'t>,
-    symbols: Rodeo,
 }
 
 pub type Ast = Vec<Stmt>;
 pub type AstRef<'a> = &'a [Stmt];
-pub type Program = (Ast, Rodeo);
-pub type ProgramErrors = (Vec<ParseError>, Rodeo);
-pub(crate) type ParserOutput = Result<Program, ProgramErrors>;
+pub type ProgramErrors = Vec<ParseError>;
+pub(crate) type ParserOutput = Result<Ast, ProgramErrors>;
 pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
 pub(crate) type StmtResult<'t> = ParseResult<'t, Stmt>;
@@ -73,7 +69,6 @@ impl<'t> Parser<'t> {
     pub(crate) fn new(input: &'t str) -> Self {
         Self {
             lexer: Lexer::new(input),
-            symbols: Rodeo::new(),
         }
     }
 
@@ -84,21 +79,15 @@ impl<'t> Parser<'t> {
             .unwrap_or(Token::Eof)
     }
 
-    fn intern(&mut self, string: &str) -> Symbol {
-        self.symbols.get_or_intern(string)
-    }
-
     fn advance(&mut self) -> ParseResult<Lexeme> {
         self.lexer
             .next()
             .as_mut()
             .map(|lexeme| {
                 let intern_key = match lexeme.token {
-                    Token::String(string) => Some(self.intern(string)),
-                    Token::Identifier(identifier) => Some(self.intern(identifier)),
+                    Token::String(string) | Token::Identifier(string) => Some(string.to_owned()),
                     _ => None,
                 };
-                lexeme.intern_key = intern_key;
                 *lexeme
             })
             .ok_or(ParseErrorCause::EndOfInput)
@@ -114,10 +103,10 @@ impl<'t> Parser<'t> {
         Err(ParseErrorCause::Expected(Expect::Token(expected)))
     }
 
-    fn expect_identifier(&mut self) -> ParseResult<(Symbol, Lexeme)> {
+    fn expect_identifier(&mut self) -> ParseResult<Lexeme> {
         if let Ok(next) = self.advance() {
             if discriminant(&next.token) == discriminant(&IDENTIFIER) {
-                return Ok((next.intern_key.unwrap(), next));
+                return Ok(next);
             }
         }
 
@@ -153,9 +142,9 @@ impl<'t> Parser<'t> {
         }
 
         if !errors.is_empty() {
-            Err((errors, self.symbols))
+            Err(errors)
         } else {
-            Ok((ast, self.symbols))
+            Ok(ast)
         }
     }
 
@@ -174,15 +163,10 @@ mod test {
     use crate::parse::expr::atom::AtomicValue;
 
     #[test]
-    fn parser_interns_strings() {
-        let mut parser = Parser::new("\"string literal\"");
-        assert!(parser.advance().unwrap().intern_key.is_some());
-    }
-
-    #[test]
     fn parser_interns_identifiers() {
-        let mut parser = Parser::new("foo");
-        assert!(parser.advance().unwrap().intern_key.is_some());
+        let identifier_literal = "foo";
+        let mut parser = Parser::new(identifier_literal);
+        assert!(parser.advance().unwrap().token == Token::Identifier(identifier_literal));
     }
 
     #[test]
@@ -208,7 +192,6 @@ mod test {
                 slice: "class",
                 span_start: 0,
                 span_end: 5,
-                intern_key: None
             }
         );
         // it reports an error if there isn't what we expect
@@ -221,8 +204,8 @@ mod test {
     #[test]
     fn parser_expects_identifiers() {
         let mut parser = Parser::new("foo fn");
-        let (identifier, _) = parser.expect_identifier().unwrap();
-        assert_eq!(parser.symbols.resolve(&identifier), "foo");
+        let identifier = parser.expect_identifier().unwrap();
+        assert_eq!(identifier.slice, "foo");
         assert_eq!(
             parser.expect_identifier().unwrap_err(),
             ParseErrorCause::Expected(Expect::Identifier)

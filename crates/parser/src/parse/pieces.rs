@@ -1,3 +1,5 @@
+use common::ProgramText;
+
 use crate::{
     parse::{Node, ParseResult, Parser},
     token::{
@@ -9,9 +11,8 @@ use crate::{
         error::{Forbidden, ParseErrorCause},
     },
 };
-use common::Symbol;
 
-pub(crate) type Param = Node<Symbol>;
+pub(crate) type Param = Node<ProgramText>;
 // (a, b, c)
 pub(crate) type Params = Node<Vec<Param>>;
 
@@ -37,8 +38,8 @@ impl<'t> Parser<'t> {
                 break;
             }
 
-            let (identifier, arg_lexeme) = self.expect_identifier()?;
-            let arg = Param::new(identifier, arg_lexeme.span());
+            let arg_lexeme = self.expect_identifier()?;
+            let arg = Param::new(arg_lexeme.slice.to_owned(), arg_lexeme.span());
             args.push(arg);
 
             if self.peek() != closing_token {
@@ -62,7 +63,6 @@ impl<'t> Parser<'t> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::utils::test::parser::symbol;
 
     fn assert_args(input: &str, args: Params) {
         let mut parser = Parser::new(input);
@@ -73,11 +73,17 @@ mod test {
     fn parser_parses_arguments() {
         assert_args("()", Params::new(vec![], 0..2));
 
-        assert_args("(a)", Params::new(vec![Param::new(symbol(0), 2..3)], 0..3));
+        assert_args(
+            "(a)",
+            Params::new(vec![Param::new("a".to_owned(), 2..3)], 0..3),
+        );
         assert_args(
             "(a, b)",
             Params::new(
-                vec![Param::new(symbol(0), 2..3), Param::new(symbol(1), 4..5)],
+                vec![
+                    Param::new("a".to_owned(), 2..3),
+                    Param::new("b".to_owned(), 4..5),
+                ],
                 0..6,
             ),
         );
@@ -85,9 +91,9 @@ mod test {
             "(a, b, c)",
             Params::new(
                 vec![
-                    Param::new(symbol(0), 2..3),
-                    Param::new(symbol(1), 4..5),
-                    Param::new(symbol(2), 6..7),
+                    Param::new("a".to_owned(), 2..3),
+                    Param::new("b".to_owned(), 4..5),
+                    Param::new("c".to_owned(), 6..7),
                 ],
                 0..8,
             ),

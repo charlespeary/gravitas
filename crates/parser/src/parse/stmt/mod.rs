@@ -3,7 +3,7 @@ use crate::{
     token::{operator::Operator, Token},
     utils::combine,
 };
-use common::Symbol;
+use common::ProgramText;
 use std::fmt;
 
 pub type Stmt = Node<Box<StmtKind>>;
@@ -17,17 +17,17 @@ pub enum StmtKind {
         expr: Expr,
     },
     VariableDeclaration {
-        name: Symbol,
+        name: ProgramText,
         expr: Expr,
     },
     FunctionDeclaration {
-        name: Symbol,
+        name: ProgramText,
         params: Params,
         body: Expr,
     },
     ClassDeclaration {
-        name: Symbol,
-        super_class: Option<Symbol>,
+        name: ProgramText,
+        super_class: Option<ProgramText>,
         methods: Vec<Stmt>,
     },
 }
@@ -95,7 +95,7 @@ impl<'t> Parser<'t> {
             let lexeme = self.expect(Token::Let)?;
             lexeme.span()
         };
-        let (name, _) = self.expect_identifier()?;
+        let name = self.expect_identifier()?.slice.to_owned();
         self.expect(Token::Operator(Operator::Assign))?;
         let expr = self.parse_expression()?;
         let semicolon = self.expect(Token::Semicolon)?;

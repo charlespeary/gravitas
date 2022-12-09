@@ -44,8 +44,6 @@ pub(crate) mod test {
             parse::{expr::Expr, stmt::Stmt, Parser, Span},
             utils::error::ParseErrorCause,
         };
-        use common::Symbol;
-        use lasso::Key;
 
         pub(crate) const DUMMY_SPAN: Span = 0..0;
 
@@ -75,10 +73,6 @@ pub(crate) mod test {
         pub(crate) fn assert_stmt_error(input: &str, expected: ParseErrorCause) {
             let mut parser = Parser::new(input);
             assert_eq!(parser.parse_stmt().unwrap_err(), expected)
-        }
-
-        pub(crate) fn symbol(key: usize) -> Symbol {
-            Symbol::try_from_usize(key).unwrap()
         }
     }
 }

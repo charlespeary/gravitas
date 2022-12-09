@@ -1,3 +1,5 @@
+use common::ProgramText;
+
 use crate::{
     parse::{
         expr::atom::AtomicValue,
@@ -15,7 +17,6 @@ use crate::{
         error::{Expect, Forbidden, ParseErrorCause},
     },
 };
-use common::Symbol;
 use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Formatter;
@@ -24,7 +25,7 @@ pub mod atom;
 pub(crate) mod control_flow;
 
 pub type Expr = Node<Box<ExprKind>>;
-pub type PathSegment = Node<Symbol>;
+pub type PathSegment = Node<ProgramText>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
@@ -325,8 +326,11 @@ impl<'t> Parser<'t> {
 
                 while self.peek() == DOT {
                     let dot = self.expect(DOT)?.span();
-                    let (symbol, lexeme) = self.expect_identifier()?;
-                    let path = PathSegment::new(symbol, combine(&dot, &lexeme.span()));
+                    let identifier = self.expect_identifier()?;
+                    let path = PathSegment::new(
+                        identifier.slice.to_owned(),
+                        combine(&dot, &identifier.span()),
+                    );
                     paths.push(path);
                 }
 

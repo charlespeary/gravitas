@@ -13,10 +13,10 @@ use crate::{
 impl<'t> Parser<'t> {
     pub(super) fn parse_class_declaration(&mut self) -> StmtResult {
         let class_keyword = self.expect(Token::Class)?.span();
-        let (name, _) = self.expect_identifier()?;
-        let super_class = if self.peek() == Token::Inherit {
+        let class_name = self.expect_identifier()?.slice.to_owned();
+        let super_class_identifier = if self.peek() == Token::Inherit {
             self.expect(Token::Inherit)?;
-            let (super_class_name, _) = self.expect_identifier()?;
+            let super_class_name = self.expect_identifier()?.slice.to_owned();
             Some(super_class_name)
         } else {
             None
@@ -28,7 +28,7 @@ impl<'t> Parser<'t> {
 
         loop {
             let next = self.peek();
-            if next == CLOSE_BRACKET || (next != Token::Let && next != Token::Function) {
+            if next == CLOSE_BRACKET || next != Token::Function {
                 break;
             }
 
@@ -42,8 +42,8 @@ impl<'t> Parser<'t> {
 
         Ok(Stmt::boxed(
             StmtKind::ClassDeclaration {
-                name,
-                super_class,
+                name: class_name,
+                super_class: super_class_identifier,
                 methods,
             },
             combine(&class_keyword, &close_bracket.span()),
@@ -64,7 +64,7 @@ mod test {
         token::constants::{CLOSE_BRACKET, OPEN_BRACKET},
         utils::{
             error::{Expect, ParseErrorCause},
-            test::parser::{symbol, DUMMY_SPAN},
+            test::parser::DUMMY_SPAN,
         },
     };
 
@@ -100,7 +100,7 @@ mod test {
         let simple_class = Stmt::boxed(
             StmtKind::ClassDeclaration {
                 methods: Vec::new(),
-                name: symbol(0),
+                name: "foo".to_owned(),
                 super_class: None,
             },
             DUMMY_SPAN,
@@ -115,24 +115,8 @@ mod test {
             Stmt::boxed(
                 StmtKind::ClassDeclaration {
                     methods: Vec::new(),
-                    name: symbol(0),
-                    super_class: Some(symbol(1)),
-                },
-                DUMMY_SPAN,
-            ),
-        );
-
-        assert_class(
-            "class foo {\
-                            let x = 5;\
-                            let y = 10;\
-                  }
-        ",
-            Stmt::boxed(
-                StmtKind::ClassDeclaration {
-                    methods: Vec::new(),
-                    name: symbol(0),
-                    super_class: None,
+                    name: "foo".to_owned(),
+                    super_class: Some("bar".to_owned()),
                 },
                 DUMMY_SPAN,
             ),
@@ -149,11 +133,11 @@ mod test {
                 StmtKind::ClassDeclaration {
                     methods: vec![Stmt::boxed(
                         StmtKind::FunctionDeclaration {
-                            name: symbol(1),
+                            name: "bar".to_owned(),
                             params: Params::new(
                                 vec![
-                                    Param::new(symbol(2), DUMMY_SPAN),
-                                    Param::new(symbol(3), DUMMY_SPAN),
+                                    Param::new("a".to_owned(), DUMMY_SPAN),
+                                    Param::new("b".to_owned(), DUMMY_SPAN),
                                 ],
                                 DUMMY_SPAN,
                             ),
@@ -167,7 +151,7 @@ mod test {
                         },
                         DUMMY_SPAN,
                     )],
-                    name: symbol(0),
+                    name: "foo".to_owned(),
                     super_class: None,
                 },
                 DUMMY_SPAN,
