@@ -86,7 +86,7 @@ impl BytecodeGenerator {
         }
     }
 
-    pub fn current_chunk(&mut self) -> &mut Chunk {
+    fn current_chunk(&mut self) -> &mut Chunk {
         &mut self.functions.last_mut().unwrap().chunk
     }
 
@@ -96,6 +96,19 @@ impl BytecodeGenerator {
 
     pub fn write_constant(&mut self, constant: Constant) -> usize {
         self.current_chunk().write_constant(constant)
+    }
+
+    pub fn code(mut self) -> Function {
+        if self.functions.len() > 1 {
+            panic!("Tried to own the code before generation finished!");
+        }
+
+        let global_function = self
+            .functions
+            .pop()
+            .expect("Generator is in invalid state!");
+
+        global_function
     }
 }
 
@@ -116,4 +129,39 @@ pub fn generate_bytecode(ast: Ast) -> BytecodeGenerationResult {
     let mut generator = BytecodeGenerator::new();
     generator.generate(ast)?;
     Ok(())
+}
+
+#[cfg(test)]
+pub(crate) mod test {
+
+    use crate::{chunk::Constant, BytecodeFrom, BytecodeGenerator, Opcode};
+
+    pub(crate) fn assert_bytecode<D>(data: D, expected_bytecode: Vec<Opcode>)
+    where
+        BytecodeGenerator: BytecodeFrom<D>,
+    {
+        let mut generator = BytecodeGenerator::new();
+        generator.generate(data).expect("Generation failed");
+        assert_eq!(generator.code().chunk.opcodes, expected_bytecode)
+    }
+
+    pub(crate) fn assert_constants<D>(data: D, expected_constants: Vec<Constant>)
+    where
+        BytecodeGenerator: BytecodeFrom<D>,
+    {
+        let mut generator = BytecodeGenerator::new();
+        generator.generate(data).expect("Generation failed");
+        assert_eq!(generator.code().chunk.constants, expected_constants)
+    }
+
+    pub(crate) fn assert_bytecode_and_constants<D: Clone>(
+        data: D,
+        expected_bytecode: Vec<Opcode>,
+        expected_constants: Vec<Constant>,
+    ) where
+        BytecodeGenerator: BytecodeFrom<D>,
+    {
+        assert_bytecode(data.clone(), expected_bytecode);
+        assert_constants(data, expected_constants);
+    }
 }

@@ -5,7 +5,13 @@ use crate::{
 use common::{Number, ProgramText};
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum MemoryAddress {
+    Local(usize),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
+    MemoryAddress(MemoryAddress),
     Number(Number),
     String(ProgramText),
     Bool(bool),
@@ -18,8 +24,8 @@ pub type OpcodeIndex = usize;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Chunk {
-    opcodes: Vec<Opcode>,
-    constants: Vec<Constant>,
+    pub opcodes: Vec<Opcode>,
+    pub constants: Vec<Constant>,
 }
 
 impl Chunk {
@@ -35,10 +41,12 @@ impl Chunk {
     }
 
     pub fn write_constant(&mut self, constant: Constant) -> ConstantIndex {
-        let length = self.constants.len();
+        let constant_index = self.constants.len();
 
         self.constants.push(constant);
-        length
+        self.write_opcode(Opcode::Constant(constant_index));
+
+        constant_index
     }
 
     pub fn write_opcode(&mut self, opcode: Opcode) -> OpcodeIndex {
