@@ -1,5 +1,6 @@
 use callables::Function;
-use chunk::{Chunk, ConstantIndex};
+use chunk::{Chunk, Constant, ConstantIndex};
+use common::MAIN_FUNCTION_NAME;
 use parser::parse::Ast;
 use state::GeneratorState;
 
@@ -69,7 +70,6 @@ pub enum Opcode {
 pub type BytecodeGenerationResult = Result<(), ()>;
 
 struct BytecodeGenerator {
-    chunk: Chunk,
     state: GeneratorState,
     functions: Vec<Function>,
 }
@@ -77,14 +77,25 @@ struct BytecodeGenerator {
 impl BytecodeGenerator {
     pub fn new() -> Self {
         Self {
-            chunk: Chunk::default(),
             state: GeneratorState::default(),
-            functions: vec! [
-                Function {
-                    name:
-                }
-            ],
+            functions: vec![Function {
+                name: MAIN_FUNCTION_NAME.to_owned(),
+                arity: 0,
+                chunk: Chunk::default(),
+            }],
         }
+    }
+
+    pub fn current_chunk(&mut self) -> &mut Chunk {
+        &mut self.functions.last_mut().unwrap().chunk
+    }
+
+    pub fn write_opcode(&mut self, opcode: Opcode) -> usize {
+        self.current_chunk().write_opcode(opcode)
+    }
+
+    pub fn write_constant(&mut self, constant: Constant) -> usize {
+        self.current_chunk().write_constant(constant)
     }
 }
 

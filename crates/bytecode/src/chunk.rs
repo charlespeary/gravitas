@@ -2,12 +2,12 @@ use crate::{
     callables::{Class, Function},
     Opcode,
 };
-use common::{Number, Symbol};
+use common::{Number, ProgramText};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
     Number(Number),
-    String(Symbol),
+    String(ProgramText),
     Bool(bool),
     Function(Function),
     Class(Class),
@@ -34,7 +34,7 @@ impl Chunk {
             .clone()
     }
 
-    pub fn write(&mut self, constant: Constant) -> ConstantIndex {
+    pub fn write_constant(&mut self, constant: Constant) -> ConstantIndex {
         let length = self.constants.len();
 
         self.constants.push(constant);
@@ -80,9 +80,9 @@ mod test {
     fn write_to_chunk() {
         let mut chunk = Chunk::default();
 
-        assert_eq!(chunk.write(Constant::Bool(true)), 0);
-        assert_eq!(chunk.write(Constant::Number(32.0)), 1);
-        assert_eq!(chunk.write(Constant::Bool(false)), 2)
+        assert_eq!(chunk.write_constant(Constant::Bool(true)), 0);
+        assert_eq!(chunk.write_constant(Constant::Number(32.0)), 1);
+        assert_eq!(chunk.write_constant(Constant::Bool(false)), 2)
     }
 
     #[test]
