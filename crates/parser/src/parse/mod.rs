@@ -79,18 +79,16 @@ impl<'t> Parser<'t> {
             .unwrap_or(Token::Eof)
     }
 
+    fn peek_eq_consume(&mut self, expected: Token) -> Option<ParseResult<Lexeme>> {
+        if let expected = self.peek() {
+            Some(self.advance())
+        } else {
+            None
+        }
+    }
+
     fn advance(&mut self) -> ParseResult<Lexeme> {
-        self.lexer
-            .next()
-            .as_mut()
-            .map(|lexeme| {
-                let intern_key = match lexeme.token {
-                    Token::String(string) | Token::Identifier(string) => Some(string.to_owned()),
-                    _ => None,
-                };
-                *lexeme
-            })
-            .ok_or(ParseErrorCause::EndOfInput)
+        self.lexer.next().ok_or(ParseErrorCause::EndOfInput)
     }
 
     fn expect(&mut self, expected: Token<'static>) -> ParseResult<Lexeme> {

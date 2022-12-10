@@ -1,4 +1,4 @@
-use common::Symbol;
+use common::ProgramText;
 use parser::{
     parse::{
         expr::{atom::AtomicValue, Expr, ExprKind},
@@ -13,8 +13,8 @@ pub type AnalyzerResult<E> = Result<(), E>;
 
 #[derive(Default)]
 pub struct Analyzer {
-    variables: HashMap<Symbol, bool>,
-    classes: HashSet<Symbol>,
+    variables: HashMap<ProgramText, bool>,
+    classes: HashSet<ProgramText>,
     in_loop: bool,
     in_class: bool,
 }
@@ -93,16 +93,16 @@ impl Analyzer {
 
         match &*stmt.kind {
             VariableDeclaration { name, expr } => {
-                self.variables.insert(*name, false);
+                self.variables.insert(name.clone(), false);
                 self.visit_expr(expr)?;
-                self.variables.insert(*name, true);
+                self.variables.insert(name.clone(), true);
             }
             ClassDeclaration {
                 name,
                 super_class,
                 methods,
             } => {
-                self.classes.insert(*name);
+                self.classes.insert(name.clone());
 
                 if let Some(supclass) = super_class {
                     if supclass == name {
@@ -123,9 +123,9 @@ impl Analyzer {
                 self.in_class = false;
             }
             FunctionDeclaration { body, name, .. } => {
-                self.variables.insert(*name, false);
+                self.variables.insert(name.clone(), false);
                 self.visit_expr(body)?;
-                self.variables.insert(*name, true);
+                self.variables.insert(name.clone(), true);
             }
             Expression { expr } => {
                 self.visit_expr(expr)?;
@@ -165,7 +165,7 @@ mod test {
     use super::*;
 
     fn assert_err(code: &str, cause: ParseErrorCause) {
-        let (ast, _) = parse(code).unwrap();
+        let ast = parse(code).unwrap();
         assert_eq!(analyze(&ast).unwrap_err()[0].cause, cause);
     }
 

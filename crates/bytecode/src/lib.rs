@@ -1,6 +1,6 @@
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
-use common::MAIN_FUNCTION_NAME;
+use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::Ast;
 use state::GeneratorState;
 
@@ -9,6 +9,41 @@ pub mod chunk;
 pub(crate) mod expr;
 pub(crate) mod state;
 pub(crate) mod stmt;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum MemoryAddress {
+    // Local variables, e.g defined inside block or a function.
+    // This value is added to the function's stack offset.
+    Local(usize),
+    // Upvalue address
+    // First value points to the stack index that starts at index
+    // defined by callstack n (second value) jumps above.
+    Upvalue(usize, usize),
+    // Global variable refereed by a string key.
+    // The value is extracted from a HashMap of globals.
+    // Note: all of the variables and functions defined in vtas are "local" per se.
+    // Only the std functions are global.
+    Global(String),
+    // Property of an object
+    // Property(PropertyAddress),
+}
+
+impl From<MemoryAddress> for Constant {
+    fn from(address: MemoryAddress) -> Self {
+        Constant::MemoryAddress(address)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Variable {
+    pub name: ProgramText,
+    pub depth: usize,
+    // Calculated index on the stack
+    pub index: usize,
+    // Flag to determine whether variable is used inside a closure and needs to be closed
+    // in order to be available after it should go off the stack.
+    pub closed: bool,
+}
 
 // Each opcode is described with e.g (Address, Number) which means that
 // first Address followed by a Number will be popped from the stack.
@@ -77,7 +112,7 @@ struct BytecodeGenerator {
 impl BytecodeGenerator {
     pub fn new() -> Self {
         Self {
-            state: GeneratorState::default(),
+            state: GeneratorState::new(),
             functions: vec![Function {
                 name: MAIN_FUNCTION_NAME.to_owned(),
                 arity: 0,

@@ -1,13 +1,8 @@
 use crate::{
     callables::{Class, Function},
-    Opcode,
+    MemoryAddress, Opcode,
 };
 use common::{Number, ProgramText};
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum MemoryAddress {
-    Local(usize),
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {

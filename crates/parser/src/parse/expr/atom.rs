@@ -1,19 +1,29 @@
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
-        ExprResult, Parser,
+        ExprResult, Node, Parser,
     },
-    token::Token,
+    token::{
+        constants::{ASSIGN, DOT},
+        Token,
+    },
+    utils::combine,
 };
 use common::{Number, ProgramText};
 use std::fmt;
+
+pub type VariableProperty = Node<String>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
     Text(ProgramText),
-    Identifier(ProgramText),
+    Identifier {
+        name: String,
+        properties: Vec<VariableProperty>,
+        is_assignment: bool,
+    },
 }
 
 impl fmt::Display for AtomicValue {
@@ -27,11 +37,11 @@ impl fmt::Display for AtomicValue {
             Number(val) => {
                 write!(f, "{}", val)?;
             }
-            Text(_) => {
-                write!(f, "$symbol")?;
+            Text(text) => {
+                write!(f, "{}", text)?;
             }
-            Identifier(_) => {
-                write!(f, "$symbol")?;
+            Identifier { name, .. } => {
+                write!(f, "{}", name)?;
             }
         }
 
@@ -42,6 +52,7 @@ impl fmt::Display for AtomicValue {
 impl<'t> Parser<'t> {
     pub(super) fn parse_atom_expr(&mut self) -> ExprResult {
         let lexeme = self.advance()?;
+        let atom_span = lexeme.span();
 
         let val = match lexeme.token {
             Token::Bool(val) => AtomicValue::Boolean(val),
@@ -49,13 +60,35 @@ impl<'t> Parser<'t> {
             // It's safe to unwrap because these strings should be interned during advance()
             // If it panics then we have a bug in our code
             Token::String(str) => AtomicValue::Text(str.to_owned()),
-            Token::Identifier(identifier) => AtomicValue::Identifier(identifier.to_owned()),
+            Token::Identifier(identifier) => {
+                let name = identifier.to_owned();
+                let mut properties: Vec<VariableProperty> = vec![];
+
+                while self.peek() == DOT {
+                    let dot = self.advance()?;
+                    let dot_span = dot.span();
+                    let identifier = self.expect_identifier()?;
+                    let property = Node {
+                        kind: identifier.slice.to_owned(),
+                        span: combine(&dot_span, &identifier.span()),
+                    };
+                    properties.push(property);
+                }
+
+                let is_assignment = self.peek() == ASSIGN;
+
+                AtomicValue::Identifier {
+                    properties,
+                    is_assignment,
+                    name,
+                }
+            }
             t => {
                 panic!("Encountered {:?} while parsing atom", t);
             }
         };
 
-        Ok(Expr::boxed(ExprKind::Atom(val), lexeme.span()))
+        Ok(Expr::boxed(ExprKind::Atom(val), atom_span))
     }
 }
 
@@ -127,7 +160,11 @@ pub(crate) mod test {
             assert_eq!(
                 parsed_identifier,
                 Expr::boxed(
-                    ExprKind::Atom(AtomicValue::Identifier(identifier.to_owned())),
+                    ExprKind::Atom(AtomicValue::Identifier {
+                        name: identifier.to_owned(),
+                        is_assignment: false,
+                        properties: vec![]
+                    }),
                     0..identifier.len(),
                 )
             );

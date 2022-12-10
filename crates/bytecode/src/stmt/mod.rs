@@ -8,7 +8,10 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             StmtKind::Expression { expr } => {
                 self.generate(expr)?;
             }
-            StmtKind::VariableDeclaration { name, expr } => {}
+            StmtKind::VariableDeclaration { name, expr } => {
+                self.generate(expr)?;
+                self.state.declare_var(name);
+            }
             StmtKind::FunctionDeclaration { name, params, body } => {}
             StmtKind::ClassDeclaration {
                 name,
