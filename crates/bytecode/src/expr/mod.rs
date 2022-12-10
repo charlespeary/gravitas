@@ -1,8 +1,9 @@
-use parser::parse::expr::{atom::AtomicValue, Expr, ExprKind};
+use parser::parse::expr::{Expr, ExprKind};
 
-use crate::{chunk::Constant, BytecodeFrom, BytecodeGenerator};
+use crate::{BytecodeFrom, BytecodeGenerator};
 
 mod atom;
+mod binary;
 
 impl BytecodeFrom<Expr> for BytecodeGenerator {
     fn generate(&mut self, expr: Expr) -> crate::BytecodeGenerationResult {
@@ -10,7 +11,12 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             ExprKind::Atom(atomic_value) => {
                 self.generate(atomic_value)?;
             }
-            ExprKind::Binary { lhs, op, rhs } => {}
+            ExprKind::Binary { lhs, op, rhs } => {
+                self.generate(lhs)?;
+                self.generate(rhs)?;
+                let operator_code = op.kind.into();
+                self.write_opcode(operator_code);
+            }
             ExprKind::Unary { op, rhs } => {}
             ExprKind::Block { stmts, return_expr } => {}
             ExprKind::If {

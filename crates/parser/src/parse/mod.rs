@@ -6,7 +6,7 @@ use crate::{
 use std::{fmt, mem::discriminant, ops::Range};
 
 pub mod expr;
-pub(crate) mod operator;
+pub mod operator;
 pub(crate) mod pieces;
 pub mod stmt;
 pub mod utils;
