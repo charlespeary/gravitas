@@ -4,6 +4,7 @@ use crate::{BytecodeFrom, BytecodeGenerator};
 
 mod atom;
 mod binary;
+mod unary;
 
 impl BytecodeFrom<Expr> for BytecodeGenerator {
     fn generate(&mut self, expr: Expr) -> crate::BytecodeGenerationResult {
@@ -17,7 +18,11 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 let operator_code = op.kind.into();
                 self.write_opcode(operator_code);
             }
-            ExprKind::Unary { op, rhs } => {}
+            ExprKind::Unary { op, rhs } => {
+                self.generate(rhs)?;
+                let operator_code = op.kind.into();
+                self.write_opcode(operator_code);
+            }
             ExprKind::Block { stmts, return_expr } => {}
             ExprKind::If {
                 condition,
