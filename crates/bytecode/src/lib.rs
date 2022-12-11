@@ -199,4 +199,39 @@ pub(crate) mod test {
         assert_bytecode(data.clone(), expected_bytecode);
         assert_constants(data, expected_constants);
     }
+
+    use parser::parse::{
+        expr::{atom::AtomicValue, Expr, ExprKind},
+        stmt::{Stmt, StmtKind},
+        Node,
+    };
+
+    pub(crate) fn declare_var(name: String, expr: Expr) -> Stmt {
+        Node {
+            kind: Box::new(StmtKind::VariableDeclaration { name, expr }),
+            span: 0..0,
+        }
+    }
+
+    pub(crate) fn expr(atomic_value: AtomicValue) -> Expr {
+        Node {
+            kind: Box::new(ExprKind::Atom(atomic_value)),
+            span: 0..0,
+        }
+    }
+
+    pub(crate) fn expr_stmt(expr: Expr) -> Stmt {
+        Node {
+            kind: Box::new(StmtKind::Expression { expr }),
+            span: 0..0,
+        }
+    }
+
+    pub(crate) fn node<T>(kind: T) -> Node<T> {
+        Node { kind, span: 0..0 }
+    }
+
+    pub(crate) fn box_node<T>(kind: T) -> Node<Box<T>> {
+        node(Box::new(kind))
+    }
 }
