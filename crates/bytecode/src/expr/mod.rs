@@ -23,12 +23,12 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 let operator_code = op.kind.into();
                 self.write_opcode(operator_code);
             }
-            ExprKind::Block { stmts, return_expr } => {}
             ExprKind::If {
                 condition,
                 body,
                 else_expr,
             } => {}
+            ExprKind::Block { stmts, return_expr } => {}
             ExprKind::While { condition, body } => {}
             ExprKind::Break { return_expr } => {}
             ExprKind::Continue => {}
