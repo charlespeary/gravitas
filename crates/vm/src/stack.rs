@@ -28,7 +28,6 @@ impl VM {
 mod test {
 
     use bytecode::chunk::Chunk;
-    use lasso::Spur;
 
     use crate::{runtime_value::RuntimeValue, test::new_vm};
 
@@ -37,7 +36,7 @@ mod test {
         let mut vm = new_vm(Chunk::default());
         vm.operands = vec![
             RuntimeValue::Number(10.0),
-            RuntimeValue::String(Spur::default()),
+            RuntimeValue::String("foo".to_owned()),
             RuntimeValue::Bool(false),
             RuntimeValue::Bool(true),
         ];
@@ -56,7 +55,7 @@ mod test {
         assert!(vm
             .pop_operand()
             .unwrap()
-            .eq(&RuntimeValue::String(Spur::default()), &mut vm)
+            .eq(&RuntimeValue::String("foo".to_owned()), &mut vm)
             .unwrap());
 
         assert!(vm

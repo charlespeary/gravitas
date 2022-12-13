@@ -58,10 +58,21 @@ impl RuntimeValue {
             _ => return vm.error(RuntimeErrorCause::MismatchedTypes),
         })
     }
+
+    pub(crate) fn to_bool(self, vm: &mut VM) -> MachineResult<bool> {
+        Ok(match self {
+            RuntimeValue::Number(Number) => true,
+            RuntimeValue::String(ProgramText) => true,
+            RuntimeValue::Bool(bool) => bool,
+            RuntimeValue::Callable(Callable) => true,
+            RuntimeValue::ObjectInstance(ObjectInstance) => true,
+        })
+    }
 }
 
 impl VM {
     pub(crate) fn op_eq(&mut self) -> OperationResult {
+        println!("{:#?}", &self.operands);
         let (a, b) = self.pop_two_operands()?;
         let result = a.eq(&b, self)?;
 
@@ -113,18 +124,16 @@ impl VM {
 #[cfg(test)]
 mod test {
     use bytecode::{
-        callables::{Class, Function},
         chunk::{Chunk, Constant},
         Opcode,
     };
-    use lasso::{Key, Spur};
 
     use crate::{
         runtime_error::RuntimeErrorCause,
         runtime_value::RuntimeValue,
         test::{
             assert_program, create_failable_two_operand_assertion, create_two_operand_assertion,
-            dummy_class, new_vm,
+            dummy_class,
         },
     };
 
@@ -164,14 +173,14 @@ mod test {
         );
 
         assert(
-            Constant::String(Spur::try_from_usize(0).unwrap()),
-            Constant::String(Spur::try_from_usize(0).unwrap()),
+            Constant::String("foo".to_owned()),
+            Constant::String("foo".to_owned()),
             RuntimeValue::Bool(false),
         );
 
         assert(
-            Constant::String(Spur::try_from_usize(0).unwrap()),
-            Constant::String(Spur::try_from_usize(1).unwrap()),
+            Constant::String("foo".to_owned()),
+            Constant::String("bar".to_owned()),
             RuntimeValue::Bool(true),
         );
 
@@ -310,7 +319,7 @@ mod test {
             //  numbers with strings
             assert_err(
                 *opcode,
-                Constant::String(Spur::default()),
+                Constant::String("foo".to_owned()),
                 Constant::Number(10.0),
             );
 
@@ -321,7 +330,7 @@ mod test {
             assert_err(
                 *opcode,
                 Constant::Bool(true),
-                Constant::String(Spur::default()),
+                Constant::String("foo".to_owned()),
             );
         }
     }

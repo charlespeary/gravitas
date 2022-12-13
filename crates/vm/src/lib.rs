@@ -1,6 +1,6 @@
 use bytecode::{chunk::Chunk, Opcode};
 use call::CallFrame;
-use common::SymbolsReader;
+use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
 
@@ -28,22 +28,20 @@ pub enum TickOutcome {
 pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,
-    pub(crate) symbols: SymbolsReader,
     pub(crate) ip: usize,
 }
 
 impl VM {
-    pub fn new(symbols: SymbolsReader, chunk: Chunk) -> Self {
+    pub fn new(chunk: Chunk) -> Self {
         let initial_frame = CallFrame {
             stack_start: 0,
-            name: symbols.get("global").expect("It comes prepacked"),
+            name: MAIN_FUNCTION_NAME.to_owned(),
             chunk,
         };
 
         Self {
             operands: Vec::new(),
             call_stack: vec![initial_frame],
-            symbols,
             ip: 0,
         }
     }
@@ -95,15 +93,18 @@ impl VM {
             Ge => self.op_ge(),
             Or => self.op_or(),
             And => self.op_and(),
-            Jif => {
-                self.op_jif()?;
+            Jif(distance) => {
+                let condition = self.pop_operand()?;
+                if !condition.to_bool(self)? {
+                    self.move_pointer(distance)?;
+                }
                 return Ok(TickOutcome::BreakFromLoop);
             }
-            Jp => {
-                self.op_jp()?;
+            Jp(distance) => {
+                self.move_pointer(distance)?;
                 return Ok(TickOutcome::BreakFromLoop);
             }
-            Pop => self.op_pop(),
+            Pop(amount) => self.op_pop(amount),
             Get => self.op_get(),
             Asg => self.op_asg(),
             Call => self.op_call(),
@@ -151,16 +152,14 @@ mod test {
         callables::{Class, Function},
         chunk::Constant,
     };
-    use lasso::{Rodeo, Spur};
+    use common::CONSTRUCTOR_NAME;
 
     fn empty_vm() -> VM {
         new_vm(Chunk::default())
     }
 
     pub(crate) fn new_vm(code: Chunk) -> VM {
-        let mut symbols = Rodeo::new();
-        symbols.get_or_intern("global");
-        VM::new(symbols.into_reader(), code)
+        VM::new(code)
     }
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
@@ -198,20 +197,14 @@ mod test {
 
     pub(crate) fn dummy_class() -> Class {
         Class {
-            name: Spur::default(),
+            name: "dummy".to_owned(),
             constructor: Function {
                 arity: 0,
                 chunk: Chunk::default(),
-                name: Spur::default(),
+                name: CONSTRUCTOR_NAME.to_owned(),
             },
             super_class: None,
             methods: vec![],
         }
-    }
-
-    #[test]
-    fn vm_runs() {
-        let mut vm = empty_vm();
-        vm.run();
     }
 }

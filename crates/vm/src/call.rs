@@ -1,18 +1,16 @@
-use std::collections::HashMap;
-
+use crate::{OperationResult, RuntimeErrorCause, RuntimeValue, VM};
 use bytecode::{
     callables::{Class, Function},
     chunk::Chunk,
 };
-use common::Symbol;
-
-use crate::{OperationResult, RuntimeErrorCause, RuntimeValue, VM};
+use common::ProgramText;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub(crate) struct CallFrame {
     pub(crate) stack_start: usize,
     pub(crate) chunk: Chunk,
-    pub(crate) name: Symbol,
+    pub(crate) name: ProgramText,
 }
 
 #[derive(Debug, Clone)]
@@ -24,7 +22,7 @@ pub enum Callable {
 #[derive(Debug, Clone)]
 pub struct ObjectInstance {
     class: Class,
-    pub properties: HashMap<Symbol, RuntimeValue>,
+    pub properties: HashMap<ProgramText, RuntimeValue>,
 }
 
 impl VM {
@@ -34,6 +32,8 @@ impl VM {
             chunk: function.chunk,
             name: function.name,
         };
+
+        println!("calling: {}", frame.name);
 
         self.call_stack.push(frame);
         Ok(())
@@ -62,8 +62,7 @@ impl VM {
 #[cfg(test)]
 mod test {
     use bytecode::{callables::Function, chunk::Constant, Opcode};
-    use common::Symbol;
-    use lasso::{Key, Rodeo};
+    use common::MAIN_FUNCTION_NAME;
 
     use crate::{test::new_vm, Chunk, OperationResult, VM};
 
@@ -72,7 +71,7 @@ mod test {
         let function = Function {
             arity: 0,
             chunk: Chunk::default(),
-            name: Symbol::default(),
+            name: "foo".to_owned(),
         };
 
         let mut vm = new_vm(Chunk::new(
@@ -83,38 +82,27 @@ mod test {
 
     #[test]
     fn change_callframe() -> OperationResult {
-        let mut symbols = Rodeo::new();
-
-        let global_func_name = "global";
-        symbols.get_or_intern(global_func_name);
-
-        let func_name = "my_function";
-
         let function = Function {
             arity: 0,
             chunk: Chunk::default(),
-            name: symbols.get_or_intern(func_name),
+            name: "my_func".to_owned(),
         };
 
-        let mut vm = VM::new(
-            symbols.into_reader(),
-            Chunk::new(
-                vec![Opcode::Constant(0), Opcode::Call],
-                vec![Constant::Function(function)],
-            ),
-        );
+        let mut vm = VM::new(Chunk::new(
+            vec![Opcode::Constant(0), Opcode::Call],
+            vec![Constant::Function(function)],
+        ));
 
-        // we start with the global callframe which name "global"
-        // is always the first intern
-        let name_symbol = vm.current_frame().name;
-        assert_eq!(vm.symbols.resolve(&name_symbol), global_func_name);
+        // we start with the global callframe which name is "main"
+        let main_fn = vm.current_frame().name.clone();
+        assert_eq!(&main_fn, MAIN_FUNCTION_NAME);
         // push the constant onto the stack
         vm.tick()?;
         // call the function
         vm.tick()?;
         // now the function's name should be equal to "my_func"
-        let name_symbol = vm.current_frame().name;
-        assert_eq!(vm.symbols.resolve(&name_symbol), func_name);
+        let my_func = vm.current_frame().name.clone();
+        assert_eq!(my_func, "my_func");
 
         Ok(())
     }

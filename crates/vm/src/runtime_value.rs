@@ -2,14 +2,14 @@ use bytecode::{
     callables::{Class, Function},
     chunk::Constant,
 };
-use common::{Number, Symbol};
+use common::{Number, ProgramText};
 
 use crate::call::{Callable, ObjectInstance};
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
     Number(Number),
-    String(Symbol),
+    String(ProgramText),
     Bool(bool),
     Callable(Callable),
     ObjectInstance(ObjectInstance),
@@ -35,6 +35,7 @@ impl From<Constant> for RuntimeValue {
             Constant::Bool(bl) => RuntimeValue::Bool(bl),
             Constant::Function(fun) => fun.into(),
             Constant::Class(class) => class.into(),
+            _ => panic!("Tried to convert invalid value"),
         }
     }
 }

@@ -84,14 +84,14 @@ pub enum Opcode {
     Or,
     // and (Bool, Bool)
     And,
-    // jump if false (Usize, Bool)
-    Jif,
-    // jump (Isize)
-    Jp,
+    // jump if false
+    Jif(isize),
+    // jump (both forwards or backwards)
+    Jp(isize),
     // return
     Rtr,
-    // pop n values from stack (Usize)
-    Pop,
+    // pop n values from stack
+    Pop(usize),
     // Get (Address)
     Get,
     // Assign (Address, Any)

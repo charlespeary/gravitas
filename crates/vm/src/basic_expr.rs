@@ -180,8 +180,6 @@ mod test {
         Opcode,
     };
 
-    use lasso::{Key, Spur};
-
     use crate::{
         runtime_error::RuntimeErrorCause,
         runtime_value::RuntimeValue,
@@ -201,7 +199,7 @@ mod test {
 
         assert_constant(Constant::Bool(false));
         assert_constant(Constant::Bool(true));
-        assert_constant(Constant::String(Spur::try_from_usize(0).unwrap()));
+        assert_constant(Constant::String("foo".to_owned()));
         assert_constant(Constant::Number(std::f64::MAX));
         assert_constant(Constant::Number(std::f64::MIN));
     }

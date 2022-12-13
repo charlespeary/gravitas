@@ -9,4 +9,3 @@ edition = "2018"
 [dependencies]
 common = { path = "../common" }
 bytecode = { path = "../bytecode" }
-lasso = "0.5.0"

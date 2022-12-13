@@ -1,10 +1,8 @@
 use crate::{runtime_error::RuntimeErrorCause, OperationResult, VM};
 
 impl VM {
-    pub(crate) fn op_pop(&mut self) -> OperationResult {
-        let n = self.pop_number()?;
-
-        for _ in 0..n as usize {
+    pub(crate) fn op_pop(&mut self, amount: usize) -> OperationResult {
+        for _ in 0..amount as usize {
             self.pop_operand()?;
         }
 
@@ -49,14 +47,12 @@ mod test {
                 Opcode::Constant(0),
                 Opcode::Constant(1),
                 Opcode::Constant(2),
-                Opcode::Constant(3),
-                Opcode::Pop,
+                Opcode::Pop(3),
             ],
             vec![
                 Constant::Bool(true),
                 Constant::Bool(true),
                 Constant::Bool(true),
-                Constant::Number(3.0),
             ],
         ));
 
@@ -64,13 +60,12 @@ mod test {
         vm.tick()?;
         vm.tick()?;
         vm.tick()?;
+
+        assert_eq!(vm.operands.len(), 3);
+
         vm.tick()?;
 
-        assert_eq!(vm.operands.len(), 4);
-
-        vm.tick()?;
-
-        // Op::Pop will pop one operand and this operand will tell it to pop 3 values from the operands stack
+        // Pop(3) will pop 3 operands from the stack
         // so after the operation finishes the operands stack length will be equal to 0
         assert_eq!(vm.operands.len(), 0);
 

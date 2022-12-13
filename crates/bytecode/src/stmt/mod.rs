@@ -1,6 +1,7 @@
+use crate::{BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator};
 use parser::parse::stmt::{Stmt, StmtKind};
 
-use crate::{BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator};
+mod var;
 
 impl BytecodeFrom<Stmt> for BytecodeGenerator {
     fn generate(&mut self, stmt: Stmt) -> BytecodeGenerationResult {
