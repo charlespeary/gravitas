@@ -10,6 +10,11 @@ pub(crate) mod expr;
 pub(crate) mod state;
 pub(crate) mod stmt;
 
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+pub struct Patch {
+    index: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum MemoryAddress {
     // Local variables, e.g defined inside block or a function.
@@ -102,8 +107,19 @@ pub enum Opcode {
     Return,
 }
 
+impl Opcode {
+    pub fn patch(self, value: isize) -> Self {
+        match self {
+            Opcode::Jif(_) => Opcode::Jif(value),
+            Opcode::Jp(_) => Opcode::Jp(value),
+            _ => unreachable!("Tried to patch invalid opcode"),
+        }
+    }
+}
+
 pub type BytecodeGenerationResult = Result<(), ()>;
 
+#[derive(Debug, Clone)]
 struct BytecodeGenerator {
     state: GeneratorState,
     functions: Vec<Function>,
@@ -144,6 +160,32 @@ impl BytecodeGenerator {
             .expect("Generator is in invalid state!");
 
         global_function
+    }
+
+    pub fn curr_index(&mut self) -> usize {
+        let size = self.current_chunk().opcodes.len();
+        if size == 0 {
+            0
+        } else {
+            size - 1
+        }
+    }
+
+    pub fn emit_patch(&mut self, opcode: Opcode) -> Patch {
+        let index = self.write_opcode(opcode);
+        Patch { index }
+    }
+
+    pub fn patch(&mut self, patch: &Patch) {
+        let current_index = self.curr_index();
+        let opcode = self
+            .current_chunk()
+            .opcodes
+            .get_mut(patch.index)
+            .expect("Patch tried to access wrong opcode.");
+        let patched_opcode =
+            opcode.patch((current_index as f32 - patch.index as f32).abs() as isize);
+        let _ = std::mem::replace(opcode, patched_opcode);
     }
 }
 
