@@ -1,7 +1,7 @@
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
-use parser::parse::Ast;
+use parser::parse::{Ast, Program};
 use state::GeneratorState;
 
 pub mod callables;
@@ -120,6 +120,14 @@ impl Opcode {
 }
 
 pub type BytecodeGenerationResult = Result<(), ()>;
+pub type ProgramBytecode = Chunk;
+pub type GenerationResult = Result<ProgramBytecode, ()>;
+
+pub fn generate_bytecode(program: Program) -> GenerationResult {
+    let mut generator = BytecodeGenerator::new();
+    generator.generate(program)?;
+    Ok(generator.code().chunk)
+}
 
 #[derive(Debug, Clone)]
 struct BytecodeGenerator {
@@ -204,12 +212,6 @@ impl BytecodeFrom<Ast> for BytecodeGenerator {
         }
         Ok(())
     }
-}
-
-pub fn generate_bytecode(ast: Ast) -> BytecodeGenerationResult {
-    let mut generator = BytecodeGenerator::new();
-    generator.generate(ast)?;
-    Ok(())
 }
 
 #[cfg(test)]

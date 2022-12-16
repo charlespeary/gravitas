@@ -33,7 +33,7 @@ impl Analyzer {
         let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
 
         match &*expr.kind {
-            Atom(AtomicValue::Identifier(ident)) => match self.variables.get(ident) {
+            Atom(AtomicValue::Identifier { name, .. }) => match self.variables.get(name) {
                 Some(false) => {
                     return err(ParseErrorCause::UsedBeforeInitialization);
                 }

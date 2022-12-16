@@ -5,6 +5,7 @@ use bytecode::{
 use common::{Number, ProgramText};
 
 use crate::call::{Callable, ObjectInstance};
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
@@ -13,6 +14,19 @@ pub enum RuntimeValue {
     Bool(bool),
     Callable(Callable),
     ObjectInstance(ObjectInstance),
+}
+
+impl fmt::Display for RuntimeValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use RuntimeValue::*;
+        match self {
+            Number(num) => write!(f, "{}", num),
+            String(text) => write!(f, "{}", text),
+            Bool(bool) => write!(f, "{}", bool),
+            Callable(callable) => write!(f, "callable"),
+            ObjectInstance(obj) => write!(f, "obj:{}", obj.class.name),
+        }
+    }
 }
 
 impl From<Function> for RuntimeValue {

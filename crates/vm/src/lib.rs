@@ -1,4 +1,4 @@
-use bytecode::{chunk::Chunk, Opcode};
+use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
 use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
@@ -29,6 +29,11 @@ pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) ip: usize,
+}
+
+pub fn run(bytecode: ProgramBytecode) -> RuntimeValue {
+    let mut vm = VM::new(bytecode);
+    vm.run().expect("VM went kaboom")
 }
 
 impl VM {

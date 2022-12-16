@@ -16,6 +16,7 @@ pub(crate) struct Parser<'t> {
 }
 
 pub type Ast = Vec<Stmt>;
+pub type Program = Ast;
 pub type AstRef<'a> = &'a [Stmt];
 pub type ProgramErrors = Vec<ParseError>;
 pub(crate) type ParserOutput = Result<Ast, ProgramErrors>;

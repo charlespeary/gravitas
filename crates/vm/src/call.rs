@@ -21,7 +21,7 @@ pub enum Callable {
 
 #[derive(Debug, Clone)]
 pub struct ObjectInstance {
-    class: Class,
+    pub class: Class,
     pub properties: HashMap<ProgramText, RuntimeValue>,
 }
 
