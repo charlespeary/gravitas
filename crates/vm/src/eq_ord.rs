@@ -66,6 +66,8 @@ impl RuntimeValue {
             RuntimeValue::Bool(bool) => bool,
             RuntimeValue::Callable(Callable) => true,
             RuntimeValue::ObjectInstance(ObjectInstance) => true,
+            RuntimeValue::Null => false,
+            _ => unreachable!(),
         })
     }
 }

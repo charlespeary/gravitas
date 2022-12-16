@@ -16,18 +16,15 @@ pub(crate) struct Repl {
 impl Repl {
     pub(crate) fn run(&self) {
         let mut rl = Editor::<()>::new();
-        let mut ast: Ast = vec![];
 
         loop {
             let readline = rl.readline(">> ");
             match readline {
                 Ok(code) => {
                     rl.add_history_entry(code.as_str());
-                    let mut new_ast = parse(&code)
+                    let ast = parse(&code)
                         .map_err(|errors| log_errors(errors, &code))
                         .expect("Parsing failed. Investigate above errors to find the cause.");
-
-                    ast.append(&mut new_ast);
 
                     analyze(&ast)
                         .map_err(|errors| log_errors(errors, &code))

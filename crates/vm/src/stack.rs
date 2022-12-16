@@ -1,3 +1,4 @@
+use bytecode::MemoryAddress;
 use common::Number;
 
 use crate::{runtime_error::RuntimeErrorCause, MachineResult, RuntimeValue, VM};
@@ -6,6 +7,13 @@ impl VM {
     pub(crate) fn pop_number(&mut self) -> MachineResult<Number> {
         match self.pop_operand()? {
             RuntimeValue::Number(num) => Ok(num),
+            _ => return self.error(RuntimeErrorCause::ExpectedNumber),
+        }
+    }
+
+    pub(crate) fn pop_address(&mut self) -> MachineResult<MemoryAddress> {
+        match self.pop_operand()? {
+            RuntimeValue::MemoryAddress(address) => Ok(address),
             _ => return self.error(RuntimeErrorCause::ExpectedNumber),
         }
     }

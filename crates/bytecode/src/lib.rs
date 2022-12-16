@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
@@ -93,8 +95,6 @@ pub enum Opcode {
     Jif(isize),
     // jump (both forwards or backwards)
     Jp(isize),
-    // return
-    Rtr,
     // pop n values from stack
     Pop(usize),
     // Get (Address)
@@ -107,6 +107,51 @@ pub enum Opcode {
     Return,
     Block(usize),
     Null,
+}
+
+impl Display for Opcode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Opcode::*;
+        let str = match self {
+            Not => "NOT",
+            Neg => "NEG",
+            Add => "ADD",
+            Sub => "SUB",
+            Div => "DIV",
+            Mul => "MUL",
+            Pow => "POW",
+            Mod => "MOD",
+            Eq => "EQ",
+            Ne => "NE",
+            Lt => "LT",
+            Le => "LE",
+            Gt => "GT",
+            Ge => "GE",
+            Or => "OR",
+            And => "AND",
+            Get => "GET",
+            Asg => "ASG",
+            Call => "CALL",
+            Return => "RET",
+            Null => "NULL",
+            rest => {
+                let str = match rest {
+                    Constant(index) => format!("CONSTANT_{}", index),
+                    Jif(distance) => format!("JIF_{}", distance),
+                    Jp(distance) => format!("JP_{}", distance),
+                    Pop(amount) => format!("POP_{}", amount),
+                    Block(amount) => format!("BLC_{}", amount),
+                    _ => unreachable!(),
+                };
+                write!(f, "{}", str)?;
+                return Ok(());
+            }
+        };
+
+        write!(f, "{}", str)?;
+
+        Ok(())
+    }
 }
 
 impl Opcode {

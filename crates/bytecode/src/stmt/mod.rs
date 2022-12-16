@@ -1,4 +1,4 @@
-use crate::{BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator};
+use crate::{BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator, Opcode};
 use parser::parse::stmt::{Stmt, StmtKind};
 
 mod var;

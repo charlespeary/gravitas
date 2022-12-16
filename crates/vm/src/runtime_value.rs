@@ -1,6 +1,7 @@
 use bytecode::{
     callables::{Class, Function},
     chunk::Constant,
+    MemoryAddress,
 };
 use common::{Number, ProgramText};
 
@@ -14,6 +15,10 @@ pub enum RuntimeValue {
     Bool(bool),
     Callable(Callable),
     ObjectInstance(ObjectInstance),
+    MemoryAddress(MemoryAddress),
+    // Temporary placeholder
+    // This will be an object instance of an Option in the future
+    Null,
 }
 
 impl fmt::Display for RuntimeValue {
@@ -25,6 +30,8 @@ impl fmt::Display for RuntimeValue {
             Bool(bool) => write!(f, "{}", bool),
             Callable(callable) => write!(f, "callable"),
             ObjectInstance(obj) => write!(f, "obj:{}", obj.class.name),
+            MemoryAddress(address) => write!(f, "address"),
+            Null => write!(f, "null"),
         }
     }
 }
@@ -49,7 +56,7 @@ impl From<Constant> for RuntimeValue {
             Constant::Bool(bl) => RuntimeValue::Bool(bl),
             Constant::Function(fun) => fun.into(),
             Constant::Class(class) => class.into(),
-            _ => panic!("Tried to convert invalid value"),
+            Constant::MemoryAddress(address) => RuntimeValue::MemoryAddress(address),
         }
     }
 }

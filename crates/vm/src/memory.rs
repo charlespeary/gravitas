@@ -1,3 +1,5 @@
+use bytecode::MemoryAddress;
+
 use crate::{runtime_error::RuntimeErrorCause, OperationResult, VM};
 
 impl VM {
@@ -19,15 +21,27 @@ impl VM {
         Ok(())
     }
 
-    pub(crate) fn op_get(&mut self) -> OperationResult {
-        let address = self.pop_number()?;
+    pub(crate) fn get_local_variable(&mut self, local_address: usize) -> OperationResult {
         let stack_start = self.current_frame().stack_start;
-        match self.operands.get(stack_start + address as usize).cloned() {
+
+        match self
+            .operands
+            .get(stack_start + local_address as usize)
+            .cloned()
+        {
             Some(value) => {
                 self.operands.push(value);
                 Ok(())
             }
             None => self.error(RuntimeErrorCause::StackOverflow),
+        }
+    }
+
+    pub(crate) fn op_get(&mut self) -> OperationResult {
+        let address = self.pop_address()?;
+        match address {
+            MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
+            _ => unimplemented!(),
         }
     }
 }

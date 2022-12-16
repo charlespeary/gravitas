@@ -32,6 +32,10 @@ pub struct VM {
 }
 
 pub fn run(bytecode: ProgramBytecode) -> RuntimeValue {
+    println!("BYTECODE: ");
+    for op in &bytecode.opcodes {
+        println!("  {}", op);
+    }
     let mut vm = VM::new(bytecode);
     vm.run().expect("VM went kaboom")
 }
