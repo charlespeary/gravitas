@@ -10,7 +10,7 @@ pub(crate) mod expr;
 pub(crate) mod state;
 pub(crate) mod stmt;
 
-#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub struct Patch {
     index: usize,
 }
@@ -105,6 +105,8 @@ pub enum Opcode {
     Call,
     // Return (Any)
     Return,
+    Block(usize),
+    Null,
 }
 
 impl Opcode {
@@ -173,7 +175,9 @@ impl BytecodeGenerator {
 
     pub fn emit_patch(&mut self, opcode: Opcode) -> Patch {
         let index = self.write_opcode(opcode);
-        Patch { index }
+        let patch = Patch { index };
+        self.state.add_patch(patch);
+        patch
     }
 
     pub fn patch(&mut self, patch: &Patch) {

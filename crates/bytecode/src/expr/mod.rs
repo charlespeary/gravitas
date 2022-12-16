@@ -1,9 +1,10 @@
 use parser::parse::expr::{Expr, ExprKind};
 
-use crate::{BytecodeFrom, BytecodeGenerator, Opcode};
+use crate::{state::ScopeType, BytecodeFrom, BytecodeGenerator, Opcode};
 
 mod atom;
 mod binary;
+mod flow_control;
 mod unary;
 
 impl BytecodeFrom<Expr> for BytecodeGenerator {
@@ -38,8 +39,32 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 }
                 self.patch(&jif_patch);
             }
-            ExprKind::Block { stmts, return_expr } => {}
-            ExprKind::While { condition, body } => {}
+            ExprKind::While { condition, body } => {
+                self.state.enter_scope(ScopeType::Block);
+                let start = self.curr_index();
+                self.generate(condition)?;
+
+                let jif = self.emit_patch(Opcode::Jif(0));
+                self.generate(body)?;
+
+                let end = self.curr_index();
+                self.write_opcode(Opcode::Jp(-(end as isize - start as isize)));
+                self.patch(&jif);
+                // TODO: implement breaking from while loops with a value
+                self.write_opcode(Opcode::Null);
+                let scope = self.state.leave_scope();
+
+                for patch in scope.patches {
+                    self.patch(&patch);
+                }
+            }
+            ExprKind::Block { stmts, return_expr } => {
+                self.generate(stmts)?;
+                if let Some(return_expr) = return_expr {
+                    self.generate(return_expr)?;
+                }
+                self.write_opcode(Opcode::Block(0));
+            }
             ExprKind::Break { return_expr } => {}
             ExprKind::Continue => {}
             ExprKind::Call { callee, args } => {}

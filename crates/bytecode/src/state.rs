@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use common::ProgramText;
 
-use crate::{callables::Class, MemoryAddress, Variable};
+use crate::{callables::Class, MemoryAddress, Patch, Variable};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScopeType {
@@ -19,6 +19,7 @@ pub struct Scope {
     pub declared: Vec<Variable>,
     pub closed: Vec<Variable>,
     pub returned: bool,
+    pub patches: Vec<Patch>,
 }
 
 impl Scope {
@@ -27,6 +28,7 @@ impl Scope {
             scope_type,
             declared: vec![],
             closed: vec![],
+            patches: vec![],
             returned: false,
         }
     }
@@ -164,5 +166,9 @@ impl GeneratorState {
             .iter()
             .filter(|v| v.closed)
             .collect()
+    }
+
+    pub(crate) fn add_patch(&mut self, patch: Patch) {
+        self.current_scope_mut().patches.push(patch);
     }
 }
