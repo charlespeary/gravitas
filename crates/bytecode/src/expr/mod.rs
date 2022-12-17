@@ -60,9 +60,11 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             }
             ExprKind::Block { stmts, return_expr } => {
                 self.generate(stmts)?;
+
                 if let Some(return_expr) = return_expr {
                     self.generate(return_expr)?;
                 }
+
                 self.write_opcode(Opcode::Block(0));
             }
             ExprKind::Break { return_expr } => {}
@@ -72,7 +74,12 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             ExprKind::Array { values } => {}
             ExprKind::Index { target, position } => {}
             ExprKind::Property { target, paths } => {}
-            ExprKind::Assignment { target, value } => {}
+            ExprKind::Assignment { target, value } => {
+                // TODO: If no additional logical will be added to it then it can just as well become a simple binary expression
+                self.generate(target)?;
+                self.generate(value)?;
+                self.write_opcode(Opcode::Asg);
+            }
             ExprKind::Closure { params, body } => {}
             ExprKind::Super => {}
             ExprKind::This => {}

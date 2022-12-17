@@ -15,15 +15,13 @@ impl BytecodeFrom<AtomicValue> for BytecodeGenerator {
                 self.write_constant(Constant::String(text));
             }
             AtomicValue::Identifier {
-                is_assignment,
-                properties,
                 name,
+                is_assignment,
             } => {
                 // TODO: make it for work object's properties
                 let var_address = self.state.find_var(&name);
                 self.write_constant(var_address.into());
 
-                // We evaluate the address if it's not used in an assignment context
                 if !is_assignment {
                     self.write_opcode(Opcode::Get);
                 }
@@ -86,7 +84,6 @@ mod test {
                 expr_stmt(expr(AtomicValue::Identifier {
                     name: "foo".to_owned(),
                     is_assignment: false,
-                    properties: vec![],
                 })),
             ],
             vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Get],

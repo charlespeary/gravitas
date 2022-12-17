@@ -14,8 +14,6 @@ mod test {
         let data = vec![
             declare_var("local".to_owned(), expr(AtomicValue::Number(0.0))),
             expr_stmt(expr(AtomicValue::Identifier {
-                properties: vec![],
-                is_assignment: false,
                 name: "local".to_owned(),
             })),
         ];

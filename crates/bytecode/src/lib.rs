@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, thread::current};
 
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
@@ -218,7 +218,7 @@ impl BytecodeGenerator {
     }
 
     pub fn curr_index(&mut self) -> usize {
-        let size = self.current_chunk().opcodes.len();
+        let size = self.current_chunk().opcodes_len();
         if size == 0 {
             0
         } else {
@@ -234,14 +234,14 @@ impl BytecodeGenerator {
     }
 
     pub fn patch(&mut self, patch: &Patch) {
+        self.state.remove_patch(patch);
         let current_index = self.curr_index();
         let opcode = self
             .current_chunk()
             .opcodes
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
-        let patched_opcode =
-            opcode.patch((current_index as f32 - patch.index as f32).abs() as isize);
+        let patched_opcode = opcode.patch((current_index - patch.index) as isize);
         let _ = std::mem::replace(opcode, patched_opcode);
     }
 }

@@ -32,9 +32,13 @@ pub struct VM {
 }
 
 pub fn run(bytecode: ProgramBytecode) -> RuntimeValue {
-    println!("BYTECODE: ");
+    println!("BYTECODE:");
     for op in &bytecode.opcodes {
         println!("  {}", op);
+    }
+    println!("CONSTANTS:");
+    for constant in &bytecode.constants {
+        println!("  {:?}", constant);
     }
     let mut vm = VM::new(bytecode);
     vm.run().expect("VM went kaboom")
@@ -84,6 +88,8 @@ impl VM {
         let next = self.current_frame().chunk.read_opcode(ip);
         use Opcode::*;
 
+        println!("NEXT: {}", next);
+
         match next {
             Constant(index) => self.op_constant(index),
             Add => self.op_add(),
@@ -107,16 +113,22 @@ impl VM {
                 if !condition.to_bool(self)? {
                     self.move_pointer(distance)?;
                 }
-                return Ok(TickOutcome::BreakFromLoop);
+                Ok(())
             }
             Jp(distance) => {
                 self.move_pointer(distance)?;
-                return Ok(TickOutcome::BreakFromLoop);
+                // So we don't increment the IP after jumping
+                return Ok(TickOutcome::ContinueExecution);
             }
             Pop(amount) => self.op_pop(amount),
+            Block(amount) => Ok(()),
             Get => self.op_get(),
             Asg => self.op_asg(),
             Call => self.op_call(),
+            Null => {
+                self.operands.push(RuntimeValue::Null);
+                Ok(())
+            }
             _ => {
                 todo!();
             }

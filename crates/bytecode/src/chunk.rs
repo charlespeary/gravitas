@@ -45,7 +45,7 @@ impl Chunk {
     }
 
     pub fn write_opcode(&mut self, opcode: Opcode) -> OpcodeIndex {
-        let length = self.opcodes.len();
+        let length = self.opcodes_len();
         self.opcodes.push(opcode);
         length
     }

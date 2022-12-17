@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use common::ProgramText;
 
@@ -19,7 +19,7 @@ pub struct Scope {
     pub declared: Vec<Variable>,
     pub closed: Vec<Variable>,
     pub returned: bool,
-    pub patches: Vec<Patch>,
+    pub patches: HashSet<Patch>,
 }
 
 impl Scope {
@@ -28,7 +28,7 @@ impl Scope {
             scope_type,
             declared: vec![],
             closed: vec![],
-            patches: vec![],
+            patches: HashSet::new(),
             returned: false,
         }
     }
@@ -169,6 +169,10 @@ impl GeneratorState {
     }
 
     pub(crate) fn add_patch(&mut self, patch: Patch) {
-        self.current_scope_mut().patches.push(patch);
+        self.current_scope_mut().patches.insert(patch);
+    }
+
+    pub(crate) fn remove_patch(&mut self, patch: &Patch) {
+        self.current_scope_mut().patches.remove(patch);
     }
 }

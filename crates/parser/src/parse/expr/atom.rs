@@ -19,11 +19,7 @@ pub enum AtomicValue {
     Boolean(bool),
     Number(Number),
     Text(ProgramText),
-    Identifier {
-        name: String,
-        properties: Vec<VariableProperty>,
-        is_assignment: bool,
-    },
+    Identifier { name: String, is_assignment: bool },
 }
 
 impl fmt::Display for AtomicValue {
@@ -62,25 +58,11 @@ impl<'t> Parser<'t> {
             Token::String(str) => AtomicValue::Text(str.to_owned()),
             Token::Identifier(identifier) => {
                 let name = identifier.to_owned();
-                let mut properties: Vec<VariableProperty> = vec![];
-
-                while self.peek() == DOT {
-                    let dot = self.advance()?;
-                    let dot_span = dot.span();
-                    let identifier = self.expect_identifier()?;
-                    let property = Node {
-                        kind: identifier.slice.to_owned(),
-                        span: combine(&dot_span, &identifier.span()),
-                    };
-                    properties.push(property);
-                }
-
                 let is_assignment = self.peek() == ASSIGN;
 
                 AtomicValue::Identifier {
-                    properties,
-                    is_assignment,
                     name,
+                    is_assignment,
                 }
             }
             t => {
@@ -162,8 +144,7 @@ pub(crate) mod test {
                 Expr::boxed(
                     ExprKind::Atom(AtomicValue::Identifier {
                         name: identifier.to_owned(),
-                        is_assignment: false,
-                        properties: vec![]
+                        is_assignment: false
                     }),
                     0..identifier.len(),
                 )

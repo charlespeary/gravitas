@@ -74,7 +74,6 @@ impl RuntimeValue {
 
 impl VM {
     pub(crate) fn op_eq(&mut self) -> OperationResult {
-        println!("{:#?}", &self.operands);
         let (a, b) = self.pop_two_operands()?;
         let result = a.eq(&b, self)?;
 
@@ -109,7 +108,6 @@ impl VM {
     pub(crate) fn op_lt(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let result = a.lt(b, self)?;
-
         self.operands.push(RuntimeValue::Bool(result));
         Ok(())
     }

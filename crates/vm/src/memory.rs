@@ -1,6 +1,6 @@
 use bytecode::MemoryAddress;
 
-use crate::{runtime_error::RuntimeErrorCause, OperationResult, VM};
+use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, OperationResult, VM};
 
 impl VM {
     pub(crate) fn op_pop(&mut self, amount: usize) -> OperationResult {
@@ -11,12 +11,26 @@ impl VM {
         Ok(())
     }
 
-    pub(crate) fn op_asg(&mut self) -> OperationResult {
-        let to_assign = self.pop_operand()?;
-        let address = self.pop_number()?;
+    pub(crate) fn assign_value(
+        &mut self,
+        value: RuntimeValue,
+        address: MemoryAddress,
+    ) -> OperationResult {
         let stack_start = self.current_frame().stack_start;
 
-        self.operands[stack_start + address as usize] = to_assign;
+        match address {
+            MemoryAddress::Local(local_address) => {
+                self.operands[stack_start + local_address as usize] = value;
+            }
+            _ => unimplemented!(),
+        }
+        Ok(())
+    }
+
+    pub(crate) fn op_asg(&mut self) -> OperationResult {
+        let to_assign = self.pop_operand()?;
+        let address = self.pop_address()?;
+        self.assign_value(to_assign, address)?;
 
         Ok(())
     }
@@ -39,6 +53,7 @@ impl VM {
 
     pub(crate) fn op_get(&mut self) -> OperationResult {
         let address = self.pop_address()?;
+        // TODO: move to util function
         match address {
             MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
             _ => unimplemented!(),

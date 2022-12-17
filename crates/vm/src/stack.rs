@@ -14,7 +14,7 @@ impl VM {
     pub(crate) fn pop_address(&mut self) -> MachineResult<MemoryAddress> {
         match self.pop_operand()? {
             RuntimeValue::MemoryAddress(address) => Ok(address),
-            _ => return self.error(RuntimeErrorCause::ExpectedNumber),
+            _ => return self.error(RuntimeErrorCause::ExpectedAddress),
         }
     }
 
@@ -26,8 +26,8 @@ impl VM {
     }
 
     pub(crate) fn pop_two_operands(&mut self) -> MachineResult<(RuntimeValue, RuntimeValue)> {
-        let a = self.pop_operand()?;
         let b = self.pop_operand()?;
+        let a = self.pop_operand()?;
         Ok((a, b))
     }
 }
