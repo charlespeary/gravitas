@@ -31,4 +31,27 @@ mod test {
             vec![Constant::Bool(true), Constant::Number(0.0)],
         );
     }
+
+    #[test]
+    fn generates_if_bytecode() {
+        assert_bytecode_and_constants(
+            box_node(ExprKind::If {
+                condition: expr(AtomicValue::Boolean(true)),
+                body: expr(AtomicValue::Boolean(true)),
+                else_expr: Some(expr(AtomicValue::Boolean(false))),
+            }),
+            vec![
+                Opcode::Constant(0),
+                Opcode::Jif(3),
+                Opcode::Constant(1),
+                Opcode::Jp(1),
+                Opcode::Constant(2),
+            ],
+            vec![
+                Constant::Bool(true),
+                Constant::Bool(true),
+                Constant::Bool(false),
+            ],
+        )
+    }
 }

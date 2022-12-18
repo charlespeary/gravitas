@@ -33,10 +33,10 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 let jif_patch = self.emit_patch(Opcode::Jif(0));
                 self.generate(body)?;
                 let jp_patch = self.emit_patch(Opcode::Jp(0));
-                self.patch(&jp_patch);
                 if let Some(else_expr) = else_expr {
                     self.generate(else_expr)?;
                 }
+                self.patch(&jp_patch);
                 self.patch(&jif_patch);
             }
             ExprKind::While { condition, body } => {
