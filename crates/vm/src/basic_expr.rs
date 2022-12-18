@@ -323,8 +323,8 @@ mod test {
         let assert_sub = assert_arithmetic_op(Opcode::Sub);
 
         // Expect 10.0 to be on top of the stack
-        assert_sub(0.0, 10.0, 10.0);
-        assert_sub(10.0, 0.0, -10.0);
+        assert_sub(10.0, 0.0, 10.0);
+        assert_sub(0.0, 10.0, -10.0);
         assert_sub(std::f64::MIN, std::f64::MIN, 0.0);
         assert_sub(std::f64::MAX, std::f64::MAX, 0.0);
         dbg!(std::f64::MAX, std::f64::MIN);
@@ -360,7 +360,7 @@ mod test {
         let assert_div = assert_arithmetic_op(Opcode::Div);
         assert_div(std::f64::MAX, std::f64::MAX, 1.0);
         assert_div(std::f64::MIN, std::f64::MIN, 1.0);
-        assert_div(1.0, 10.0, 10.0);
+        assert_div(10.0, 1.0, 10.0);
         assert_div(-1.0, -1.0, 1.0);
     }
 
@@ -368,9 +368,9 @@ mod test {
     fn op_mod() {
         let assert_mod = assert_arithmetic_op(Opcode::Mod);
         assert_mod(1.0, 1.0, 0.0);
-        assert_mod(3.0, 5.0, 2.0);
-        assert_mod(1.0, -1.0, 0.0);
+        assert_mod(5.0, 3.0, 2.0);
         assert_mod(-1.0, 1.0, 0.0);
+        assert_mod(1.0, -1.0, 0.0);
         assert_mod(std::f64::MAX, std::f64::MAX, 0.0);
         assert_mod(std::f64::MIN, std::f64::MIN, 0.0);
     }
@@ -378,9 +378,9 @@ mod test {
     #[test]
     fn op_pow() {
         let assert_pow = assert_arithmetic_op(Opcode::Pow);
-        assert_pow(-1.0, 10.0, 0.1);
+        assert_pow(10.0, -1.0, 0.1);
         assert_pow(-1.0, -1.0, -1.0);
-        assert_pow(2.0, 3.0, 9.0);
+        assert_pow(3.0, 2.0, 9.0);
         assert_pow(0.0, 0.0, 1.0);
         assert_pow(std::f64::MAX, std::f64::MAX, std::f64::INFINITY);
         assert_pow(std::f64::MIN, std::f64::MIN, 0.0);

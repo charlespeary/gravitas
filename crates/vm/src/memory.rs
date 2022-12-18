@@ -66,7 +66,7 @@ mod test {
     use crate::{runtime_value::RuntimeValue, test::new_vm, OperationResult};
     use bytecode::{
         chunk::{Chunk, Constant},
-        Opcode,
+        MemoryAddress, Opcode,
     };
 
     #[test]
@@ -105,7 +105,10 @@ mod test {
     fn op_get() -> OperationResult {
         let mut vm = new_vm(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Get],
-            vec![Constant::Bool(true), Constant::Number(0.0)],
+            vec![
+                Constant::Bool(true),
+                Constant::MemoryAddress(MemoryAddress::Local(0)),
+            ],
         ));
 
         // push the constants onto the stack
@@ -134,7 +137,7 @@ mod test {
             ],
             vec![
                 Constant::Number(127.0),
-                Constant::Number(0.0),
+                Constant::MemoryAddress(MemoryAddress::Local(0)),
                 Constant::Number(7.0),
             ],
         ));

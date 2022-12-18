@@ -208,14 +208,14 @@ mod test {
         let assert = create_two_operand_assertion(Opcode::Gt);
 
         assert(
-            Constant::Number(5.0),
             Constant::Number(0.0),
+            Constant::Number(5.0),
             RuntimeValue::Bool(false),
         );
 
         assert(
-            Constant::Number(5.0),
             Constant::Number(10.0),
+            Constant::Number(5.0),
             RuntimeValue::Bool(true),
         );
 
@@ -231,14 +231,14 @@ mod test {
         let assert = create_two_operand_assertion(Opcode::Ge);
 
         assert(
-            Constant::Number(5.0),
             Constant::Number(0.0),
+            Constant::Number(5.0),
             RuntimeValue::Bool(false),
         );
 
         assert(
-            Constant::Number(5.0),
             Constant::Number(10.0),
+            Constant::Number(5.0),
             RuntimeValue::Bool(true),
         );
 
@@ -254,8 +254,8 @@ mod test {
         let assert = create_two_operand_assertion(Opcode::Lt);
 
         assert(
+            Constant::Number(10.0),
             Constant::Number(0.0),
-            Constant::Number(10.0),
             RuntimeValue::Bool(false),
         );
 
@@ -266,8 +266,8 @@ mod test {
         );
 
         assert(
-            Constant::Number(10.0),
             Constant::Number(5.0),
+            Constant::Number(10.0),
             RuntimeValue::Bool(true),
         );
     }
@@ -277,8 +277,8 @@ mod test {
         let assert = create_two_operand_assertion(Opcode::Le);
 
         assert(
-            Constant::Number(0.0),
             Constant::Number(10.0),
+            Constant::Number(0.0),
             RuntimeValue::Bool(false),
         );
 
@@ -289,8 +289,8 @@ mod test {
         );
 
         assert(
-            Constant::Number(10.0),
             Constant::Number(5.0),
+            Constant::Number(10.0),
             RuntimeValue::Bool(true),
         );
     }
@@ -337,17 +337,18 @@ mod test {
 
     #[test]
     fn object_comparison() {
-        let code = Chunk::new(
-            vec![
-                Opcode::Eq,
-                Opcode::Call,
-                Opcode::Call,
-                Opcode::Constant(0),
-                Opcode::Constant(0),
-            ],
-            vec![Constant::Class(dummy_class())],
-        );
+        // TODO: implement when OOP is ready
+        // let code = Chunk::new(
+        //     vec![
+        //         Opcode::Eq,
+        //         Opcode::Call,
+        //         Opcode::Call,
+        //         Opcode::Constant(0),
+        //         Opcode::Constant(0),
+        //     ],
+        //     vec![Constant::Class(dummy_class())],
+        // );
 
-        assert_program(code, RuntimeValue::Bool(true));
+        // assert_program(code, RuntimeValue::Bool(true));
     }
 }
