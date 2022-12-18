@@ -88,8 +88,6 @@ impl VM {
         let next = self.current_frame().chunk.read_opcode(ip);
         use Opcode::*;
 
-        println!("NEXT: {}", next);
-
         match next {
             Constant(index) => self.op_constant(index),
             Add => self.op_add(),

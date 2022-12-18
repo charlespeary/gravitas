@@ -15,6 +15,7 @@ mod test {
             declare_var("local".to_owned(), expr(AtomicValue::Number(0.0))),
             expr_stmt(expr(AtomicValue::Identifier {
                 name: "local".to_owned(),
+                is_assignment: false,
             })),
         ];
 

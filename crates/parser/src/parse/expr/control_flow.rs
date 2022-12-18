@@ -118,11 +118,11 @@ mod test {
     fn parser_parses_block_expressions() {
         assert_expr("{  }", "{  }");
         assert_expr("{ 2 }", "{ 2 }");
-        assert_expr("{ let x = 10; }", "{ let $symbol = 10; }");
-        assert_expr("{ let x = 10; 5 }", "{ let $symbol = 10; 5 }");
+        assert_expr("{ let x = 10; }", "{ let x = 10; }");
+        assert_expr("{ let x = 10; 5 }", "{ let x = 10; 5 }");
         assert_expr(
             "{ let x = 10; let y = 5; 5 }",
-            "{ let $symbol = 10; let $symbol = 5; 5 }",
+            "{ let x = 10; let y = 5; 5 }",
         );
 
         assert_expr_error("{", ParseErrorCause::Expected(Expect::Token(CLOSE_BRACKET)))
@@ -157,11 +157,11 @@ mod test {
         assert_expr("while 3 < 10 { 5 }", "while (< 3 10) { 5 }");
         assert_expr(
             "while x < 10 { let x = x + 1; }",
-            "while (< $symbol 10) { let $symbol = (+ $symbol 1); }",
+            "while (< x 10) { let x = (+ x 1); }",
         );
         assert_expr(
             "while foo < 20 { foo = foo + 1; }",
-            "while (< $symbol 20) { $symbol = (+ $symbol 1); }",
+            "while (< foo 20) { foo = (+ foo 1); }",
         );
     }
 
@@ -169,8 +169,8 @@ mod test {
     fn parser_parses_break_expressions() {
         assert_expr("break", "break");
         assert_expr("break 5", "break 5");
-        assert_expr("break foo + 10", "break (+ $symbol 10)");
-        assert_expr("break foo <= bar", "break (<= $symbol $symbol)");
+        assert_expr("break foo + 10", "break (+ foo 10)");
+        assert_expr("break foo <= bar", "break (<= foo bar)");
     }
 
     #[test]

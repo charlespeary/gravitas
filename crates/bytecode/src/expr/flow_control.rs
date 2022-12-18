@@ -22,7 +22,7 @@ mod test {
             while_loop,
             vec![
                 Opcode::Constant(0),
-                Opcode::Jif(4),
+                Opcode::Jif(3),
                 Opcode::Constant(1),
                 Opcode::Block(0),
                 Opcode::Jp(-3),

@@ -200,9 +200,9 @@ impl fmt::Display for ExprKind {
                 write!(f, "]")?;
             }
             Property { target, paths } => {
-                write!(f, "{}", target)?;
-                for _ in paths {
-                    write!(f, ".$symbol")?;
+                write!(f, "{}", target.kind.to_string())?;
+                for path in paths {
+                    write!(f, ".{}", path.kind)?;
                 }
             }
             Assignment { target, value } => {
@@ -536,16 +536,16 @@ mod test {
 
     #[test]
     fn parses_call_expression() {
-        assert_expr("foo()", "$symbol()");
-        assert_expr("foo(2)", "$symbol(2)");
-        assert_expr("foo(2,3)", "$symbol(2,3)");
-        assert_expr("foo() + bar()", "(+ $symbol() $symbol())");
+        assert_expr("foo()", "foo()");
+        assert_expr("foo(2)", "foo(2)");
+        assert_expr("foo(2,3)", "foo(2,3)");
+        assert_expr("foo() + bar()", "(+ foo() bar())");
     }
 
     #[test]
     fn parses_index_expression() {
-        assert_expr("foo[0]", "$symbol[0]");
-        assert_expr("foo[1 + 2]", "$symbol[(+ 1 2)]");
+        assert_expr("foo[0]", "foo[0]");
+        assert_expr("foo[1 + 2]", "foo[(+ 1 2)]");
     }
 
     #[test]
@@ -561,17 +561,17 @@ mod test {
 
     #[test]
     fn parses_property_expression() {
-        assert_expr("foo.bar", "$symbol.$symbol");
-        assert_expr("foo.bar.property", "$symbol.$symbol.$symbol");
-        assert_expr("foo.bar.property.prop", "$symbol.$symbol.$symbol.$symbol");
+        assert_expr("foo.bar", "foo.bar");
+        assert_expr("foo.bar.property", "foo.bar.property");
+        assert_expr("foo.bar.property.prop", "foo.bar.property.prop");
 
         assert_expr_error("foo.", ParseErrorCause::Expected(Expect::Identifier));
     }
 
     #[test]
     fn parses_assignment_expression() {
-        assert_expr("a = b", "$symbol = $symbol");
-        assert_expr("a = a + 1", "$symbol = (+ $symbol 1)");
+        assert_expr("a = b", "a = b");
+        assert_expr("a = a + 1", "a = (+ a 1)");
     }
 
     #[test]
@@ -584,9 +584,6 @@ mod test {
     #[test]
     fn parses_closure_expression() {
         assert_expr("|| => 10", "|0| => 10");
-        assert_expr(
-            "|a,b,c| => a + b + c",
-            "|3| => (+ (+ $symbol $symbol) $symbol)",
-        );
+        assert_expr("|a,b,c| => a + b + c", "|3| => (+ (+ a b) c)");
     }
 }

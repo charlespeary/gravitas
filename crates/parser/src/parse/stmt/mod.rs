@@ -40,13 +40,14 @@ impl fmt::Display for StmtKind {
             Expression { expr } => {
                 write!(f, "{};", expr)?;
             }
-            VariableDeclaration { expr, .. } => {
-                write!(f, "let $symbol = {};", expr)?;
+            VariableDeclaration { expr, name } => {
+                write!(f, "let {} = {};", name, expr)?;
             }
-            FunctionDeclaration { params, body, .. } => {
+            FunctionDeclaration { params, body, name } => {
                 write!(
                     f,
-                    "fn $symbol({}) {}",
+                    "fn {}({}) {}",
+                    name,
                     if params.kind.is_empty() {
                         "empty"
                     } else {
@@ -58,11 +59,11 @@ impl fmt::Display for StmtKind {
             ClassDeclaration {
                 super_class,
                 methods,
-                ..
+                name,
             } => {
-                write!(f, "class $symbol")?;
-                if super_class.is_some() {
-                    write!(f, " : $symbol")?;
+                write!(f, "class {}", name)?;
+                if let Some(super_class) = super_class {
+                    write!(f, " : {}", super_class)?;
                 }
                 write!(f, "methods({}) ", methods.len())?;
             }
@@ -148,7 +149,7 @@ mod test {
 
     #[test]
     fn parses_variable_declaration() {
-        assert_stmt("let foo = 10;", "let $symbol = 10;");
-        assert_stmt("let bar = 2 + 2 >= 10;", "let $symbol = (>= (+ 2 2) 10);");
+        assert_stmt("let foo = 10;", "let foo = 10;");
+        assert_stmt("let bar = 2 + 2 >= 10;", "let bar = (>= (+ 2 2) 10);");
     }
 }
