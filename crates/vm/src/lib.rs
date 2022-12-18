@@ -125,6 +125,10 @@ impl VM {
                 self.operands.push(block_result);
                 Ok(())
             }
+            Break(distance) => {
+                self.move_pointer(distance)?;
+                Ok(())
+            }
             Get => self.op_get(),
             Asg => self.op_asg(),
             Call => self.op_call(),

@@ -34,11 +34,7 @@ impl BytecodeFrom<AtomicValue> for BytecodeGenerator {
 
 #[cfg(test)]
 mod test {
-    use parser::parse::{
-        expr::{atom::AtomicValue, ExprKind},
-        stmt::{Stmt, StmtKind},
-        Node,
-    };
+    use parser::parse::expr::atom::AtomicValue;
 
     use crate::{
         chunk::Constant,

@@ -20,16 +20,18 @@ pub struct Scope {
     pub closed: Vec<Variable>,
     pub returned: bool,
     pub patches: HashSet<Patch>,
+    pub starting_index: usize,
 }
 
 impl Scope {
-    pub fn new(scope_type: ScopeType) -> Self {
+    pub fn new(scope_type: ScopeType, starting_index: usize) -> Self {
         Self {
             scope_type,
             declared: vec![],
             closed: vec![],
             patches: HashSet::new(),
             returned: false,
+            starting_index,
         }
     }
 }
@@ -45,7 +47,7 @@ impl GeneratorState {
     pub fn new() -> Self {
         Self {
             // Initialize State with global scope
-            scopes: vec![Scope::new(ScopeType::Global)],
+            scopes: vec![Scope::new(ScopeType::Global, 0)],
             ..Default::default()
         }
     }
@@ -84,8 +86,8 @@ impl GeneratorState {
         self.current_scope().returned
     }
 
-    pub fn enter_scope(&mut self, scope_type: ScopeType) {
-        self.scopes.push(Scope::new(scope_type))
+    pub fn enter_scope(&mut self, scope_type: ScopeType, starting_index: usize) {
+        self.scopes.push(Scope::new(scope_type, starting_index))
     }
 
     pub fn leave_scope(&mut self) -> Scope {

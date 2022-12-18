@@ -40,7 +40,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 self.patch(&jif_patch);
             }
             ExprKind::While { condition, body } => {
-                self.state.enter_scope(ScopeType::Block);
+                self.enter_scope(ScopeType::Block);
                 let start = self.curr_index();
                 self.generate(condition)?;
 
@@ -69,8 +69,19 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
 
                 self.write_opcode(Opcode::Block(self.state.declared()));
             }
-            ExprKind::Break { return_expr } => {}
-            ExprKind::Continue => {}
+            ExprKind::Break { return_expr } => {
+                if let Some(return_expr) = return_expr {
+                    self.generate(return_expr)?;
+                } else {
+                    self.write_opcode(Opcode::Null);
+                }
+                self.emit_patch(Opcode::Break(0));
+            }
+            ExprKind::Continue => {
+                let ending_index = self.curr_index();
+                let starting_index = self.state.current_scope().starting_index;
+                self.write_opcode(Opcode::Jp(starting_index as isize - ending_index as isize));
+            }
             ExprKind::Call { callee, args } => {}
             ExprKind::Return { value } => {}
             ExprKind::Array { values } => {}

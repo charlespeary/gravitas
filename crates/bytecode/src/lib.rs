@@ -4,7 +4,7 @@ use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};
-use state::GeneratorState;
+use state::{GeneratorState, ScopeType};
 
 pub mod callables;
 pub mod chunk;
@@ -106,6 +106,7 @@ pub enum Opcode {
     // Return (Any)
     Return,
     Block(usize),
+    Break(isize),
     Null,
 }
 
@@ -141,6 +142,7 @@ impl Display for Opcode {
                     Jp(distance) => format!("JP_{}", distance),
                     Pop(amount) => format!("POP_{}", amount),
                     Block(amount) => format!("BLC_{}", amount),
+                    Break(distance) => format!("BRK_{}", distance),
                     _ => unreachable!(),
                 };
                 write!(f, "{}", str)?;
@@ -159,6 +161,7 @@ impl Opcode {
         match self {
             Opcode::Jif(_) => Opcode::Jif(value),
             Opcode::Jp(_) => Opcode::Jp(value),
+            Opcode::Break(_) => Opcode::Break(value),
             _ => unreachable!("Tried to patch invalid opcode"),
         }
     }
@@ -243,6 +246,11 @@ impl BytecodeGenerator {
             .expect("Patch tried to access wrong opcode.");
         let patched_opcode = opcode.patch((current_index - patch.index) as isize);
         let _ = std::mem::replace(opcode, patched_opcode);
+    }
+
+    pub fn enter_scope(&mut self, scope_type: ScopeType) {
+        let starting_index = self.curr_index();
+        self.state.enter_scope(scope_type, starting_index);
     }
 }
 
