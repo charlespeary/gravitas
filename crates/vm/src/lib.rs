@@ -119,7 +119,12 @@ impl VM {
                 return Ok(TickOutcome::ContinueExecution);
             }
             Pop(amount) => self.op_pop(amount),
-            Block(amount) => Ok(()),
+            Block(amount) => {
+                let block_result = self.pop_operand()?;
+                self.op_pop(amount)?;
+                self.operands.push(block_result);
+                Ok(())
+            }
             Get => self.op_get(),
             Asg => self.op_asg(),
             Call => self.op_call(),

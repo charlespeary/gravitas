@@ -63,9 +63,11 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
 
                 if let Some(return_expr) = return_expr {
                     self.generate(return_expr)?;
+                } else {
+                    self.write_opcode(Opcode::Null);
                 }
 
-                self.write_opcode(Opcode::Block(0));
+                self.write_opcode(Opcode::Block(self.state.declared()));
             }
             ExprKind::Break { return_expr } => {}
             ExprKind::Continue => {}
@@ -90,7 +92,13 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
 
 #[cfg(test)]
 mod test {
-    use crate::{BytecodeGenerator, Opcode};
+    use parser::parse::expr::{atom::AtomicValue, ExprKind};
+
+    use crate::{
+        chunk::Constant,
+        test::{assert_bytecode_and_constants, box_node, declare_var, expr},
+        BytecodeGenerator, Opcode,
+    };
 
     #[test]
     fn it_patches_opcodes() {
@@ -111,6 +119,32 @@ mod test {
         assert_eq!(
             generator.clone().code().chunk.opcodes[patch.index],
             Opcode::Jif(2)
+        );
+    }
+
+    #[test]
+    fn generates_block_bytecode() {
+        // If no return_expr is specified then block return null by default
+        // Block also drops variables declared inside
+        assert_bytecode_and_constants(
+            box_node(ExprKind::Block {
+                return_expr: None,
+                stmts: vec![declare_var(
+                    "foo".to_owned(),
+                    expr(AtomicValue::Number(0.0)),
+                )],
+            }),
+            vec![Opcode::Constant(0), Opcode::Null, Opcode::Block(1)], // expected_bytecode,
+            vec![Constant::Number(0.0)],
+        );
+        // Otherwise block returns the last expression
+        assert_bytecode_and_constants(
+            box_node(ExprKind::Block {
+                return_expr: Some(expr(AtomicValue::Number(5.0))),
+                stmts: vec![],
+            }),
+            vec![Opcode::Constant(0), Opcode::Block(0)], // expected_bytecode,
+            vec![Constant::Number(5.0)],
         );
     }
 }
