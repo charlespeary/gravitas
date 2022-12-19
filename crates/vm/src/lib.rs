@@ -8,9 +8,10 @@ pub(crate) mod basic_expr;
 pub(crate) mod call;
 pub(crate) mod eq_ord;
 pub(crate) mod flow_control;
+pub mod gravitas_std;
 pub(crate) mod memory;
 pub(crate) mod runtime_error;
-pub(crate) mod runtime_value;
+pub mod runtime_value;
 pub(crate) mod stack;
 
 pub type ProgramOutput = Result<RuntimeValue, RuntimeError>;
@@ -24,7 +25,7 @@ pub enum TickOutcome {
     ContinueExecution,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,

@@ -155,7 +155,7 @@ impl GeneratorState {
                     MemoryAddress::Local(var.index)
                 }
             })
-            .expect("Generator is in a bad state. Analyzer didn't ensure that variable is defined.")
+            .unwrap_or(MemoryAddress::Global(name.to_owned()))
     }
 
     pub fn scope_variables(&self) -> &Vec<Variable> {

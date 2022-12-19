@@ -1,4 +1,7 @@
-use crate::{OperationResult, RuntimeErrorCause, RuntimeValue, VM};
+use crate::{
+    gravitas_std::{BuiltInFunction, FnArgs},
+    MachineResult, OperationResult, RuntimeErrorCause, RuntimeValue, VM,
+};
 use bytecode::{
     callables::{Class, Function},
     chunk::Chunk,
@@ -17,6 +20,7 @@ pub(crate) struct CallFrame {
 pub enum Callable {
     Function(Function),
     Class(Class),
+    BuiltInFunction(BuiltInFunction),
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +30,15 @@ pub struct ObjectInstance {
 }
 
 impl VM {
+    fn get_args(&mut self, arity: usize) -> MachineResult<FnArgs> {
+        let mut args = vec![];
+        for _ in 0..arity {
+            args.push(self.pop_operand()?);
+        }
+
+        Ok(args)
+    }
+
     fn function_call(&mut self, function: Function) -> OperationResult {
         let frame = CallFrame {
             stack_start: self.ip + 1,
@@ -44,6 +57,18 @@ impl VM {
         Ok(())
     }
 
+    fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> OperationResult {
+        let BuiltInFunction {
+            arity,
+            fn_body,
+            name,
+        } = built_in_function;
+        let args = self.get_args(arity)?;
+        let result = fn_body(args, self);
+        self.operands.push(result);
+        Ok(())
+    }
+
     pub(crate) fn op_call(&mut self) -> OperationResult {
         let callee = match self.pop_operand()? {
             RuntimeValue::Callable(callable) => callable,
@@ -53,6 +78,7 @@ impl VM {
         match callee {
             Callable::Function(function) => self.function_call(function),
             Callable::Class(class) => self.class_call(class),
+            Callable::BuiltInFunction(built_in_fn) => self.built_in_function_call(built_in_fn),
         }?;
 
         Ok(())

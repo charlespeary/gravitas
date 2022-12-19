@@ -7,6 +7,15 @@ mod binary;
 mod flow_control;
 mod unary;
 
+impl BytecodeFrom<Vec<Expr>> for BytecodeGenerator {
+    fn generate(&mut self, data: Vec<Expr>) -> crate::BytecodeGenerationResult {
+        for expr in data {
+            self.generate(expr)?;
+        }
+        Ok(())
+    }
+}
+
 impl BytecodeFrom<Expr> for BytecodeGenerator {
     fn generate(&mut self, expr: Expr) -> crate::BytecodeGenerationResult {
         match *expr.kind {
@@ -82,7 +91,11 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 let starting_index = self.state.current_scope().starting_index;
                 self.write_opcode(Opcode::Jp(starting_index as isize - ending_index as isize));
             }
-            ExprKind::Call { callee, args } => {}
+            ExprKind::Call { callee, args } => {
+                self.generate(args)?;
+                self.generate(callee)?;
+                self.write_opcode(Opcode::Call);
+            }
             ExprKind::Return { value } => {}
             ExprKind::Array { values } => {}
             ExprKind::Index { target, position } => {}

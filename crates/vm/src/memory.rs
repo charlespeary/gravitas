@@ -1,6 +1,10 @@
 use bytecode::MemoryAddress;
+use common::ProgramText;
 
-use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, OperationResult, VM};
+use crate::{
+    gravitas_std::STD_FUNCTIONS, runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue,
+    OperationResult, VM,
+};
 
 impl VM {
     pub(crate) fn op_pop(&mut self, amount: usize) -> OperationResult {
@@ -51,11 +55,20 @@ impl VM {
         }
     }
 
+    pub(crate) fn get_global_variable(&mut self, name: ProgramText) -> OperationResult {
+        let built_in = STD_FUNCTIONS
+            .get(&*name)
+            .expect("This global variable is not defined.");
+        self.operands.push(built_in.clone().into());
+        Ok(())
+    }
+
     pub(crate) fn op_get(&mut self) -> OperationResult {
         let address = self.pop_address()?;
         // TODO: move to util function
         match address {
             MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
+            MemoryAddress::Global(name) => self.get_global_variable(name),
             _ => unimplemented!(),
         }
     }

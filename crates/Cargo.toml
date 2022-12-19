@@ -6,5 +6,5 @@ members = [
     "bytecode",
     "vm",
     "common",
-    "analyzer"
+    "analyzer",
 ]

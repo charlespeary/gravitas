@@ -8,6 +8,7 @@ use parser::{
     utils::error::{ParseError, ParseErrorCause},
 };
 use std::collections::{HashMap, HashSet};
+use vm::gravitas_std::STD_FUNCTIONS;
 
 pub type AnalyzerResult<E> = Result<(), E>;
 
@@ -21,7 +22,14 @@ pub struct Analyzer {
 
 impl Analyzer {
     pub fn new() -> Self {
+        let variables: HashMap<ProgramText, bool> = STD_FUNCTIONS
+            .keys()
+            .cloned()
+            .map(|name| (name.to_owned(), true))
+            .collect();
+
         Self {
+            variables,
             ..Default::default()
         }
     }
