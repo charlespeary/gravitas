@@ -96,7 +96,14 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 self.generate(callee)?;
                 self.write_opcode(Opcode::Call);
             }
-            ExprKind::Return { value } => {}
+            ExprKind::Return { value } => {
+                if let Some(value) = value {
+                    self.generate(value)?;
+                } else {
+                    self.write_opcode(Opcode::Null);
+                }
+                self.write_opcode(Opcode::Return);
+            }
             ExprKind::Array { values } => {}
             ExprKind::Index { target, position } => {}
             ExprKind::Property { target, paths } => {}

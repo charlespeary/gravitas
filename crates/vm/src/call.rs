@@ -14,6 +14,7 @@ pub(crate) struct CallFrame {
     pub(crate) stack_start: usize,
     pub(crate) chunk: Chunk,
     pub(crate) name: ProgramText,
+    pub(crate) return_ip: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -29,6 +30,13 @@ pub struct ObjectInstance {
     pub properties: HashMap<ProgramText, RuntimeValue>,
 }
 
+pub(crate) enum CallType {
+    EnterFnBody,
+    InlineFn,
+}
+
+pub(crate) type CallOperation = MachineResult<CallType>;
+
 impl VM {
     fn get_args(&mut self, arity: usize) -> MachineResult<FnArgs> {
         let mut args = vec![];
@@ -39,25 +47,49 @@ impl VM {
         Ok(args)
     }
 
-    fn function_call(&mut self, function: Function) -> OperationResult {
+    pub(crate) fn add_call_frame(&mut self, call_frame: CallFrame) {
+        self.call_stack.push(call_frame);
+    }
+
+    pub(crate) fn remove_call_frame(&mut self) {
+        let frame = self
+            .call_stack
+            .pop()
+            .expect("Tried to remove the global call frame.");
+
+        println!(
+            "return_ip: {}, self.ip: {} stack_start: {}",
+            frame.return_ip, self.ip, frame.stack_start
+        );
+
+        self.ip = frame.return_ip;
+        self.operands.truncate(frame.stack_start);
+    }
+
+    fn function_call(&mut self, function: Function) -> CallOperation {
+        let recursion_handler = function.clone();
+        self.operands.push(recursion_handler.into());
+
         let frame = CallFrame {
-            stack_start: self.ip + 1,
+            // -1 because we also count function pushed onto the stack
+            // for recursion purposes
+            stack_start: self.operands.len() - function.arity - 1,
             chunk: function.chunk,
             name: function.name,
+            return_ip: self.ip,
         };
 
-        println!("calling: {}", frame.name);
+        self.add_call_frame(frame);
 
-        self.call_stack.push(frame);
-        Ok(())
+        Ok(CallType::EnterFnBody)
     }
 
-    fn class_call(&mut self, class: Class) -> OperationResult {
+    fn class_call(&mut self, class: Class) -> CallOperation {
         self.function_call(class.constructor)?;
-        Ok(())
+        Ok(CallType::EnterFnBody)
     }
 
-    fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> OperationResult {
+    fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> CallOperation {
         let BuiltInFunction {
             arity,
             fn_body,
@@ -66,10 +98,10 @@ impl VM {
         let args = self.get_args(arity)?;
         let result = fn_body(args, self);
         self.operands.push(result);
-        Ok(())
+        Ok(CallType::InlineFn)
     }
 
-    pub(crate) fn op_call(&mut self) -> OperationResult {
+    pub(crate) fn op_call(&mut self) -> CallOperation {
         let callee = match self.pop_operand()? {
             RuntimeValue::Callable(callable) => callable,
             _ => return self.error(RuntimeErrorCause::NotCallable),
@@ -79,9 +111,7 @@ impl VM {
             Callable::Function(function) => self.function_call(function),
             Callable::Class(class) => self.class_call(class),
             Callable::BuiltInFunction(built_in_fn) => self.built_in_function_call(built_in_fn),
-        }?;
-
-        Ok(())
+        }
     }
 }
 

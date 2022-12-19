@@ -1,15 +1,15 @@
 use analyzer::analyze;
 use bytecode::generate_bytecode;
-use parser::{parse, parse::Ast};
+use clap::Args;
+use parser::parse;
 use rustyline::{error::ReadlineError, Editor};
-use structopt::StructOpt;
 
 use crate::compiler::log_errors;
 use vm::run;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Args)]
 pub(crate) struct Repl {
-    #[structopt(short, long)]
+    #[clap(long, short, action)]
     pub(crate) debug: bool,
 }
 
@@ -36,7 +36,7 @@ impl Repl {
                         .map_err(|error| println!("TODO: generation errors"))
                         .expect("Bytecode generation failed. Investigate above errors to find the cause.");
 
-                    let program_output = run(bytecode);
+                    let program_output = run(bytecode, self.debug);
                     println!("> {}", program_output);
                 }
                 Err(ReadlineError::Interrupted) => {

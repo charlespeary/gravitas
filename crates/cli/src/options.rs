@@ -1,8 +1,13 @@
 use crate::repl::Repl;
-use structopt::StructOpt;
+use clap::{Parser, Subcommand};
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "gravitas", about = "A toy programming language")]
-pub(crate) enum Gravitas {
+#[derive(Parser)]
+pub(crate) struct Gravitas {
+    #[command(subcommand)]
+    pub(crate) action: GravitasAction,
+}
+
+#[derive(Subcommand)]
+pub(crate) enum GravitasAction {
     Repl(Repl),
 }

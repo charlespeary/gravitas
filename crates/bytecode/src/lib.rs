@@ -1,4 +1,4 @@
-use std::{fmt::Display, thread::current};
+use std::fmt::Display;
 
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
@@ -33,6 +33,19 @@ pub enum MemoryAddress {
     Global(String),
     // Property of an object
     // Property(PropertyAddress),
+}
+
+impl Display for MemoryAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Self::Global(name) => format!("global_address::{}", name),
+            Self::Local(address) => format!("local_address::{}", address),
+            Self::Upvalue(..) => "upvalue".to_owned(),
+        };
+        write!(f, "{}", str)?;
+
+        Ok(())
+    }
 }
 
 impl From<MemoryAddress> for Constant {
@@ -246,6 +259,17 @@ impl BytecodeGenerator {
             .expect("Patch tried to access wrong opcode.");
         let patched_opcode = opcode.patch((current_index - patch.index) as isize);
         let _ = std::mem::replace(opcode, patched_opcode);
+    }
+
+    pub fn new_function(&mut self, name: ProgramText, arity: usize) {
+        let new_fn = Function {
+            arity,
+            name,
+            chunk: Chunk::default(),
+        };
+
+        self.enter_scope(ScopeType::Function);
+        self.functions.push(new_fn);
     }
 
     pub fn enter_scope(&mut self, scope_type: ScopeType) {

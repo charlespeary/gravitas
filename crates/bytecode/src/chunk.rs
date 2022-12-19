@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{
     callables::{Class, Function},
     MemoryAddress, Opcode,
@@ -12,6 +14,22 @@ pub enum Constant {
     Bool(bool),
     Function(Function),
     Class(Class),
+}
+
+impl Display for Constant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Self::MemoryAddress(address) => address.to_string(),
+            Self::Number(num) => num.to_string(),
+            Self::String(str) => str.clone(),
+            Self::Bool(bool) => bool.to_string(),
+            Self::Function(fun) => fun.name.clone(),
+            Self::Class(class) => class.name.clone(),
+        };
+
+        write!(f, "{}", str)?;
+        Ok(())
+    }
 }
 
 pub type ConstantIndex = usize;

@@ -12,6 +12,6 @@ analyzer = { path = "../analyzer" }
 common = { path = "../common" }
 vm = { path = "../vm" }
 bytecode = { path = "../bytecode" }
-structopt = "0.3.21"
 rustyline = "8.2.0"
 codespan-reporting = "0.11.1"
+clap = { version = "4.0.29", features = ["derive"] }

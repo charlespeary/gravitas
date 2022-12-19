@@ -3,11 +3,7 @@ use crate::{
         expr::{Expr, ExprKind},
         ExprResult, Node, Parser,
     },
-    token::{
-        constants::{ASSIGN, DOT},
-        Token,
-    },
-    utils::combine,
+    token::{constants::ASSIGN, Token},
 };
 use common::{Number, ProgramText};
 use std::fmt;

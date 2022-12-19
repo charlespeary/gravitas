@@ -1,8 +1,15 @@
-use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
+use crate::call::CallType;
+use bytecode::{
+    chunk::{Chunk, Constant},
+    Opcode, ProgramBytecode,
+};
 use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
+#[macro_use]
+extern crate prettytable;
+use prettytable::{Cell, Row, Table};
 
 pub(crate) mod basic_expr;
 pub(crate) mod call;
@@ -32,15 +39,32 @@ pub struct VM {
     pub(crate) ip: usize,
 }
 
-pub fn run(bytecode: ProgramBytecode) -> RuntimeValue {
-    println!("BYTECODE:");
-    for op in &bytecode.opcodes {
-        println!("  {}", op);
+pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
+    if debug {
+        let mut table = Table::new();
+
+        table.add_row(row!["OPCODE", "CONSTANT INDEX", "CONSTANT VALUE"]);
+
+        let opcodes = bytecode.opcodes.iter();
+        let constants = bytecode
+            .constants
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i.to_string(), c.to_string()))
+            .chain(std::iter::repeat(("-".to_owned(), "-".to_owned())));
+
+        for (opcode, (constant_index, constant_value)) in opcodes.zip(constants) {
+            table.add_row(row![
+                opcode.to_string(),
+                constant_index,
+                constant_value.to_string()
+            ]);
+        }
+
+        // Print the table to stdout
+        table.printstd();
     }
-    println!("CONSTANTS:");
-    for constant in &bytecode.constants {
-        println!("  {:?}", constant);
-    }
+
     let mut vm = VM::new(bytecode);
     vm.run().expect("VM went kaboom")
 }
@@ -51,6 +75,7 @@ impl VM {
             stack_start: 0,
             name: MAIN_FUNCTION_NAME.to_owned(),
             chunk,
+            return_ip: 0,
         };
 
         Self {
@@ -68,26 +93,17 @@ impl VM {
         self.call_stack.last().expect("Callstack is empty")
     }
 
-    pub(crate) fn end_frame(&mut self) {
-        self.call_stack.pop();
-    }
-
     pub(crate) fn tick(&mut self) -> MachineResult<TickOutcome> {
         let has_next_opcode = self.ip < self.current_frame().chunk.opcodes_len();
 
-        if !has_next_opcode && !self.call_stack.is_empty() {
-            self.end_frame();
-        }
-
         // we finish the program if no next opcode and callstack is empty
-        if !has_next_opcode && self.call_stack.is_empty() {
+        if !has_next_opcode {
             return Ok(TickOutcome::FinishProgram);
         }
 
-        let ip = self.ip - self.current_frame().stack_start;
-
-        let next = self.current_frame().chunk.read_opcode(ip);
+        let next = self.current_frame().chunk.read_opcode(self.ip);
         use Opcode::*;
+        println!("N: {}", next);
 
         match next {
             Constant(index) => self.op_constant(index),
@@ -132,7 +148,21 @@ impl VM {
             }
             Get => self.op_get(),
             Asg => self.op_asg(),
-            Call => self.op_call(),
+            Call => match self.op_call()? {
+                CallType::EnterFnBody => {
+                    self.ip = 0;
+                    return Ok(TickOutcome::ContinueExecution);
+                }
+                CallType::InlineFn => Ok(()),
+            },
+            Return => {
+                println!("before stack: {:?}", &self.operands);
+                let result = self.pop_operand()?;
+                self.remove_call_frame();
+                println!("after stack: {:?}", &self.operands);
+                self.operands.push(result);
+                Ok(())
+            }
             Null => {
                 self.operands.push(RuntimeValue::Null);
                 Ok(())
