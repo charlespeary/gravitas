@@ -48,8 +48,7 @@ impl VM {
             .cloned()
         {
             Some(value) => {
-                println!("GOT: {}", &value);
-                self.operands.push(value);
+                self.push_operand(value);
                 Ok(())
             }
             None => self.error(RuntimeErrorCause::StackOverflow),
@@ -60,7 +59,7 @@ impl VM {
         let built_in = STD_FUNCTIONS
             .get(&*name)
             .expect("This global variable is not defined.");
-        self.operands.push(built_in.clone().into());
+        self.push_operand(built_in.clone().into());
         Ok(())
     }
 

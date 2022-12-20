@@ -89,7 +89,7 @@ impl VM {
     pub(crate) fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
         let item = self.current_frame().chunk.read(index);
         let value = RuntimeValue::from(item);
-        self.operands.push(value);
+        self.push_operand(value);
         Ok(())
     }
 
@@ -100,14 +100,14 @@ impl VM {
     pub(crate) fn op_neg(&mut self) -> OperationResult {
         let a = self.pop_operand()?;
         let res = a.neg(self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_not(&mut self) -> OperationResult {
         let a = self.pop_operand()?;
         let res = a.not(self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
@@ -117,56 +117,56 @@ impl VM {
     pub(crate) fn op_add(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.add(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_sub(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.sub(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_mul(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.mul(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_div(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.div(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_mod(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.modulo(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_pow(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.pow(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_and(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.and(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 
     pub(crate) fn op_or(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let res = a.or(b, self)?;
-        self.operands.push(res);
+        self.push_operand(res);
         Ok(())
     }
 

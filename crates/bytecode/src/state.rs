@@ -158,8 +158,6 @@ impl GeneratorState {
             })
             .unwrap_or(MemoryAddress::Global(name.to_owned()));
 
-        println!("scope: {:?}", self.current_scope());
-        println!("{}:{}", name, var);
         var
     }
 

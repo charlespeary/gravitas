@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use bytecode::MemoryAddress;
 use common::Number;
 
@@ -16,6 +18,11 @@ impl VM {
             RuntimeValue::MemoryAddress(address) => Ok(address),
             _ => return self.error(RuntimeErrorCause::ExpectedAddress),
         }
+    }
+
+    pub(crate) fn push_operand(&mut self, operand: RuntimeValue) {
+        self.debug(format!("[STACK][PUSH] {}", &operand));
+        self.operands.push(operand);
     }
 
     pub(crate) fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {

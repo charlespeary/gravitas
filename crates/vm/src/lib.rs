@@ -1,8 +1,8 @@
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+
 use crate::call::CallType;
-use bytecode::{
-    chunk::{Chunk, Constant},
-    Opcode, ProgramBytecode,
-};
+use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
 use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
@@ -34,6 +34,7 @@ pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) ip: usize,
+    pub(crate) debug: bool,
 }
 
 pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
@@ -41,13 +42,12 @@ pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
         println!("{}", bytecode);
     }
 
-    let mut vm = VM::new(bytecode);
-    // vm.run().expect("VM went kaboom")
-    RuntimeValue::Null
+    let mut vm = VM::new(bytecode, debug);
+    vm.run().expect("VM went kaboom")
 }
 
 impl VM {
-    pub fn new(chunk: Chunk) -> Self {
+    pub fn new(chunk: Chunk, debug: bool) -> Self {
         let initial_frame = CallFrame {
             stack_start: 0,
             name: MAIN_FUNCTION_NAME.to_owned(),
@@ -59,11 +59,30 @@ impl VM {
             operands: Vec::new(),
             call_stack: vec![initial_frame],
             ip: 0,
+            debug,
         }
     }
 
     fn error<T>(&mut self, cause: RuntimeErrorCause) -> MachineResult<T> {
         Err(RuntimeError { cause })
+    }
+
+    // TODO: This probably could be hidden behind a feature flag to not
+    // decrease VM's performance but since it's not a language to use
+    // in real world scenario then it's fine.
+    fn debug<S: std::fmt::Display + AsRef<str>>(&self, msg: S) {
+        if self.debug {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .create(true)
+                .open("debug.gv")
+                .unwrap();
+
+            if let Err(e) = writeln!(file, "{}", msg) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
     }
 
     pub(crate) fn current_frame(&self) -> &CallFrame {
@@ -80,7 +99,8 @@ impl VM {
 
         let next = self.current_frame().chunk.read_opcode(self.ip);
         use Opcode::*;
-        println!("N: {}", next);
+
+        self.debug(format!("Next opcode: {}", &next));
 
         match next {
             Constant(index) => self.op_constant(index),
@@ -116,7 +136,7 @@ impl VM {
             Block(amount) => {
                 let block_result = self.pop_operand()?;
                 self.op_pop(amount)?;
-                self.operands.push(block_result);
+                self.push_operand(block_result);
                 Ok(())
             }
             Break(distance) => {
@@ -134,12 +154,13 @@ impl VM {
             },
             Return => {
                 let result = self.pop_operand()?;
+                println!("RET: {} ", &result);
                 self.remove_call_frame();
-                self.operands.push(result);
+                self.push_operand(result);
                 Ok(())
             }
             Null => {
-                self.operands.push(RuntimeValue::Null);
+                self.push_operand(RuntimeValue::Null);
                 Ok(())
             }
             _ => {
@@ -193,7 +214,7 @@ mod test {
     }
 
     pub(crate) fn new_vm(code: Chunk) -> VM {
-        VM::new(code)
+        VM::new(code, false)
     }
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {

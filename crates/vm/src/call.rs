@@ -63,7 +63,7 @@ impl VM {
 
     fn function_call(&mut self, function: Function) -> CallOperation {
         let recursion_handler = function.clone();
-        self.operands.push(recursion_handler.into());
+        self.push_operand(recursion_handler.into());
 
         let frame = CallFrame {
             // -1 because we also count function pushed onto the stack
@@ -92,7 +92,7 @@ impl VM {
         } = built_in_function;
         let args = self.get_args(arity)?;
         let result = fn_body(args, self);
-        self.operands.push(result);
+        self.push_operand(result);
         Ok(CallType::InlineFn)
     }
 

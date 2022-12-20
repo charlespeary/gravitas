@@ -77,7 +77,7 @@ impl VM {
         let (a, b) = self.pop_two_operands()?;
         let result = a.eq(&b, self)?;
 
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 
@@ -85,7 +85,7 @@ impl VM {
         let (a, b) = self.pop_two_operands()?;
         let result = a.ne(b, self)?;
 
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 
@@ -93,7 +93,7 @@ impl VM {
         let (a, b) = self.pop_two_operands()?;
         let result = a.gt(b, self)?;
 
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 
@@ -101,14 +101,14 @@ impl VM {
         let (a, b) = self.pop_two_operands()?;
         let result = a.ge(b, self)?;
 
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 
     pub(crate) fn op_lt(&mut self) -> OperationResult {
         let (a, b) = self.pop_two_operands()?;
         let result = a.lt(b, self)?;
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 
@@ -116,7 +116,7 @@ impl VM {
         let (a, b) = self.pop_two_operands()?;
         let result = a.le(b, self)?;
 
-        self.operands.push(RuntimeValue::Bool(result));
+        self.push_operand(RuntimeValue::Bool(result));
         Ok(())
     }
 }
