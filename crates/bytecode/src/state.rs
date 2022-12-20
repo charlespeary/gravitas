@@ -147,7 +147,8 @@ impl GeneratorState {
     pub fn find_var(&mut self, name: &str) -> MemoryAddress {
         let current_depth = self.depth();
         let in_closure = self.is_in_closure();
-        self.search_var(name)
+        let var = self
+            .search_var(name)
             .map(|var| {
                 if var.closed && in_closure {
                     MemoryAddress::Upvalue(var.index, current_depth - var.depth)
@@ -155,7 +156,11 @@ impl GeneratorState {
                     MemoryAddress::Local(var.index)
                 }
             })
-            .unwrap_or(MemoryAddress::Global(name.to_owned()))
+            .unwrap_or(MemoryAddress::Global(name.to_owned()));
+
+        println!("scope: {:?}", self.current_scope());
+        println!("{}:{}", name, var);
+        var
     }
 
     pub fn scope_variables(&self) -> &Vec<Variable> {

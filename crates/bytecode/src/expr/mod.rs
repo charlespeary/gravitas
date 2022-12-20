@@ -61,11 +61,7 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 self.patch(&jif);
                 // TODO: implement breaking from while loops with a value
                 self.write_opcode(Opcode::Null);
-                let scope = self.state.leave_scope();
-
-                for patch in scope.patches {
-                    self.patch(&patch);
-                }
+                self.leave_scope();
             }
             ExprKind::Block { stmts, return_expr } => {
                 self.generate(stmts)?;

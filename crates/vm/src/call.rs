@@ -63,7 +63,9 @@ impl VM {
         );
 
         self.ip = frame.return_ip;
+        // println!("stack bt: {:#?}", &self.operands);
         self.operands.truncate(frame.stack_start);
+        // println!("stack at: {:#?}", &self.operands);
     }
 
     fn function_call(&mut self, function: Function) -> CallOperation {

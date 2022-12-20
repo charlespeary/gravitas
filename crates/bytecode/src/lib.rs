@@ -276,6 +276,13 @@ impl BytecodeGenerator {
         let starting_index = self.curr_index();
         self.state.enter_scope(scope_type, starting_index);
     }
+
+    pub fn leave_scope(&mut self) {
+        let scope = self.state.leave_scope();
+        for patch in scope.patches {
+            self.patch(&patch);
+        }
+    }
 }
 
 pub trait BytecodeFrom<T> {
