@@ -22,6 +22,11 @@ impl VM {
     ) -> OperationResult {
         let stack_start = self.current_frame().stack_start;
 
+        self.debug(format!(
+            "[STACK][ASSIGN][ADDRESS={}][VALUE={}]",
+            &address, &value
+        ));
+
         match address {
             MemoryAddress::Local(local_address) => {
                 self.operands[stack_start + local_address as usize] = value;
@@ -41,13 +46,14 @@ impl VM {
 
     pub(crate) fn get_local_variable(&mut self, local_address: usize) -> OperationResult {
         let stack_start = self.current_frame().stack_start;
+        let stack_address = stack_start + local_address as usize;
 
-        match self
-            .operands
-            .get(stack_start + local_address as usize)
-            .cloned()
-        {
+        match self.operands.get(stack_address).cloned() {
             Some(value) => {
+                self.debug(format!(
+                    "[STACK][GET_LOCAL_VARIABLE][ADDRESS={}][VALUE={}]",
+                    stack_address, &value
+                ));
                 self.push_operand(value);
                 Ok(())
             }
@@ -59,6 +65,7 @@ impl VM {
         let built_in = STD_FUNCTIONS
             .get(&*name)
             .expect("This global variable is not defined.");
+        self.debug(format!("[STACK][GET_GLOBAL_VARIABLE][NAME={}]", name));
         self.push_operand(built_in.clone().into());
         Ok(())
     }

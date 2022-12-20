@@ -30,7 +30,7 @@ impl fmt::Display for RuntimeValue {
             Bool(bool) => write!(f, "{}", bool),
             Callable(callable) => write!(f, "callable"),
             ObjectInstance(obj) => write!(f, "obj:{}", obj.class.name),
-            MemoryAddress(address) => write!(f, "address"),
+            MemoryAddress(address) => write!(f, "{}", address.to_string()),
             Null => write!(f, "null"),
         }
     }

@@ -1,5 +1,6 @@
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
+use std::path::Path;
 
 use crate::call::CallType;
 use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
@@ -29,12 +30,35 @@ pub enum TickOutcome {
     ContinueExecution,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
+struct DebugOptions {
+    file: File,
+}
+
+impl DebugOptions {
+    fn new() -> Self {
+        static DEBUG_LOG: &str = "debug.gv";
+
+        if Path::new(DEBUG_LOG).exists() {
+            std::fs::remove_file(DEBUG_LOG).unwrap();
+        }
+
+        let file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open("debug.gv")
+            .unwrap();
+
+        Self { file }
+    }
+}
+
+#[derive(Debug)]
 pub struct VM {
     pub(crate) operands: Vec<RuntimeValue>,
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) ip: usize,
-    pub(crate) debug: bool,
+    pub(crate) debug: Option<DebugOptions>,
 }
 
 pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
@@ -42,12 +66,17 @@ pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
         println!("{}", bytecode);
     }
 
-    let mut vm = VM::new(bytecode, debug);
+    let mut vm = VM::new(bytecode);
+
+    if debug {
+        vm = vm.with_debug();
+    }
+
     vm.run().expect("VM went kaboom")
 }
 
 impl VM {
-    pub fn new(chunk: Chunk, debug: bool) -> Self {
+    pub fn new(chunk: Chunk) -> Self {
         let initial_frame = CallFrame {
             stack_start: 0,
             name: MAIN_FUNCTION_NAME.to_owned(),
@@ -59,8 +88,13 @@ impl VM {
             operands: Vec::new(),
             call_stack: vec![initial_frame],
             ip: 0,
-            debug,
+            debug: None,
         }
+    }
+
+    pub fn with_debug(mut self) -> Self {
+        self.debug = Some(DebugOptions::new());
+        self
     }
 
     fn error<T>(&mut self, cause: RuntimeErrorCause) -> MachineResult<T> {
@@ -70,16 +104,9 @@ impl VM {
     // TODO: This probably could be hidden behind a feature flag to not
     // decrease VM's performance but since it's not a language to use
     // in real world scenario then it's fine.
-    fn debug<S: std::fmt::Display + AsRef<str>>(&self, msg: S) {
-        if self.debug {
-            let mut file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .create(true)
-                .open("debug.gv")
-                .unwrap();
-
-            if let Err(e) = writeln!(file, "{}", msg) {
+    fn debug<S: std::fmt::Display + AsRef<str>>(&mut self, msg: S) {
+        if let Some(debug_options) = &mut self.debug {
+            if let Err(e) = writeln!(debug_options.file, "{}", msg) {
                 eprintln!("Couldn't write to file: {}", e);
             }
         }
@@ -100,7 +127,7 @@ impl VM {
         let next = self.current_frame().chunk.read_opcode(self.ip);
         use Opcode::*;
 
-        self.debug(format!("Next opcode: {}", &next));
+        self.debug(format!("[OPCODE][NEXT]: {}", &next));
 
         match next {
             Constant(index) => self.op_constant(index),
@@ -178,12 +205,15 @@ impl VM {
             if self.tick()? == TickOutcome::FinishProgram {
                 break;
             }
+            self.debug("[VM] TICK");
         }
         self.pop_operand()
     }
 
     pub(crate) fn move_pointer(&mut self, distance: isize) -> OperationResult {
         use std::ops::Neg;
+
+        self.debug(format!("[VM][MOVE_POINTER] {}", distance));
 
         if distance.is_positive() {
             self.ip += distance as usize;
@@ -214,7 +244,7 @@ mod test {
     }
 
     pub(crate) fn new_vm(code: Chunk) -> VM {
-        VM::new(code, false)
+        VM::new(code)
     }
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {

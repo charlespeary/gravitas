@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use bytecode::MemoryAddress;
 use common::Number;
 
@@ -26,7 +24,9 @@ impl VM {
     }
 
     pub(crate) fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {
-        match self.operands.pop() {
+        let value = self.operands.pop();
+        self.debug(format!("[STACK][POP] {:?}", &value));
+        match value {
             Some(value) => Ok(value),
             None => self.error(RuntimeErrorCause::PoppedFromEmptyStack),
         }

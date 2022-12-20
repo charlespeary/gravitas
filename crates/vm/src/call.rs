@@ -48,20 +48,32 @@ impl VM {
     }
 
     pub(crate) fn add_call_frame(&mut self, call_frame: CallFrame) {
+        self.debug(format!(
+            "[CALL_STACK][NEW FRAME][NAME={}][RETURN_IP={}][STACK_START={}]",
+            call_frame.name, call_frame.return_ip, call_frame.stack_start
+        ));
+
         self.call_stack.push(call_frame);
     }
 
     pub(crate) fn remove_call_frame(&mut self) {
-        let frame = self
+        let call_frame = self
             .call_stack
             .pop()
             .expect("Tried to remove the global call frame.");
 
-        self.ip = frame.return_ip;
-        self.operands.truncate(frame.stack_start);
+        self.debug(format!(
+            "[CALL_STACK][REMOVE FRAME][NAME={}][RETURN_IP={}][STACK_START={}]",
+            call_frame.name, call_frame.return_ip, call_frame.stack_start
+        ));
+
+        self.ip = call_frame.return_ip;
+        self.operands.truncate(call_frame.stack_start);
     }
 
     fn function_call(&mut self, function: Function) -> CallOperation {
+        self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &function.name));
+
         let recursion_handler = function.clone();
         self.push_operand(recursion_handler.into());
 
@@ -80,6 +92,8 @@ impl VM {
     }
 
     fn class_call(&mut self, class: Class) -> CallOperation {
+        self.debug(format!("[VM][CALL][CLASS][NAME={}]", &class.name));
+
         self.function_call(class.constructor)?;
         Ok(CallType::EnterFnBody)
     }
@@ -90,6 +104,9 @@ impl VM {
             fn_body,
             name,
         } = built_in_function;
+
+        self.debug(format!("[VM][CALL][BUILT IN][NAME={}]", &name));
+
         let args = self.get_args(arity)?;
         let result = fn_body(args, self);
         self.push_operand(result);
@@ -125,7 +142,7 @@ mod test {
             name: "foo".to_owned(),
         };
 
-        let mut vm = new_vm(Chunk::new(
+        let vm = new_vm(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Call],
             vec![Constant::Function(function)],
         ));
