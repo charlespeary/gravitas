@@ -48,6 +48,7 @@ impl VM {
             .cloned()
         {
             Some(value) => {
+                println!("GOT: {}", &value);
                 self.operands.push(value);
                 Ok(())
             }
@@ -66,7 +67,6 @@ impl VM {
     pub(crate) fn op_get(&mut self) -> OperationResult {
         let address = self.pop_address()?;
         // TODO: move to util function
-        println!("add: {}", &address);
         match address {
             MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
             MemoryAddress::Global(name) => self.get_global_variable(name),

@@ -68,6 +68,7 @@ version = "0.1.0"
 dependencies = [
  "common",
  "parser",
+ "prettytable-rs",
 ]
 
 [[package]]
@@ -817,7 +818,6 @@ dependencies = [
  "bytecode",
  "common",
  "lazy_static",
- "prettytable-rs",
 ]
 
 [[package]]

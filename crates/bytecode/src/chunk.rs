@@ -5,6 +5,7 @@ use crate::{
     MemoryAddress, Opcode,
 };
 use common::{Number, ProgramText};
+use prettytable::Table;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -23,7 +24,7 @@ impl Display for Constant {
             Self::Number(num) => num.to_string(),
             Self::String(str) => str.clone(),
             Self::Bool(bool) => bool.to_string(),
-            Self::Function(fun) => fun.name.clone(),
+            Self::Function(fun) => fun.chunk.to_string(),
             Self::Class(class) => class.name.clone(),
         };
 
@@ -39,6 +40,35 @@ pub type OpcodeIndex = usize;
 pub struct Chunk {
     pub opcodes: Vec<Opcode>,
     pub constants: Vec<Constant>,
+}
+
+impl Display for Chunk {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut table = Table::new();
+
+        table.add_row(row!["OPCODE", "CONSTANT INDEX", "CONSTANT VALUE"]);
+
+        let opcodes = self.opcodes.iter();
+        let constants = self
+            .constants
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i.to_string(), c.to_string()))
+            .chain(std::iter::repeat(("-".to_owned(), "-".to_owned())));
+
+        for (opcode, (constant_index, constant_value)) in opcodes.zip(constants) {
+            table.add_row(row![
+                opcode.to_string(),
+                constant_index,
+                constant_value.to_string()
+            ]);
+        }
+
+        // Print the table to stdout
+        // TODO: should I use the formatter, hmm?
+        table.fmt(fmt)?;
+        Ok(())
+    }
 }
 
 impl Chunk {

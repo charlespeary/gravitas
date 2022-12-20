@@ -7,9 +7,6 @@ use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
-#[macro_use]
-extern crate prettytable;
-use prettytable::{Cell, Row, Table};
 
 pub(crate) mod basic_expr;
 pub(crate) mod call;
@@ -41,32 +38,12 @@ pub struct VM {
 
 pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
     if debug {
-        let mut table = Table::new();
-
-        table.add_row(row!["OPCODE", "CONSTANT INDEX", "CONSTANT VALUE"]);
-
-        let opcodes = bytecode.opcodes.iter();
-        let constants = bytecode
-            .constants
-            .iter()
-            .enumerate()
-            .map(|(i, c)| (i.to_string(), c.to_string()))
-            .chain(std::iter::repeat(("-".to_owned(), "-".to_owned())));
-
-        for (opcode, (constant_index, constant_value)) in opcodes.zip(constants) {
-            table.add_row(row![
-                opcode.to_string(),
-                constant_index,
-                constant_value.to_string()
-            ]);
-        }
-
-        // Print the table to stdout
-        table.printstd();
+        println!("{}", bytecode);
     }
 
     let mut vm = VM::new(bytecode);
-    vm.run().expect("VM went kaboom")
+    // vm.run().expect("VM went kaboom")
+    RuntimeValue::Null
 }
 
 impl VM {

@@ -57,15 +57,8 @@ impl VM {
             .pop()
             .expect("Tried to remove the global call frame.");
 
-        println!(
-            "return_ip: {}, self.ip: {} stack_start: {}",
-            frame.return_ip, self.ip, frame.stack_start
-        );
-
         self.ip = frame.return_ip;
-        // println!("stack bt: {:#?}", &self.operands);
         self.operands.truncate(frame.stack_start);
-        // println!("stack at: {:#?}", &self.operands);
     }
 
     fn function_call(&mut self, function: Function) -> CallOperation {

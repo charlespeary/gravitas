@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 common = { path = "../common" }
 parser = { path = "../parser" }
+prettytable-rs = "^0.9"

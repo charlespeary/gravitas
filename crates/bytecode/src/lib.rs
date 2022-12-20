@@ -5,6 +5,8 @@ use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};
 use state::{GeneratorState, ScopeType};
+#[macro_use]
+extern crate prettytable;
 
 pub mod callables;
 pub mod chunk;
