@@ -1,4 +1,5 @@
 use analyzer::analyze;
+use bytecode::generate_bytecode;
 use codespan_reporting::{
     files::SimpleFiles,
     term::{
@@ -9,6 +10,7 @@ use codespan_reporting::{
 use common::CompilerDiagnostic;
 use parser::{parse, parse::Program};
 use std::path::Path;
+use vm::{run, runtime_value::RuntimeValue};
 
 pub(crate) fn log_errors(errors: Vec<impl CompilerDiagnostic>, code: &str) {
     let mut files = SimpleFiles::new();
@@ -31,6 +33,20 @@ pub(crate) fn compile(code: &str) -> Program {
         })
         .map_err(|errors| log_errors(errors, code))
         .expect("Compilation failed. See above errors to find out what went wrong.")
+}
+
+pub(crate) fn compile_and_run(code: &str, debug: bool) -> RuntimeValue {
+    let ast = compile(code);
+
+    analyze(&ast)
+        .map_err(|errors| log_errors(errors, &code))
+        .expect("Static analysis failed. Investigate above errors to find the cause.");
+
+    let bytecode = generate_bytecode(ast.clone())
+        .map_err(|error| println!("TODO: generation errors"))
+        .expect("Bytecode generation failed. Investigate above errors to find the cause.");
+
+    run(bytecode, debug)
 }
 
 pub(crate) fn compile_file<P: AsRef<Path>>(path: P) {}

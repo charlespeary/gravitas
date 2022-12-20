@@ -1,0 +1,6 @@
+fn foo() {
+    return 5;
+}
+
+let x = foo();
+print(x);

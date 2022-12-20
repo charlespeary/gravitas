@@ -156,10 +156,8 @@ impl VM {
                 CallType::InlineFn => Ok(()),
             },
             Return => {
-                println!("before stack: {:?}", &self.operands);
                 let result = self.pop_operand()?;
                 self.remove_call_frame();
-                println!("after stack: {:?}", &self.operands);
                 self.operands.push(result);
                 Ok(())
             }
