@@ -2,10 +2,10 @@ use std::fmt::Display;
 
 use crate::{
     callables::{Class, Function},
-    MemoryAddress, Opcode,
+    chunk, MemoryAddress, Opcode,
 };
 use common::{Number, ProgramText};
-use prettytable::Table;
+use prettytable::{Row, Table};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -24,7 +24,7 @@ impl Display for Constant {
             Self::Number(num) => num.to_string(),
             Self::String(str) => str.clone(),
             Self::Bool(bool) => bool.to_string(),
-            Self::Function(fun) => fun.chunk.to_string(),
+            Self::Function(fun) => fun.name.clone(),
             Self::Class(class) => class.name.clone(),
         };
 
@@ -42,33 +42,28 @@ pub struct Chunk {
     pub constants: Vec<Constant>,
 }
 
-impl Display for Chunk {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut table = Table::new();
+pub(crate) fn chunk_into_rows(chunk: Chunk) -> Vec<Row> {
+    let mut rows = vec![];
 
-        table.add_row(row!["OPCODE", "CONSTANT INDEX", "CONSTANT VALUE"]);
+    rows.push(row!["OPCODE", "CONSTANT INDEX", "CONSTANT VALUE"]);
 
-        let opcodes = self.opcodes.iter();
-        let constants = self
-            .constants
-            .iter()
-            .enumerate()
-            .map(|(i, c)| (i.to_string(), c.to_string()))
-            .chain(std::iter::repeat(("-".to_owned(), "-".to_owned())));
+    let opcodes = chunk.opcodes.iter();
+    let constants = chunk
+        .constants
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (i.to_string(), c.to_string()))
+        .chain(std::iter::repeat(("-".to_owned(), "-".to_owned())));
 
-        for (opcode, (constant_index, constant_value)) in opcodes.zip(constants) {
-            table.add_row(row![
-                opcode.to_string(),
-                constant_index,
-                constant_value.to_string()
-            ]);
-        }
-
-        // Print the table to stdout
-        // TODO: should I use the formatter, hmm?
-        table.fmt(fmt)?;
-        Ok(())
+    for (opcode, (constant_index, constant_value)) in opcodes.zip(constants) {
+        rows.push(row![
+            opcode.to_string(),
+            constant_index,
+            constant_value.to_string()
+        ]);
     }
+
+    rows
 }
 
 impl Chunk {

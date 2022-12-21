@@ -1,9 +1,23 @@
 use bytecode::MemoryAddress;
 use common::Number;
+use prettytable::{Cell, Row, Table};
 
 use crate::{runtime_error::RuntimeErrorCause, MachineResult, RuntimeValue, VM};
 
 impl VM {
+    fn debug_stack(&mut self) {
+        let mut table = Table::new();
+
+        table.add_row(row!["INDEX", "STACK VALUE"]);
+
+        for (index, value) in self.operands.iter().enumerate() {
+            table.add_row(row![index, value]);
+        }
+
+        self.debug("");
+        self.debug(table.to_string());
+    }
+
     pub(crate) fn pop_number(&mut self) -> MachineResult<Number> {
         match self.pop_operand()? {
             RuntimeValue::Number(num) => Ok(num),
@@ -20,12 +34,16 @@ impl VM {
 
     pub(crate) fn push_operand(&mut self, operand: RuntimeValue) {
         self.debug(format!("[STACK][PUSH] {}", &operand));
+        self.debug_stack();
+
         self.operands.push(operand);
     }
 
     pub(crate) fn pop_operand(&mut self) -> MachineResult<RuntimeValue> {
         let value = self.operands.pop();
         self.debug(format!("[STACK][POP] {:?}", &value));
+        self.debug_stack();
+
         match value {
             Some(value) => Ok(value),
             None => self.error(RuntimeErrorCause::PoppedFromEmptyStack),
@@ -44,11 +62,11 @@ mod test {
 
     use bytecode::chunk::Chunk;
 
-    use crate::{runtime_value::RuntimeValue, test::new_vm};
+    use crate::{runtime_value::RuntimeValue, VM};
 
     #[test]
     fn pop_operand() {
-        let mut vm = new_vm(Chunk::default());
+        let mut vm = VM::new();
         vm.operands = vec![
             RuntimeValue::Number(10.0),
             RuntimeValue::String("foo".to_owned()),

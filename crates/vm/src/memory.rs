@@ -83,7 +83,7 @@ impl VM {
 
 #[cfg(test)]
 mod test {
-    use crate::{runtime_value::RuntimeValue, test::new_vm, OperationResult};
+    use crate::{runtime_value::RuntimeValue, test::main_fn, OperationResult, VM};
     use bytecode::{
         chunk::{Chunk, Constant},
         MemoryAddress, Opcode,
@@ -91,7 +91,7 @@ mod test {
 
     #[test]
     fn op_pop() -> OperationResult {
-        let mut vm = new_vm(Chunk::new(
+        let mut code = main_fn(Chunk::new(
             vec![
                 Opcode::Constant(0),
                 Opcode::Constant(1),
@@ -104,6 +104,8 @@ mod test {
                 Constant::Bool(true),
             ],
         ));
+
+        let mut vm = VM::new();
 
         // let's push the constants onto the stack
         vm.tick()?;
@@ -123,7 +125,8 @@ mod test {
 
     #[test]
     fn op_get() -> OperationResult {
-        let mut vm = new_vm(Chunk::new(
+        let mut vm = VM::new();
+        let mut code = main_fn(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Constant(1), Opcode::Get],
             vec![
                 Constant::Bool(true),
@@ -148,7 +151,8 @@ mod test {
 
     #[test]
     fn op_asg() -> OperationResult {
-        let mut vm = new_vm(Chunk::new(
+        let mut vm = VM::new();
+        let mut code = main_fn(Chunk::new(
             vec![
                 Opcode::Constant(0),
                 Opcode::Constant(1),

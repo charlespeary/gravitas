@@ -1,140 +1,593 @@
++------------+----------------+-----------------------+
+| Name       | Arity          |                       |
++------------+----------------+-----------------------+
+| main       | 0              |                       |
++------------+----------------+-----------------------+
+| OPCODE     | CONSTANT INDEX | CONSTANT VALUE        |
++------------+----------------+-----------------------+
+| CONSTANT_0 | 0              | fib                   |
++------------+----------------+-----------------------+
+| CONSTANT_1 | 1              | 0                     |
++------------+----------------+-----------------------+
+| CONSTANT_2 | 2              | local_address::0      |
++------------+----------------+-----------------------+
+| GET        | 3              | local_address::1      |
++------------+----------------+-----------------------+
+| CALL       | 4              | local_address::1      |
++------------+----------------+-----------------------+
+| CONSTANT_3 | 5              | local_address::2      |
++------------+----------------+-----------------------+
+| GET        | 6              | global_address::print |
++------------+----------------+-----------------------+
+| CONSTANT_4 | -              | -                     |
++------------+----------------+-----------------------+
+| GET        | -              | -                     |
++------------+----------------+-----------------------+
+| ADD        | -              | -                     |
++------------+----------------+-----------------------+
+| CONSTANT_5 | -              | -                     |
++------------+----------------+-----------------------+
+| GET        | -              | -                     |
++------------+----------------+-----------------------+
+| CONSTANT_6 | -              | -                     |
++------------+----------------+-----------------------+
+| GET        | -              | -                     |
++------------+----------------+-----------------------+
+| CALL       | -              | -                     |
++------------+----------------+-----------------------+
++------------+----------------+------------------+
+| Name       | Arity          |                  |
++------------+----------------+------------------+
+| fib        | 1              |                  |
++------------+----------------+------------------+
+| OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
++------------+----------------+------------------+
+| CONSTANT_0 | 0              | local_address::0 |
++------------+----------------+------------------+
+| GET        | 1              | 1                |
++------------+----------------+------------------+
+| CONSTANT_1 | 2              | 1                |
++------------+----------------+------------------+
+| EQ         | 3              | 5                |
++------------+----------------+------------------+
+| JIF_5      | 4              | local_address::0 |
++------------+----------------+------------------+
+| CONSTANT_2 | 5              | 0                |
++------------+----------------+------------------+
+| RET        | 6              | 0                |
++------------+----------------+------------------+
+| NULL       | -              | -                |
++------------+----------------+------------------+
+| BLC_2      | -              | -                |
++------------+----------------+------------------+
+| JP_0       | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_3 | -              | -                |
++------------+----------------+------------------+
+| RET        | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_4 | -              | -                |
++------------+----------------+------------------+
+| GET        | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_5 | -              | -                |
++------------+----------------+------------------+
+| EQ         | -              | -                |
++------------+----------------+------------------+
+| JIF_5      | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_6 | -              | -                |
++------------+----------------+------------------+
+| RET        | -              | -                |
++------------+----------------+------------------+
+| NULL       | -              | -                |
++------------+----------------+------------------+
+| BLC_2      | -              | -                |
++------------+----------------+------------------+
+| JP_0       | -              | -                |
++------------+----------------+------------------+
+| RET        | -              | -                |
++------------+----------------+------------------+
+
+[CALL_STACK][NEW FRAME][NAME=main][RETURN_IP=0][STACK_START=0]
+[VM][START OF EXECUTION][NAME=main]
 [OPCODE][NEXT]: CONSTANT_0
 [STACK][PUSH] callable
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_1
 [STACK][PUSH] 0
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_2
 [STACK][PUSH] local_address::0
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=0][VALUE=callable]
 [STACK][PUSH] callable
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CALL
-[STACK][POP] Some(Callable(Function(Function { arity: 1, chunk: Chunk { opcodes: [Constant(0), Get, Constant(1), Get, Call, Constant(2), Get, Constant(3), Eq, Jif(5), Constant(4), Return, Null, Block(2), Jp(0), Constant(5), Return, Constant(6), Get, Constant(7), Eq, Jif(5), Constant(8), Return, Null, Block(2), Jp(0), Return], constants: [MemoryAddress(Local(0)), MemoryAddress(Global("print")), MemoryAddress(Local(0)), Number(1.0), Number(1.0), Number(5.0), MemoryAddress(Local(0)), Number(0.0), Number(0.0)] }, name: "fib" })))
+[STACK][POP] Some(Callable(Function(Function { arity: 1, chunk: Chunk { opcodes: [Constant(0), Get, Constant(1), Eq, Jif(5), Constant(2), Return, Null, Block(2), Jp(0), Constant(3), Return, Constant(4), Get, Constant(5), Eq, Jif(5), Constant(6), Return, Null, Block(2), Jp(0), Return], constants: [MemoryAddress(Local(0)), Number(1.0), Number(1.0), Number(5.0), MemoryAddress(Local(0)), Number(0.0), Number(0.0)] }, name: "fib" })))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+
 [VM][CALL][FUNCTION][NAME=fib]
 [STACK][PUSH] callable
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+
 [CALL_STACK][NEW FRAME][NAME=fib][RETURN_IP=4][STACK_START=1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_0
 [STACK][PUSH] local_address::0
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=0]
 [STACK][PUSH] 0
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] global_address::print
-[VM][MOVE_POINTER] 1
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Global("print")))
-[STACK][GET_GLOBAL_VARIABLE][NAME=print]
-[STACK][PUSH] callable
-[VM][MOVE_POINTER] 1
-[VM] TICK
-[OPCODE][NEXT]: CALL
-[STACK][POP] Some(Callable(BuiltInFunction(BuiltInFunction { arity: 1, name: "print", fn_body: "<built in function>" })))
-[VM][CALL][BUILT IN][NAME=print]
-[STACK][POP] Some(Number(0.0))
-[STACK][PUSH] null
-[VM][MOVE_POINTER] 1
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] local_address::0
-[VM][MOVE_POINTER] 1
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(0)))
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=0]
-[STACK][PUSH] 0
-[VM][MOVE_POINTER] 1
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
 [STACK][PUSH] 1
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+| 3     | 0           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: EQ
 [STACK][POP] Some(Number(1.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+| 3     | 0           |
++-------+-------------+
+
 [STACK][POP] Some(Number(0.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
 [STACK][PUSH] false
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: JIF_5
 [STACK][POP] Some(Bool(false))
-[VM][MOVE_POINTER] 5
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 5]
+[VM][MOVE_POINTER][IP_NOW = 9][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_5
+[OPCODE][NEXT]: CONSTANT_3
 [STACK][PUSH] 5
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 10][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: RET
 [STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 0           |
++-------+-------------+
+| 2     | callable    |
++-------+-------------+
+
 [CALL_STACK][REMOVE FRAME][NAME=fib][RETURN_IP=4][STACK_START=1]
 [STACK][PUSH] 5
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_3
 [STACK][PUSH] local_address::1
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=5]
 [STACK][PUSH] 5
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_4
 [STACK][PUSH] local_address::1
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 5           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 5           |
++-------+-------------+
+
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=5]
 [STACK][PUSH] 5
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 5           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 8][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: ADD
 [STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 5           |
++-------+-------------+
+
 [STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+
 [STACK][PUSH] 10
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 9][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_5
 [STACK][PUSH] local_address::2
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 10][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(2)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=2][VALUE=10]
 [STACK][PUSH] 10
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 11][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_6
 [STACK][PUSH] global_address::print
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+| 3     | 10          |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 12][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Global("print")))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+| 3     | 10          |
++-------+-------------+
+
 [STACK][GET_GLOBAL_VARIABLE][NAME=print]
 [STACK][PUSH] callable
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+| 3     | 10          |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 13][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CALL
 [STACK][POP] Some(Callable(BuiltInFunction(BuiltInFunction { arity: 1, name: "print", fn_body: "<built in function>" })))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+| 3     | 10          |
++-------+-------------+
+
 [VM][CALL][BUILT IN][NAME=print]
 [STACK][POP] Some(Number(10.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
 [STACK][PUSH] null
-[VM][MOVE_POINTER] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 14][DISTANCE = 1]
 [VM] TICK
+[VM][END OF EXECUTION]
 [STACK][POP] Some(Null)
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | callable    |
++-------+-------------+
+| 1     | 5           |
++-------+-------------+
+| 2     | 10          |
++-------+-------------+
+
+[VM][EXECUTION RESULT][VALUE=Ok(Null)]

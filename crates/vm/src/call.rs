@@ -132,7 +132,7 @@ mod test {
     use bytecode::{callables::Function, chunk::Constant, Opcode};
     use common::MAIN_FUNCTION_NAME;
 
-    use crate::{test::new_vm, Chunk, OperationResult, VM};
+    use crate::{test::main_fn, Chunk, OperationResult, VM};
 
     #[test]
     fn grow_callstack() {
@@ -142,7 +142,7 @@ mod test {
             name: "foo".to_owned(),
         };
 
-        let vm = new_vm(Chunk::new(
+        let code = main_fn(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Call],
             vec![Constant::Function(function)],
         ));
@@ -156,10 +156,12 @@ mod test {
             name: "my_func".to_owned(),
         };
 
-        let mut vm = VM::new(Chunk::new(
+        let mut code = main_fn(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Call],
             vec![Constant::Function(function)],
         ));
+
+        let mut vm = VM::new();
 
         // we start with the global callframe which name is "main"
         let main_fn = vm.current_frame().name.clone();

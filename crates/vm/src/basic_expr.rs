@@ -183,7 +183,7 @@ mod test {
     use crate::{
         runtime_error::RuntimeErrorCause,
         runtime_value::RuntimeValue,
-        test::{assert_program, create_two_operand_assertion, new_vm},
+        test::{assert_program, create_two_operand_assertion},
     };
 
     // Start of stuff that doesn't belong to any particular group
@@ -211,7 +211,7 @@ mod test {
     #[test]
     fn op_neg() {
         // Accept only booleans
-        let mut vm = new_vm(Chunk::new(
+        let mut code = new_vm(Chunk::new(
             vec![Opcode::Constant(0), Opcode::Neg],
             vec![Constant::Bool(true)],
         ));

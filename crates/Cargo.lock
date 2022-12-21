@@ -818,6 +818,7 @@ dependencies = [
  "bytecode",
  "common",
  "lazy_static",
+ "prettytable-rs",
 ]
 
 [[package]]

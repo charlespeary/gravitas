@@ -1,13 +1,18 @@
+use std::fmt::format;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::path::Path;
 
 use crate::call::CallType;
+use bytecode::callables::Function;
 use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
 use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
+
+#[macro_use]
+extern crate prettytable;
 
 pub(crate) mod basic_expr;
 pub(crate) mod call;
@@ -62,31 +67,20 @@ pub struct VM {
 }
 
 pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
-    if debug {
-        println!("{}", bytecode);
-    }
-
-    let mut vm = VM::new(bytecode);
+    let mut vm = VM::new();
 
     if debug {
         vm = vm.with_debug();
     }
 
-    vm.run().expect("VM went kaboom")
+    vm.run(bytecode).expect("VM went kaboom")
 }
 
 impl VM {
-    pub fn new(chunk: Chunk) -> Self {
-        let initial_frame = CallFrame {
-            stack_start: 0,
-            name: MAIN_FUNCTION_NAME.to_owned(),
-            chunk,
-            return_ip: 0,
-        };
-
+    pub fn new() -> Self {
         Self {
             operands: Vec::new(),
-            call_stack: vec![initial_frame],
+            call_stack: vec![],
             ip: 0,
             debug: None,
         }
@@ -200,20 +194,42 @@ impl VM {
         Ok(TickOutcome::ContinueExecution)
     }
 
-    pub(crate) fn run(&mut self) -> ProgramOutput {
+    pub(crate) fn run(&mut self, main_fn: Function) -> ProgramOutput {
+        self.debug(format!("{}", main_fn));
+        let initial_frame = CallFrame {
+            stack_start: 0,
+            name: main_fn.name,
+            chunk: main_fn.chunk,
+            return_ip: 0,
+        };
+
+        self.add_call_frame(initial_frame);
+
+        self.debug(format!(
+            "[VM][START OF EXECUTION][NAME={}]",
+            self.current_frame().name
+        ));
+
         loop {
             if self.tick()? == TickOutcome::FinishProgram {
                 break;
             }
             self.debug("[VM] TICK");
         }
-        self.pop_operand()
+        self.debug("[VM][END OF EXECUTION]");
+        let result = self.pop_operand();
+        self.debug(format!("[VM][EXECUTION RESULT][VALUE={:?}]", &result));
+
+        result
     }
 
     pub(crate) fn move_pointer(&mut self, distance: isize) -> OperationResult {
         use std::ops::Neg;
 
-        self.debug(format!("[VM][MOVE_POINTER] {}", distance));
+        self.debug(format!(
+            "[VM][MOVE_POINTER][IP_NOW = {}][DISTANCE = {}]",
+            self.ip, distance
+        ));
 
         if distance.is_positive() {
             self.ip += distance as usize;
@@ -239,29 +255,34 @@ mod test {
     };
     use common::CONSTRUCTOR_NAME;
 
-    fn empty_vm() -> VM {
-        new_vm(Chunk::default())
-    }
-
-    pub(crate) fn new_vm(code: Chunk) -> VM {
-        VM::new(code)
+    pub(crate) fn main_fn(chunk: Chunk) -> Function {
+        Function {
+            arity: 0,
+            chunk,
+            name: MAIN_FUNCTION_NAME.to_owned(),
+        }
     }
 
     pub fn assert_program(code: Chunk, expected_outcome: RuntimeValue) {
-        let mut vm = new_vm(code);
-        assert!(vm.run().unwrap().eq(&expected_outcome, &mut vm).unwrap());
+        let mut vm = VM::new();
+        assert!(vm
+            .run(main_fn(code))
+            .unwrap()
+            .eq(&expected_outcome, &mut vm)
+            .unwrap());
     }
 
     pub(crate) fn create_failable_two_operand_assertion(
         opcode: Opcode,
     ) -> impl Fn(Constant, Constant, RuntimeErrorCause) {
         move |a: Constant, b: Constant, expected: RuntimeErrorCause| {
-            let mut vm = new_vm(Chunk::new(
+            let mut vm = VM::new();
+            let code = main_fn(Chunk::new(
                 vec![Opcode::Constant(0), Opcode::Constant(1), opcode],
                 vec![a, b],
             ));
 
-            assert_eq!(vm.run().unwrap_err().cause, expected);
+            assert_eq!(vm.run(code).unwrap_err().cause, expected);
         }
     }
 
@@ -269,12 +290,14 @@ mod test {
         opcode: Opcode,
     ) -> impl Fn(Constant, Constant, RuntimeValue) {
         move |a: Constant, b: Constant, expected: RuntimeValue| {
-            let mut vm = new_vm(Chunk::new(
+            let mut vm = VM::new();
+
+            let code = main_fn(Chunk::new(
                 vec![Opcode::Constant(0), Opcode::Constant(1), opcode],
                 vec![a, b],
             ));
 
-            let result = vm.run().unwrap();
+            let result = vm.run(code).unwrap();
 
             assert!(result.eq(&expected, &mut vm).unwrap());
         }

@@ -183,13 +183,13 @@ impl Opcode {
 }
 
 pub type BytecodeGenerationResult = Result<(), ()>;
-pub type ProgramBytecode = Chunk;
+pub type ProgramBytecode = Function;
 pub type GenerationResult = Result<ProgramBytecode, ()>;
 
 pub fn generate_bytecode(program: Program) -> GenerationResult {
     let mut generator = BytecodeGenerator::new();
     generator.generate(program)?;
-    Ok(generator.code().chunk)
+    Ok(generator.code())
 }
 
 #[derive(Debug, Clone)]
