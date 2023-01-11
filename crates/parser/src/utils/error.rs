@@ -51,6 +51,7 @@ pub enum ParseErrorCause {
     SuperclassDoesntExist,
     NotDefined,
     ReturnExprMustBeLast,
+    ReturnUsedOutsideFunction,
 }
 
 impl CompilerDiagnostic for ParseError {
@@ -59,6 +60,7 @@ impl CompilerDiagnostic for ParseError {
         let span = combine(&self.span_start, &self.span_end);
         // let span = self.span.clone();
 
+        // TODO: It's all repetetive
         match &self.cause {
             EndOfInput => Diagnostic::error().with_message("unexpected end of input"),
             UnexpectedToken { .. } => Diagnostic::error()
@@ -95,6 +97,9 @@ impl CompilerDiagnostic for ParseError {
                 .with_labels(vec![Label::primary(file_id, span)]),
             ReturnExprMustBeLast => Diagnostic::error()
                 .with_message("Return expression must be the last item in the block or function")
+                .with_labels(vec![Label::primary(file_id, span)]),
+            ReturnUsedOutsideFunction => Diagnostic::error()
+                .with_message("Return expression can only be used inside functions!")
                 .with_labels(vec![Label::primary(file_id, span)]),
             _ => Diagnostic::error().with_message("TODO"),
         }

@@ -18,6 +18,7 @@ pub struct Analyzer {
     classes: HashSet<ProgramText>,
     in_loop: bool,
     in_class: bool,
+    in_function: bool,
 }
 
 impl Analyzer {
@@ -95,6 +96,11 @@ impl Analyzer {
                     return err(ParseErrorCause::UsedOutsideClass);
                 }
             }
+            Return { value } => {
+                if !self.in_function {
+                    return err(ParseErrorCause::ReturnUsedOutsideFunction);
+                }
+            }
             _ => {}
         }
         Ok(())
@@ -146,7 +152,9 @@ impl Analyzer {
             }
             FunctionDeclaration { body, name, .. } => {
                 self.variables.insert(name.clone(), false);
+                self.in_function = true;
                 self.visit_expr(body)?;
+                self.in_function = false;
                 self.variables.insert(name.clone(), true);
             }
             Expression { expr } => {
@@ -209,5 +217,6 @@ mod test {
         assert_err("class Foo { fn method() { continue; } }", UsedOutsideLoop);
         // evaluates errors inside functions
         assert_err("fn foo() { continue; }", UsedOutsideLoop);
+        assert_err("return;", ReturnUsedOutsideFunction);
     }
 }
