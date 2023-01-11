@@ -1,4 +1,5 @@
 use crate::parse::utils::ExprOrStmt;
+use crate::utils::error::ParseErrorCause;
 use crate::{
     parse::{
         expr::{Expr, ExprKind},
@@ -13,7 +14,7 @@ use crate::{
 };
 
 impl<'t> Parser<'t> {
-    pub(super) fn parse_block_expr(&mut self) -> ExprResult {
+    pub(crate) fn parse_block_expr(&mut self) -> ExprResult {
         let open_bracket = self.expect(OPEN_BRACKET)?.span();
         let mut stmts: Vec<Stmt> = vec![];
         let mut return_expr = None;
@@ -24,7 +25,14 @@ impl<'t> Parser<'t> {
             }
             match self.parse_expr_or_stmt()? {
                 ExprOrStmt::Expr(expr) => {
+                    // return_expr must always come last in the block
                     return_expr = Some(expr);
+
+                    if self.peek() != CLOSE_BRACKET {
+                        return Err(ParseErrorCause::ReturnExprMustBeLast);
+                    }
+
+                    break;
                 }
                 ExprOrStmt::Stmt(stmt) => {
                     stmts.push(stmt);

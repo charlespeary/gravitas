@@ -1,3 +1,4 @@
+use core::panic;
 use parser::parse_file;
 use std::{fs, io, sync::mpsc::channel, thread, time::Duration};
 
@@ -5,8 +6,6 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 
 #[test]
 fn run_samples() -> io::Result<()> {
-    let mut tests_failed = false;
-
     for sample_program in fs::read_dir("./tests/sample_programs")?.map(|p| p.unwrap().path()) {
         let file_name = sample_program
             .file_name()
@@ -30,18 +29,14 @@ fn run_samples() -> io::Result<()> {
                     println!("{} compiled successfully.", file_name);
                 }
                 Err(_) => {
-                    tests_failed = true;
                     eprintln!("Regression found in {}.", file_name);
+                    panic!();
                 }
             },
             Err(_) => {
-                tests_failed = true;
                 eprintln!("{} timed out.", file_name);
+                panic!();
             }
-        }
-
-        if tests_failed {
-            panic!("Regression occurred in the sample programs.")
         }
     }
 

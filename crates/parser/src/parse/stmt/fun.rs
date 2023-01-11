@@ -22,7 +22,6 @@ impl<'t> Parser<'t> {
         }
         let body = self.parse_expression()?;
         let span = combine(&fn_keyword, &body.span);
-
         Ok(Stmt::boxed(
             StmtKind::FunctionDeclaration { name, params, body },
             span,

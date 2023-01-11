@@ -38,7 +38,14 @@ impl Analyzer {
         use ExprKind::*;
         let span = expr.span.clone();
 
-        let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
+        // TODO: just making it work. It probably should differentiate between the start and end span.
+        let err = move |cause: ParseErrorCause| {
+            Err(ParseError {
+                span_end: span.clone(),
+                span_start: span.clone(),
+                cause,
+            })
+        };
 
         match &*expr.kind {
             Atom(AtomicValue::Identifier { name, .. }) => match self.variables.get(name) {
@@ -97,7 +104,14 @@ impl Analyzer {
         use StmtKind::*;
 
         let span = stmt.span.clone();
-        let err = move |cause: ParseErrorCause| Err(ParseError { span, cause });
+        let err = move |cause: ParseErrorCause| {
+            Err(ParseError {
+                // TODO: just making it work. It probably should differentiate between the start and end span.
+                span_start: span.clone(),
+                span_end: span.clone(),
+                cause,
+            })
+        };
 
         match &*stmt.kind {
             VariableDeclaration { name, expr } => {

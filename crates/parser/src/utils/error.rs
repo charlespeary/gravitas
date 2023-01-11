@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::{token::Token, utils::combine};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use common::CompilerDiagnostic;
 use logos::Span;
@@ -33,7 +33,8 @@ pub enum Forbidden {
 
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
-    pub span: Span,
+    pub span_start: Span,
+    pub span_end: Span,
     pub cause: ParseErrorCause,
 }
 
@@ -49,12 +50,14 @@ pub enum ParseErrorCause {
     CantInheritFromItself,
     SuperclassDoesntExist,
     NotDefined,
+    ReturnExprMustBeLast,
 }
 
 impl CompilerDiagnostic for ParseError {
     fn report(&self, file_id: usize) -> Diagnostic<usize> {
         use ParseErrorCause::*;
-        let span = self.span.clone();
+        let span = combine(&self.span_start, &self.span_end);
+        // let span = self.span.clone();
 
         match &self.cause {
             EndOfInput => Diagnostic::error().with_message("unexpected end of input"),
@@ -89,6 +92,9 @@ impl CompilerDiagnostic for ParseError {
                 .with_labels(vec![Label::primary(file_id, span)]),
             NotDefined => Diagnostic::error()
                 .with_message("Variable was used but it's not defined anywhere")
+                .with_labels(vec![Label::primary(file_id, span)]),
+            ReturnExprMustBeLast => Diagnostic::error()
+                .with_message("Return expression must be the last item in the block or function")
                 .with_labels(vec![Label::primary(file_id, span)]),
             _ => Diagnostic::error().with_message("TODO"),
         }

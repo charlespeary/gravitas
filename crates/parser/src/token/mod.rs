@@ -228,7 +228,7 @@ impl<'t> Lexer<'t> {
     }
 
     pub(crate) fn current_span(&self) -> Span {
-        self.current_span.clone().unwrap()
+        self.current_span.clone().unwrap_or(0..0)
     }
 }
 

@@ -175,7 +175,6 @@ impl VM {
             },
             Return => {
                 let result = self.pop_operand()?;
-                println!("RET: {} ", &result);
                 self.remove_call_frame();
                 self.push_operand(result);
                 Ok(())
@@ -216,6 +215,7 @@ impl VM {
             }
             self.debug("[VM] TICK");
         }
+
         self.debug("[VM][END OF EXECUTION]");
         let result = self.pop_operand();
         self.debug(format!("[VM][EXECUTION RESULT][VALUE={:?}]", &result));

@@ -49,7 +49,6 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                     .functions
                     .pop()
                     .expect("We just defined and evaluated function. It shouldn't happen.");
-
                 self.leave_scope();
                 self.write_constant(Constant::Function(new_fn));
                 self.state.declare_var(name);

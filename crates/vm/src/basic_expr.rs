@@ -1,6 +1,6 @@
 use std::ops::Neg;
 
-use bytecode::chunk::{Chunk, ConstantIndex};
+use bytecode::chunk::ConstantIndex;
 
 use crate::{
     runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
@@ -327,7 +327,6 @@ mod test {
         assert_sub(0.0, 10.0, -10.0);
         assert_sub(std::f64::MIN, std::f64::MIN, 0.0);
         assert_sub(std::f64::MAX, std::f64::MAX, 0.0);
-        dbg!(std::f64::MAX, std::f64::MIN);
         assert_sub(std::f64::MIN, -std::f64::MAX, 0.0);
     }
 

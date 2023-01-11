@@ -117,6 +117,8 @@ impl<'t> Parser<'t> {
         let mut errors = Vec::new();
 
         while self.peek() != Token::Eof {
+            let span_start = self.lexer.current_span();
+
             match self.parse_stmt() {
                 Ok(stmt) => {
                     ast.push(stmt);
@@ -124,7 +126,8 @@ impl<'t> Parser<'t> {
                 Err(cause) => {
                     let parse_error = ParseError {
                         cause,
-                        span: self.lexer.current_span(),
+                        span_start,
+                        span_end: self.lexer.current_span(),
                     };
                     errors.push(parse_error);
 
