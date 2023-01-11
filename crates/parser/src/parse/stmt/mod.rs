@@ -1,10 +1,12 @@
 use crate::{
-    parse::{expr::Expr, pieces::Params, Node, Parser, StmtResult},
+    parse::{expr::Expr, Node, Params, Parser, StmtResult},
     token::{operator::Operator, Token},
     utils::combine,
 };
 use common::ProgramText;
 use std::fmt;
+
+use super::FunctionBody;
 
 pub type Stmt = Node<Box<StmtKind>>;
 
@@ -23,7 +25,7 @@ pub enum StmtKind {
     FunctionDeclaration {
         name: ProgramText,
         params: Params,
-        body: Expr,
+        body: FunctionBody,
     },
     ClassDeclaration {
         name: ProgramText,

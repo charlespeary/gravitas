@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use callables::Function;
+use callables::{Class, Function};
 use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};

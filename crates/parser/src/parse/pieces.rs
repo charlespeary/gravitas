@@ -1,7 +1,5 @@
-use common::ProgramText;
-
 use crate::{
-    parse::{Node, ParseResult, Parser},
+    parse::{Param, Params, ParseResult, Parser},
     token::{
         constants::{CLOSE_PARENTHESIS, OPEN_PARENTHESIS},
         Token,
@@ -11,10 +9,6 @@ use crate::{
         error::{Forbidden, ParseErrorCause},
     },
 };
-
-pub(crate) type Param = Node<ProgramText>;
-// (a, b, c)
-pub(crate) type Params = Node<Vec<Param>>;
 
 impl<'t> Parser<'t> {
     pub(super) fn parse_params(&mut self) -> ParseResult<Params> {

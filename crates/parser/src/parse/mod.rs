@@ -1,3 +1,5 @@
+use common::ProgramText;
+
 use crate::{
     parse::{expr::Expr, stmt::Stmt},
     token::{constants::IDENTIFIER, Lexeme, Lexer, Token},
@@ -19,6 +21,10 @@ pub type Ast = Vec<Stmt>;
 pub type Program = Ast;
 pub type AstRef<'a> = &'a [Stmt];
 pub type ProgramErrors = Vec<ParseError>;
+pub type Param = Node<ProgramText>;
+// (a, b, c)
+pub type Params = Node<Vec<Param>>;
+pub type FunctionBody = Expr;
 pub(crate) type ParserOutput = Result<Ast, ProgramErrors>;
 pub(crate) type ParseResult<'t, T> = Result<T, ParseErrorCause>;
 pub(crate) type ExprResult<'t> = ParseResult<'t, Expr>;
