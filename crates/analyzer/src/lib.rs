@@ -13,12 +13,36 @@ use vm::gravitas_std::STD_FUNCTIONS;
 pub type AnalyzerResult<E> = Result<(), E>;
 
 #[derive(Default)]
+struct Scope {
+    depth: usize,
+}
+
+impl Scope {
+    fn new() -> Self {
+        Self { depth: 0 }
+    }
+
+    fn enter(&mut self) {
+        self.depth += 1;
+    }
+
+    fn leave(&mut self) {
+        self.depth -= 1;
+    }
+
+    fn is_in(&self) -> bool {
+        self.depth > 0
+    }
+}
+
+#[derive(Default)]
 pub struct Analyzer {
     variables: HashMap<ProgramText, bool>,
     classes: HashSet<ProgramText>,
-    in_loop: bool,
-    in_class: bool,
-    in_function: bool,
+
+    class: Scope,
+    function: Scope,
+    loops: Scope,
 }
 
 impl Analyzer {
@@ -73,17 +97,17 @@ impl Analyzer {
             }
             While { condition, body } => {
                 self.visit_expr(condition)?;
-                self.in_loop = true;
+                self.loops.enter();
                 self.visit_expr(body)?;
-                self.in_loop = false;
+                self.loops.leave();
             }
             Continue => {
-                if !self.in_loop {
+                if !self.loops.is_in() {
                     return err(ParseErrorCause::UsedOutsideLoop);
                 }
             }
             Break { return_expr } => {
-                if !self.in_loop {
+                if !self.loops.is_in() {
                     return err(ParseErrorCause::UsedOutsideLoop);
                 }
 
@@ -92,12 +116,12 @@ impl Analyzer {
                 }
             }
             Super | This => {
-                if !self.in_class {
+                if !self.class.is_in() {
                     return err(ParseErrorCause::UsedOutsideClass);
                 }
             }
             Return { value } => {
-                if !self.in_function {
+                if !self.function.is_in() {
                     return err(ParseErrorCause::ReturnUsedOutsideFunction);
                 }
             }
@@ -142,19 +166,19 @@ impl Analyzer {
                     }
                 }
 
-                self.in_class = true;
+                self.class.enter();
 
                 for method in methods {
                     self.visit_stmt(method)?;
                 }
 
-                self.in_class = false;
+                self.class.leave();
             }
             FunctionDeclaration { body, name, .. } => {
                 self.variables.insert(name.clone(), false);
-                self.in_function = true;
+                self.function.enter();
                 self.visit_expr(body)?;
-                self.in_function = false;
+                self.function.leave();
                 self.variables.insert(name.clone(), true);
             }
             Expression { expr } => {
