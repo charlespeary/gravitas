@@ -1,13 +1,14 @@
-use std::fmt::format;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::path::Path;
 
 use crate::call::CallType;
 use bytecode::callables::Function;
-use bytecode::{chunk::Chunk, Opcode, ProgramBytecode};
+use bytecode::stmt::{GlobalItem, GlobalPointer};
+use bytecode::{Opcode, ProgramBytecode};
 use call::CallFrame;
 use common::MAIN_FUNCTION_NAME;
+use gc::{Closure, HeapPointer, GC};
 use runtime_error::{RuntimeError, RuntimeErrorCause};
 use runtime_value::RuntimeValue;
 
@@ -18,6 +19,7 @@ pub(crate) mod basic_expr;
 pub(crate) mod call;
 pub(crate) mod eq_ord;
 pub(crate) mod flow_control;
+pub(crate) mod gc;
 pub mod gravitas_std;
 pub(crate) mod memory;
 pub(crate) mod runtime_error;
@@ -64,6 +66,9 @@ pub struct VM {
     pub(crate) call_stack: Vec<CallFrame>,
     pub(crate) ip: usize,
     pub(crate) debug: Option<DebugOptions>,
+
+    pub(crate) globals: Vec<GlobalItem>,
+    pub(crate) gc: GC,
 }
 
 pub fn run(bytecode: ProgramBytecode, debug: bool) -> RuntimeValue {
@@ -83,6 +88,8 @@ impl VM {
             call_stack: vec![],
             ip: 0,
             debug: None,
+            globals: vec![],
+            gc: GC::new(),
         }
     }
 
@@ -110,15 +117,25 @@ impl VM {
         self.call_stack.last().expect("Callstack is empty")
     }
 
+    // TODO: This slows whole execution down, but it's fine for now
+    pub(crate) fn current_code(&self) -> &Function {
+        let current_frame = self.current_frame();
+        let closure = self.gc.deref(current_frame.closure_ptr).as_closure();
+        self.globals
+            .get(closure.function_ptr)
+            .unwrap()
+            .as_function()
+    }
+
     pub(crate) fn tick(&mut self) -> MachineResult<TickOutcome> {
-        let has_next_opcode = self.ip < self.current_frame().chunk.opcodes_len();
+        let has_next_opcode = self.ip < self.current_code().chunk.opcodes_len();
 
         // we finish the program if no next opcode and callstack is empty
         if !has_next_opcode {
             return Ok(TickOutcome::FinishProgram);
         }
 
-        let next = self.current_frame().chunk.read_opcode(self.ip);
+        let next = self.current_code().chunk.read_opcode(self.ip);
         use Opcode::*;
 
         self.debug(format!("[OPCODE][NEXT]: {}", &next));
@@ -193,12 +210,38 @@ impl VM {
         Ok(TickOutcome::ContinueExecution)
     }
 
-    pub(crate) fn run(&mut self, main_fn: Function) -> ProgramOutput {
-        self.debug(format!("{}", main_fn));
+    pub(crate) fn deref_global(&self, ptr: GlobalPointer) -> &GlobalItem {
+        self.globals.get(ptr).unwrap()
+    }
+
+    pub(crate) fn make_closure(&mut self, function_ptr: GlobalPointer) -> HeapPointer {
+        let closure = Closure {
+            function_ptr,
+            upvalues: vec![],
+        };
+
+        self.gc.allocate(closure.into())
+    }
+
+    pub(crate) fn get_closure(&self, closure_ptr: HeapPointer) -> (&Closure, &Function) {
+        let closure = self.gc.deref(closure_ptr).as_closure();
+        let closure_fn = self.deref_global(closure.function_ptr).as_function();
+
+        (closure, closure_fn)
+    }
+
+    pub(crate) fn run(&mut self, program: ProgramBytecode) -> ProgramOutput {
+        for global in &program.globals {
+            self.debug(format!("[GLOBAL][NAME={}]", global.name()));
+            self.debug(format!("{}", global));
+        }
+
+        self.globals = program.globals;
+        let closure_ptr = self.make_closure(program.global_fn_ptr);
         let initial_frame = CallFrame {
             stack_start: 0,
-            name: main_fn.name,
-            chunk: main_fn.chunk,
+            name: MAIN_FUNCTION_NAME.to_string(),
+            closure_ptr,
             return_ip: 0,
         };
 

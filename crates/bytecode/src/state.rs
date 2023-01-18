@@ -156,7 +156,8 @@ impl GeneratorState {
                     MemoryAddress::Local(var.index)
                 }
             })
-            .unwrap_or(MemoryAddress::Global(name.to_owned()));
+            // TODO: Deal with STD lib
+            .unwrap();
 
         var
     }

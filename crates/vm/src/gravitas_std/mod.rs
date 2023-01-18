@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt};
 
-use crate::{call::Callable, runtime_value::RuntimeValue, VM};
+use crate::{runtime_value::RuntimeValue, VM};
 use common::ProgramText;
 use lazy_static::lazy_static;
 
@@ -22,12 +22,6 @@ impl fmt::Debug for BuiltInFunction {
             .field("name", &self.name)
             .field("fn_body", &"<built in function>")
             .finish()
-    }
-}
-
-impl Into<RuntimeValue> for BuiltInFunction {
-    fn into(self) -> RuntimeValue {
-        RuntimeValue::Callable(Callable::BuiltInFunction(self))
     }
 }
 

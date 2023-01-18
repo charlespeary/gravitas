@@ -87,7 +87,7 @@ impl VM {
     // Start of stuff that doesn't belong to any particular group
 
     pub(crate) fn op_constant(&mut self, index: ConstantIndex) -> OperationResult {
-        let item = self.current_frame().chunk.read(index);
+        let item = self.current_code().chunk.read(index);
         let value = RuntimeValue::from(item);
         self.push_operand(value);
         Ok(())

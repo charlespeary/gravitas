@@ -5,6 +5,7 @@ use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};
 use state::{GeneratorState, ScopeType};
+use stmt::{GlobalItem, GlobalPointer};
 #[macro_use]
 extern crate prettytable;
 
@@ -12,7 +13,7 @@ pub mod callables;
 pub mod chunk;
 pub(crate) mod expr;
 pub(crate) mod state;
-pub(crate) mod stmt;
+pub mod stmt;
 
 #[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub struct Patch {
@@ -28,11 +29,6 @@ pub enum MemoryAddress {
     // First value points to the stack index that starts at index
     // defined by callstack n (second value) jumps above.
     Upvalue(usize, usize),
-    // Global variable refereed by a string key.
-    // The value is extracted from a HashMap of globals.
-    // Note: all of the variables and functions defined in vtas are "local" per se.
-    // Only the std functions are global.
-    Global(String),
     // Property of an object
     // Property(PropertyAddress),
 }
@@ -40,7 +36,6 @@ pub enum MemoryAddress {
 impl Display for MemoryAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            Self::Global(name) => format!("global_address::{}", name),
             Self::Local(address) => format!("local_address::{}", address),
             Self::Upvalue(..) => "upvalue".to_owned(),
         };
@@ -183,7 +178,10 @@ impl Opcode {
 }
 
 pub type BytecodeGenerationResult = Result<(), ()>;
-pub type ProgramBytecode = Function;
+pub struct ProgramBytecode {
+    pub global_fn_ptr: GlobalPointer,
+    pub globals: Vec<GlobalItem>,
+}
 pub type GenerationResult = Result<ProgramBytecode, ()>;
 
 pub fn generate_bytecode(program: Program) -> GenerationResult {
@@ -196,6 +194,7 @@ pub fn generate_bytecode(program: Program) -> GenerationResult {
 struct BytecodeGenerator {
     state: GeneratorState,
     functions: Vec<Function>,
+    globals: Vec<GlobalItem>,
 }
 
 impl BytecodeGenerator {
@@ -207,6 +206,7 @@ impl BytecodeGenerator {
                 arity: 0,
                 chunk: Chunk::default(),
             }],
+            globals: vec![],
         }
     }
 
@@ -222,7 +222,7 @@ impl BytecodeGenerator {
         self.current_chunk().write_constant(constant)
     }
 
-    pub fn code(mut self) -> Function {
+    pub fn code(mut self) -> ProgramBytecode {
         if self.functions.len() > 1 {
             panic!("Tried to own the code before generation finished!");
         }
@@ -232,7 +232,12 @@ impl BytecodeGenerator {
             .pop()
             .expect("Generator is in invalid state!");
 
-        global_function
+        let global_fn_ptr = self.declare_global(global_function.into());
+
+        ProgramBytecode {
+            globals: self.globals,
+            global_fn_ptr,
+        }
     }
 
     pub fn curr_index(&mut self) -> usize {

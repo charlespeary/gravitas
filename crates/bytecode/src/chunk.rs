@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
-use crate::{
-    callables::{Class, Function},
-    chunk, MemoryAddress, Opcode,
-};
+use crate::{stmt::GlobalPointer, MemoryAddress, Opcode};
 use common::{Number, ProgramText};
-use prettytable::{Row, Table};
+use prettytable::Row;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Constant {
@@ -13,8 +10,8 @@ pub enum Constant {
     Number(Number),
     String(ProgramText),
     Bool(bool),
-    Function(Function),
-    Class(Class),
+    Function(GlobalPointer),
+    Class(GlobalPointer),
 }
 
 impl Display for Constant {
@@ -24,8 +21,8 @@ impl Display for Constant {
             Self::Number(num) => num.to_string(),
             Self::String(str) => str.clone(),
             Self::Bool(bool) => bool.to_string(),
-            Self::Function(fun) => fun.name.clone(),
-            Self::Class(class) => class.name.clone(),
+            Self::Function(fun) => fun.to_string(),
+            Self::Class(class) => class.to_string(),
         };
 
         write!(f, "{}", str)?;

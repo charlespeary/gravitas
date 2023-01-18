@@ -64,9 +64,10 @@ impl RuntimeValue {
             RuntimeValue::Number(Number) => true,
             RuntimeValue::String(ProgramText) => true,
             RuntimeValue::Bool(bool) => bool,
-            RuntimeValue::Callable(Callable) => true,
             RuntimeValue::ObjectInstance(ObjectInstance) => true,
             RuntimeValue::Null => false,
+            RuntimeValue::Function(Function) => true,
+            RuntimeValue::Class(Class) => true,
             _ => unreachable!(),
         })
     }

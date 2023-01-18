@@ -1,27 +1,18 @@
 use crate::{
+    gc::HeapPointer,
     gravitas_std::{BuiltInFunction, FnArgs},
-    MachineResult, OperationResult, RuntimeErrorCause, RuntimeValue, VM,
+    MachineResult, RuntimeErrorCause, RuntimeValue, VM,
 };
-use bytecode::{
-    callables::{Class, Function},
-    chunk::Chunk,
-};
+use bytecode::{callables::Class, stmt::GlobalPointer};
 use common::ProgramText;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub(crate) struct CallFrame {
     pub(crate) stack_start: usize,
-    pub(crate) chunk: Chunk,
     pub(crate) name: ProgramText,
     pub(crate) return_ip: usize,
-}
-
-#[derive(Debug, Clone)]
-pub enum Callable {
-    Function(Function),
-    Class(Class),
-    BuiltInFunction(BuiltInFunction),
+    pub(crate) closure_ptr: HeapPointer,
 }
 
 #[derive(Debug, Clone)]
@@ -71,18 +62,24 @@ impl VM {
         self.operands.truncate(call_frame.stack_start);
     }
 
-    fn function_call(&mut self, function: Function) -> CallOperation {
-        self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &function.name));
+    fn function_call(&mut self, function_ptr: GlobalPointer) -> CallOperation {
+        let (arity, name) = {
+            let function = self.deref_global(function_ptr).as_function();
 
-        let recursion_handler = function.clone();
-        self.push_operand(recursion_handler.into());
+            (function.arity, function.name.clone())
+        };
+        self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &name));
 
+        let recursion_handler = RuntimeValue::Function(function_ptr);
+        self.push_operand(recursion_handler);
+
+        let closure_ptr = self.make_closure(function_ptr);
         let frame = CallFrame {
             // -1 because we also count function pushed onto the stack
             // for recursion purposes
-            stack_start: self.operands.len() - function.arity - 1,
-            chunk: function.chunk,
-            name: function.name,
+            stack_start: self.operands.len() - arity - 1,
+            name,
+            closure_ptr,
             return_ip: self.ip,
         };
 
@@ -91,12 +88,18 @@ impl VM {
         Ok(CallType::EnterFnBody)
     }
 
-    fn class_call(&mut self, class: Class) -> CallOperation {
-        self.debug(format!("[VM][CALL][CLASS][NAME={}]", &class.name));
+    // fn class_call(&mut self, class_ptr: ClassPointer) -> CallOperation {
+    // let class = self.deref_class(class_ptr);
+    // self.debug(format!("[VM][CALL][CLASS][NAME={}]", &class.name));
 
-        self.function_call(class.constructor)?;
-        Ok(CallType::EnterFnBody)
-    }
+    // if let Some(constructor) = class.constructor {
+    //     self.function_call(constructor)?;
+    // } else {
+    //     // TODO: empty object
+    // }
+
+    // Ok(CallType::EnterFnBody)
+    // }
 
     fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> CallOperation {
         let BuiltInFunction {
@@ -114,15 +117,9 @@ impl VM {
     }
 
     pub(crate) fn op_call(&mut self) -> CallOperation {
-        let callee = match self.pop_operand()? {
-            RuntimeValue::Callable(callable) => callable,
+        match self.pop_operand()? {
+            RuntimeValue::Function(function_ptr) => self.function_call(function_ptr),
             _ => return self.error(RuntimeErrorCause::NotCallable),
-        };
-
-        match callee {
-            Callable::Function(function) => self.function_call(function),
-            Callable::Class(class) => self.class_call(class),
-            Callable::BuiltInFunction(built_in_fn) => self.built_in_function_call(built_in_fn),
         }
     }
 }

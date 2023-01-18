@@ -3,7 +3,10 @@ use std::fmt::Display;
 use common::ProgramText;
 use prettytable::Table;
 
-use crate::chunk::{self, chunk_into_rows, Chunk, Constant};
+use crate::{
+    chunk::{chunk_into_rows, Chunk},
+    stmt::GlobalPointer,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Function {
@@ -15,9 +18,9 @@ pub struct Function {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Class {
     pub name: ProgramText,
-    pub constructor: Function,
-    pub methods: Vec<Function>,
-    pub super_class: Option<Box<Class>>,
+    pub methods: Vec<GlobalPointer>,
+    pub super_class: Option<Box<GlobalPointer>>,
+    pub constructor: Option<GlobalPointer>,
 }
 
 impl Display for Function {
@@ -33,27 +36,20 @@ impl Display for Function {
 
         table.fmt(f)?;
 
-        fn extract_functions(chunk: Chunk) -> Vec<Function> {
-            fn extractor(chunk: Chunk, functions: &mut Vec<Function>) {
-                for constant in chunk.constants {
-                    match constant {
-                        Constant::Function(fun) => {
-                            functions.push(fun.clone());
-                            extractor(fun.chunk, functions);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            let mut functions = vec![];
-            extractor(chunk, &mut functions);
-            functions
-        }
+        Ok(())
+    }
+}
 
-        let functions_inside_chunk = extract_functions(self.chunk.clone());
+impl Display for Class {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut table = Table::new();
 
-        for function in functions_inside_chunk {
-            write!(f, "{}", function)?;
+        table.add_row(row!["Name", "Number of methods"]);
+        table.add_row(row![self.name, self.methods.len()]);
+        table.fmt(f)?;
+
+        for method in &self.methods {
+            write!(f, "{}", method)?;
         }
 
         Ok(())
