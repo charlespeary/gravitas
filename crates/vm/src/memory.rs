@@ -1,6 +1,9 @@
 use bytecode::MemoryAddress;
 
-use crate::{runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, OperationResult, VM};
+use crate::{
+    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
+    VM,
+};
 
 impl VM {
     pub(crate) fn op_pop(&mut self, amount: usize) -> OperationResult {
@@ -40,7 +43,10 @@ impl VM {
         Ok(())
     }
 
-    pub(crate) fn get_local_variable(&mut self, local_address: usize) -> OperationResult {
+    pub(crate) fn get_local_variable(
+        &mut self,
+        local_address: usize,
+    ) -> MachineResult<RuntimeValue> {
         let stack_start = self.current_frame().stack_start;
         let stack_address = stack_start + local_address as usize;
 
@@ -50,20 +56,38 @@ impl VM {
                     "[STACK][GET_LOCAL_VARIABLE][ADDRESS={}][VALUE={}]",
                     stack_address, &value
                 ));
-                self.push_operand(value);
-                Ok(())
+                Ok(value)
             }
             None => self.error(RuntimeErrorCause::StackOverflow),
+        }
+    }
+
+    pub(crate) fn get_upvalue(&mut self, upvalue_index: usize) -> MachineResult<RuntimeValue> {
+        println!("extracting upvalue...");
+        let current_closure_ptr = self
+            .call_stack
+            .last()
+            .map(|frame| frame.closure_ptr)
+            .unwrap();
+
+        let closure = self.gc.deref(current_closure_ptr).as_closure();
+        let upvalue = closure.upvalues.get(upvalue_index).cloned().unwrap();
+        Ok(upvalue)
+    }
+
+    pub(crate) fn get_variable(&mut self, address: MemoryAddress) -> MachineResult<RuntimeValue> {
+        match address {
+            MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
+            MemoryAddress::Upvalue(upvalue_index) => self.get_upvalue(upvalue_index),
         }
     }
 
     pub(crate) fn op_get(&mut self) -> OperationResult {
         let address = self.pop_address()?;
         // TODO: move to util function
-        match address {
-            MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
-            _ => unimplemented!(),
-        }
+        let value = self.get_variable(address)?;
+        self.push_operand(value);
+        Ok(())
     }
 }
 

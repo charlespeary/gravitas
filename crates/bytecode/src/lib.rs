@@ -28,7 +28,7 @@ pub enum MemoryAddress {
     // Upvalue address
     // First value points to the stack index that starts at index
     // defined by callstack n (second value) jumps above.
-    Upvalue(usize, usize),
+    Upvalue(usize),
     // Property of an object
     // Property(PropertyAddress),
 }
@@ -60,6 +60,7 @@ pub struct Variable {
     // Flag to determine whether variable is used inside a closure and needs to be closed
     // in order to be available after it should go off the stack.
     pub closed: bool,
+    pub upvalue_index: Option<usize>,
 }
 
 // Each opcode is described with e.g (Address, Number) which means that
@@ -118,6 +119,8 @@ pub enum Opcode {
     Block(usize),
     Break(isize),
     Null,
+    // number of upvalue addresses to pop
+    CreateClosure(usize),
 }
 
 impl Display for Opcode {
@@ -153,6 +156,7 @@ impl Display for Opcode {
                     Pop(amount) => format!("POP_{}", amount),
                     Block(amount) => format!("BLC_{}", amount),
                     Break(distance) => format!("BRK_{}", distance),
+                    CreateClosure(amount) => format!("CLOSURE_{}", amount),
                     _ => unreachable!(),
                 };
                 write!(f, "{}", str)?;

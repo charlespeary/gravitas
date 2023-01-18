@@ -4,7 +4,7 @@ use crate::{
     callables::{Class, Function},
     chunk::Constant,
     state::ScopeType,
-    BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator, Opcode,
+    BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator, MemoryAddress, Opcode,
 };
 use common::CONSTRUCTOR_NAME;
 use parser::parse::{
@@ -133,7 +133,32 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             StmtKind::FunctionDeclaration { name, params, body } => {
                 let new_fn = self.compile_function(name.clone(), params, body)?;
                 let fn_ptr = self.declare_global(new_fn.into());
-                self.write_constant(Constant::Function(fn_ptr));
+
+                let (upvalues_addresses, upvalues_count) = {
+                    let upvalues = self.state.scope_closed_variables();
+
+                    let count = upvalues.len();
+                    let addresses: Vec<Constant> = upvalues
+                        .iter()
+                        .map(|upvalue| {
+                            // It's still on the stack because depth 1 means that it's the function in which closure is declared
+                            if upvalue.depth == 1 {
+                                Constant::MemoryAddress(MemoryAddress::Local(upvalue.index))
+                            } else {
+                                todo!()
+                            }
+                        })
+                        .collect();
+
+                    (addresses, count)
+                };
+
+                self.write_constant(Constant::GlobalPointer(fn_ptr));
+                for upvalue_address in upvalues_addresses {
+                    self.write_constant(upvalue_address);
+                }
+
+                self.write_opcode(Opcode::CreateClosure(upvalues_count));
             }
             StmtKind::ClassDeclaration {
                 name,
@@ -174,7 +199,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 };
 
                 let class_ptr = self.declare_global(class.into());
-                self.write_constant(Constant::Class(class_ptr));
+                self.write_constant(Constant::GlobalPointer(class_ptr));
             }
         }
         Ok(())

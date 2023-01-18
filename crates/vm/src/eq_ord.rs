@@ -66,8 +66,6 @@ impl RuntimeValue {
             RuntimeValue::Bool(bool) => bool,
             RuntimeValue::ObjectInstance(ObjectInstance) => true,
             RuntimeValue::Null => false,
-            RuntimeValue::Function(Function) => true,
-            RuntimeValue::Class(Class) => true,
             _ => unreachable!(),
         })
     }

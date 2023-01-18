@@ -1,9 +1,12 @@
 use crate::{
-    gc::HeapPointer,
-    gravitas_std::{BuiltInFunction, FnArgs},
+    gc::{Closure, HeapObject, HeapPointer},
+    gravitas_std::{functions, BuiltInFunction, FnArgs},
     MachineResult, RuntimeErrorCause, RuntimeValue, VM,
 };
-use bytecode::{callables::Class, stmt::GlobalPointer};
+use bytecode::{
+    callables::Class,
+    stmt::{GlobalItem, GlobalPointer},
+};
 use common::ProgramText;
 use std::collections::HashMap;
 
@@ -62,7 +65,10 @@ impl VM {
         self.operands.truncate(call_frame.stack_start);
     }
 
-    fn function_call(&mut self, function_ptr: GlobalPointer) -> CallOperation {
+    fn closure_call(&mut self, closure_ptr: HeapPointer) -> CallOperation {
+        let closure = self.gc.deref(closure_ptr).as_closure();
+        let function_ptr = closure.function_ptr;
+
         let (arity, name) = {
             let function = self.deref_global(function_ptr).as_function();
 
@@ -70,10 +76,9 @@ impl VM {
         };
         self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &name));
 
-        let recursion_handler = RuntimeValue::Function(function_ptr);
+        let recursion_handler = RuntimeValue::GlobalPointer(function_ptr);
         self.push_operand(recursion_handler);
 
-        let closure_ptr = self.make_closure(function_ptr);
         let frame = CallFrame {
             // -1 because we also count function pushed onto the stack
             // for recursion purposes
@@ -117,9 +122,14 @@ impl VM {
     }
 
     pub(crate) fn op_call(&mut self) -> CallOperation {
-        match self.pop_operand()? {
-            RuntimeValue::Function(function_ptr) => self.function_call(function_ptr),
-            _ => return self.error(RuntimeErrorCause::NotCallable),
+        let callee = self.pop_operand()?;
+
+        if let RuntimeValue::HeapPointer(heap_ptr) = callee {
+            match self.gc.deref(heap_ptr) {
+                HeapObject::Closure(_) => self.closure_call(heap_ptr),
+            }
+        } else {
+            return self.error(RuntimeErrorCause::NotCallable);
         }
     }
 }

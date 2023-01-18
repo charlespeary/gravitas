@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::path::Path;
 
 use crate::call::CallType;
+use crate::gc::HeapObject;
 use bytecode::callables::Function;
 use bytecode::stmt::{GlobalItem, GlobalPointer};
 use bytecode::{Opcode, ProgramBytecode};
@@ -198,6 +199,34 @@ impl VM {
             }
             Null => {
                 self.push_operand(RuntimeValue::Null);
+                Ok(())
+            }
+            CreateClosure(upvalues_count) => {
+                let mut upvalues = vec![];
+
+                for _ in 0..upvalues_count {
+                    let upvalue_address = self.pop_operand()?.as_address();
+                    let upvalue = self.get_variable(upvalue_address)?;
+                    upvalues.push(upvalue);
+                }
+
+                let fn_ptr = self.pop_operand()?.as_pointer();
+                let closure_ptr = self.make_closure(fn_ptr);
+
+                let closure_mut = self.gc.deref_mut(closure_ptr);
+
+                for upvalue in upvalues {
+                    match closure_mut {
+                        HeapObject::Closure(closure) => {
+                            closure.upvalues.push(upvalue);
+                        }
+                        _ => {
+                            todo!();
+                        }
+                    }
+                }
+
+                self.push_operand(RuntimeValue::HeapPointer(closure_ptr));
                 Ok(())
             }
             _ => {

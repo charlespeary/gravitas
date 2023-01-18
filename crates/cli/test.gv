@@ -1,11 +1,14 @@
-fn fib(n) {
-    if n == 0 {
-        return 0;
-    };
+fn makeClosure(x) {
+    fn innerClosure() {
+        fn closure() {
+            return x;
+        }
+        return closure;
+    }
 
-    print(5);
+    return innerClosure();
 }
 
-let x = fib(0);
-let y = x + x;
-print(y);
+let x = makeInnerClosure(10);
+let y = x();
+let z = y();

@@ -10,8 +10,7 @@ pub enum Constant {
     Number(Number),
     String(ProgramText),
     Bool(bool),
-    Function(GlobalPointer),
-    Class(GlobalPointer),
+    GlobalPointer(GlobalPointer),
 }
 
 impl Display for Constant {
@@ -21,8 +20,7 @@ impl Display for Constant {
             Self::Number(num) => num.to_string(),
             Self::String(str) => str.clone(),
             Self::Bool(bool) => bool.to_string(),
-            Self::Function(fun) => fun.to_string(),
-            Self::Class(class) => class.to_string(),
+            Self::GlobalPointer(ptr) => ptr.to_string(),
         };
 
         write!(f, "{}", str)?;

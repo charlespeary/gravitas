@@ -62,4 +62,8 @@ impl GC {
     pub fn deref(&self, pointer: HeapPointer) -> &HeapObject {
         self.objects.get(pointer).unwrap()
     }
+
+    pub fn deref_mut(&mut self, pointer: HeapPointer) -> &mut HeapObject {
+        self.objects.get_mut(pointer).unwrap()
+    }
 }

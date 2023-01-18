@@ -7,7 +7,6 @@ use crate::{callables::Class, MemoryAddress, Patch, Variable};
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScopeType {
     Function,
-    Closure,
     Block,
     Global,
     Class,
@@ -17,7 +16,7 @@ pub enum ScopeType {
 pub struct Scope {
     pub scope_type: ScopeType,
     pub declared: Vec<Variable>,
-    pub closed: Vec<Variable>,
+    pub upvalues_count: usize,
     pub returned: bool,
     pub patches: HashSet<Patch>,
     pub starting_index: usize,
@@ -28,10 +27,10 @@ impl Scope {
         Self {
             scope_type,
             declared: vec![],
-            closed: vec![],
             patches: HashSet::new(),
             returned: false,
             starting_index,
+            upvalues_count: 0,
         }
     }
 }
@@ -65,13 +64,20 @@ impl GeneratorState {
     }
 
     pub fn is_in_closure(&self) -> bool {
-        self.scopes.last().map_or(false, |scope| {
-            if let ScopeType::Closure = scope.scope_type {
-                true
-            } else {
-                false
-            }
-        })
+        let mut scopes = self
+            .scopes
+            .iter()
+            .rev()
+            .filter(|scope| scope.scope_type != ScopeType::Block);
+
+        // If we are in a function that is inside in another function, then we are in a closure.
+        let current_scope = scopes.next().map(|s| s.scope_type);
+        let above_scope = scopes.next().map(|s| s.scope_type);
+
+        match (current_scope, above_scope) {
+            (Some(ScopeType::Function), Some(ScopeType::Function)) => true,
+            _ => false,
+        }
     }
 
     pub fn declared(&self) -> usize {
@@ -95,10 +101,12 @@ impl GeneratorState {
     }
 
     pub fn depth(&self) -> usize {
+        // -1 because we don't count the local scope which is 0
         self.scopes
             .iter()
             .filter(|s| s.scope_type != ScopeType::Block)
             .count()
+            - 1
     }
 
     pub fn declare_var(&mut self, name: ProgramText) {
@@ -106,9 +114,7 @@ impl GeneratorState {
         // If we are in closure or function then offset equals to 0, otherwise we need to calculate blocks
         // above the current scope, because they don't reset the stack counter to
         // the beginning of the stack frame.
-        let stack_offset: usize = if [ScopeType::Function, ScopeType::Closure]
-            .contains(&self.current_scope().scope_type)
-        {
+        let stack_offset: usize = if &self.current_scope().scope_type == &ScopeType::Function {
             0
         } else {
             self.scopes
@@ -127,6 +133,7 @@ impl GeneratorState {
             depth,
             index: stack_offset + scope.declared.len(),
             closed: false,
+            upvalue_index: None,
         })
     }
 
@@ -137,6 +144,8 @@ impl GeneratorState {
             if let Some(var) = scope.declared.iter_mut().find(|var| var.name == name) {
                 if var.depth != current_depth {
                     var.closed = true;
+                    var.upvalue_index = Some(scope.upvalues_count);
+                    scope.upvalues_count += 1;
                 }
                 return Some(var);
             }
@@ -145,13 +154,12 @@ impl GeneratorState {
     }
 
     pub fn find_var(&mut self, name: &str) -> MemoryAddress {
-        let current_depth = self.depth();
         let in_closure = self.is_in_closure();
         let var = self
             .search_var(name)
             .map(|var| {
                 if var.closed && in_closure {
-                    MemoryAddress::Upvalue(var.index, current_depth - var.depth)
+                    MemoryAddress::Upvalue(var.upvalue_index.unwrap())
                 } else {
                     MemoryAddress::Local(var.index)
                 }
