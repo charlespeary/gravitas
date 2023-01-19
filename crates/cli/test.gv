@@ -1,14 +1,16 @@
-fn makeClosure(x) {
-    fn innerClosure() {
-        fn closure() {
-            return x;
+fn makeClosure(closedValue) {
+    fn closure() {
+        fn inner() {
+            return closedValue;
         }
-        return closure;
+        // "inner" makes closure here
+        // must capture pointer to closedValue
+        return inner;
     }
-
-    return innerClosure();
+    // "closure" makes closure here 0
+    // must capture closedValue
+    return closure();
 }
 
-let x = makeInnerClosure(10);
+let x = makeClosure(10);
 let y = x();
-let z = y();

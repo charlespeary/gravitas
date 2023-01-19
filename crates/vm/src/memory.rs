@@ -86,6 +86,9 @@ impl VM {
         let address = self.pop_address()?;
         // TODO: move to util function
         let value = self.get_variable(address)?;
+        // if let RuntimeValue::HeapPointer(ptr) = value.clone() {
+        //     println!("heap: {:?}", self.gc.deref(ptr));
+        // }
         self.push_operand(value);
         Ok(())
     }

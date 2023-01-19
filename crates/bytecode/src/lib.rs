@@ -57,10 +57,15 @@ pub struct Variable {
     pub depth: usize,
     // Calculated index on the stack
     pub index: usize,
-    // Flag to determine whether variable is used inside a closure and needs to be closed
-    // in order to be available after it should go off the stack.
-    pub closed: bool,
+    pub is_closed: bool,
     pub upvalue_index: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Upvalue {
+    upvalue_index: usize,
+    is_local: bool,
+    local_index: usize,
 }
 
 // Each opcode is described with e.g (Address, Number) which means that

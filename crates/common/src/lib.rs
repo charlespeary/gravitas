@@ -10,4 +10,5 @@ pub type Address = Number;
 pub const MAIN_FUNCTION_NAME: &str = "main";
 pub const LAMBDA_NAME: &str = "lambda";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
+pub const CLOSED_VARIABLE_PLACEHOLDER: &str = "@closed@";
 pub type ProgramText = String;

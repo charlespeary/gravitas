@@ -202,13 +202,16 @@ impl VM {
                 Ok(())
             }
             CreateClosure(upvalues_count) => {
+                println!("Creating closure: {}", self.call_stack.last().unwrap().name);
                 let mut upvalues = vec![];
 
                 for _ in 0..upvalues_count {
                     let upvalue_address = self.pop_operand()?.as_address();
-                    let upvalue = self.get_variable(upvalue_address)?;
+                    let upvalue = self.get_variable(upvalue_address.clone())?;
                     upvalues.push(upvalue);
                 }
+
+                println!("UPVALUES: {:?}", &upvalues);
 
                 let fn_ptr = self.pop_operand()?.as_pointer();
                 let closure_ptr = self.make_closure(fn_ptr);
@@ -218,6 +221,7 @@ impl VM {
                 for upvalue in upvalues {
                     match closure_mut {
                         HeapObject::Closure(closure) => {
+                            println!("capturing upvalue... {}", &upvalue);
                             closure.upvalues.push(upvalue);
                         }
                         _ => {
@@ -225,7 +229,6 @@ impl VM {
                         }
                     }
                 }
-
                 self.push_operand(RuntimeValue::HeapPointer(closure_ptr));
                 Ok(())
             }

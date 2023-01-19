@@ -1,8 +1,8 @@
-[GLOBAL][NAME=closure]
+[GLOBAL][NAME=inner]
 +------------+----------------+----------------+
 | Name       | Arity          |                |
 +------------+----------------+----------------+
-| closure    | 0              |                |
+| inner      | 0              |                |
 +------------+----------------+----------------+
 | OPCODE     | CONSTANT INDEX | CONSTANT VALUE |
 +------------+----------------+----------------+
@@ -17,6 +17,31 @@
 | RET        | -              | -              |
 +------------+----------------+----------------+
 
+[GLOBAL][NAME=closure]
++------------+----------------+------------------+
+| Name       | Arity          |                  |
++------------+----------------+------------------+
+| closure    | 0              |                  |
++------------+----------------+------------------+
+| OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
++------------+----------------+------------------+
+| CONSTANT_0 | 0              | 0                |
++------------+----------------+------------------+
+| CONSTANT_1 | 1              | upvalue          |
++------------+----------------+------------------+
+| CLOSURE_1  | 2              | local_address::1 |
++------------+----------------+------------------+
+| CONSTANT_2 | -              | -                |
++------------+----------------+------------------+
+| GET        | -              | -                |
++------------+----------------+------------------+
+| RET        | -              | -                |
++------------+----------------+------------------+
+| NULL       | -              | -                |
++------------+----------------+------------------+
+| RET        | -              | -                |
++------------+----------------+------------------+
+
 [GLOBAL][NAME=makeClosure]
 +-------------+----------------+------------------+
 | Name        | Arity          |                  |
@@ -25,7 +50,7 @@
 +-------------+----------------+------------------+
 | OPCODE      | CONSTANT INDEX | CONSTANT VALUE   |
 +-------------+----------------+------------------+
-| CONSTANT_0  | 0              | 0                |
+| CONSTANT_0  | 0              | 1                |
 +-------------+----------------+------------------+
 | CONSTANT_1  | 1              | local_address::0 |
 +-------------+----------------+------------------+
@@ -34,6 +59,8 @@
 | CONSTANT_2  | -              | -                |
 +-------------+----------------+------------------+
 | GET         | -              | -                |
++-------------+----------------+------------------+
+| CALL        | -              | -                |
 +-------------+----------------+------------------+
 | RET         | -              | -                |
 +-------------+----------------+------------------+
@@ -50,7 +77,7 @@
 +------------+----------------+------------------+
 | OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
 +------------+----------------+------------------+
-| CONSTANT_0 | 0              | 1                |
+| CONSTANT_0 | 0              | 2                |
 +------------+----------------+------------------+
 | CLOSURE_0  | 1              | 10               |
 +------------+----------------+------------------+
@@ -81,7 +108,7 @@
 [VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CLOSURE_0
-[STACK][POP] Some(GlobalPointer(1))
+[STACK][POP] Some(GlobalPointer(2))
 
 +-------+-------------+
 | INDEX | STACK VALUE |
@@ -215,7 +242,7 @@
 +-------+----------------+
 
 [STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=10]
-[STACK][POP] Some(GlobalPointer(0))
+[STACK][POP] Some(GlobalPointer(1))
 
 +-------+----------------+
 | INDEX | STACK VALUE    |
@@ -290,8 +317,230 @@
 
 [VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: RET
+[OPCODE][NEXT]: CALL
 [STACK][POP] Some(HeapPointer(2))
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+
+[VM][CALL][FUNCTION][NAME=closure]
+[STACK][PUSH] global pointer
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+
+[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=5][STACK_START=4]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_0
+[STACK][PUSH] global pointer
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] upvalue
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | global pointer |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CLOSURE_1
+[STACK][POP] Some(MemoryAddress(Upvalue(0)))
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | global pointer |
++-------+----------------+
+
+[STACK][POP] Some(GlobalPointer(0))
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+
+[STACK][PUSH] heap pointer
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] local_address::1
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | heap pointer   |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | heap pointer   |
++-------+----------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=5][VALUE=heap pointer]
+[STACK][PUSH] heap pointer
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | heap pointer   |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(HeapPointer(3))
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+| 4     | global pointer |
++-------+----------------+
+| 5     | heap pointer   |
++-------+----------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=5][STACK_START=4]
+[STACK][PUSH] heap pointer
+
++-------+----------------+
+| INDEX | STACK VALUE    |
++-------+----------------+
+| 0     | heap pointer   |
++-------+----------------+
+| 1     | 10             |
++-------+----------------+
+| 2     | global pointer |
++-------+----------------+
+| 3     | heap pointer   |
++-------+----------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(HeapPointer(3))
 
 +-------+----------------+
 | INDEX | STACK VALUE    |
@@ -354,7 +603,7 @@
 [VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(2))
+[STACK][POP] Some(HeapPointer(3))
 
 +-------+--------------+
 | INDEX | STACK VALUE  |
@@ -364,7 +613,7 @@
 | 1     | heap pointer |
 +-------+--------------+
 
-[VM][CALL][FUNCTION][NAME=closure]
+[VM][CALL][FUNCTION][NAME=inner]
 [STACK][PUSH] global pointer
 
 +-------+--------------+
@@ -375,7 +624,7 @@
 | 1     | heap pointer |
 +-------+--------------+
 
-[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=8][STACK_START=2]
+[CALL_STACK][NEW FRAME][NAME=inner][RETURN_IP=8][STACK_START=2]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_0
 [STACK][PUSH] upvalue
@@ -432,7 +681,7 @@
 | 2     | global pointer |
 +-------+----------------+
 
-[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=8][STACK_START=2]
+[CALL_STACK][REMOVE FRAME][NAME=inner][RETURN_IP=8][STACK_START=2]
 [STACK][PUSH] 10
 
 +-------+--------------+

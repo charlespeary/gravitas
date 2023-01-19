@@ -135,17 +135,20 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 let fn_ptr = self.declare_global(new_fn.into());
 
                 let (upvalues_addresses, upvalues_count) = {
-                    let upvalues = self.state.scope_closed_variables();
-
+                    let upvalues = self.state.scope_upvalues();
+                    println!("Function {} has {} upvalues", name, upvalues.len());
                     let count = upvalues.len();
                     let addresses: Vec<Constant> = upvalues
                         .iter()
                         .map(|upvalue| {
+                            println!("Upvalue: {:?}", upvalue);
                             // It's still on the stack because depth 1 means that it's the function in which closure is declared
-                            if upvalue.depth == 1 {
-                                Constant::MemoryAddress(MemoryAddress::Local(upvalue.index))
+                            if upvalue.is_local {
+                                Constant::MemoryAddress(MemoryAddress::Local(upvalue.local_index))
                             } else {
-                                todo!()
+                                Constant::MemoryAddress(MemoryAddress::Upvalue(
+                                    upvalue.upvalue_index,
+                                ))
                             }
                         })
                         .collect();
@@ -154,6 +157,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 };
 
                 self.write_constant(Constant::GlobalPointer(fn_ptr));
+
                 for upvalue_address in upvalues_addresses {
                     self.write_constant(upvalue_address);
                 }
