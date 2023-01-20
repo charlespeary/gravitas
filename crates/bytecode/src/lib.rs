@@ -28,7 +28,7 @@ pub enum MemoryAddress {
     // Upvalue address
     // First value points to the stack index that starts at index
     // defined by callstack n (second value) jumps above.
-    Upvalue(usize),
+    Upvalue { index: usize, is_ref: bool },
     // Property of an object
     // Property(PropertyAddress),
 }
@@ -37,7 +37,7 @@ impl Display for MemoryAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Self::Local(address) => format!("local_address::{}", address),
-            Self::Upvalue(..) => "upvalue".to_owned(),
+            Self::Upvalue { .. } => "upvalue".to_owned(),
         };
         write!(f, "{}", str)?;
 
@@ -57,7 +57,6 @@ pub struct Variable {
     pub depth: usize,
     // Calculated index on the stack
     pub index: usize,
-    pub is_closed: bool,
     pub upvalue_index: Option<usize>,
 }
 
@@ -66,6 +65,8 @@ pub struct Upvalue {
     upvalue_index: usize,
     is_local: bool,
     local_index: usize,
+    is_ref: bool,
+    name: ProgramText,
 }
 
 // Each opcode is described with e.g (Address, Number) which means that

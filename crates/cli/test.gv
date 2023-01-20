@@ -1,6 +1,7 @@
 fn makeClosure(closedValue) {
     fn closure() {
-        fn inner() {
+        fn inner() { 
+            closedValue = closedValue + 1;
             return closedValue;
         }
         // "inner" makes closure here
@@ -14,3 +15,6 @@ fn makeClosure(closedValue) {
 
 let x = makeClosure(10);
 let y = x();
+let z = x();
+let a = x();
+let b = x();

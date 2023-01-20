@@ -133,22 +133,20 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             StmtKind::FunctionDeclaration { name, params, body } => {
                 let new_fn = self.compile_function(name.clone(), params, body)?;
                 let fn_ptr = self.declare_global(new_fn.into());
-
                 let (upvalues_addresses, upvalues_count) = {
                     let upvalues = self.state.scope_upvalues();
-                    println!("Function {} has {} upvalues", name, upvalues.len());
                     let count = upvalues.len();
                     let addresses: Vec<Constant> = upvalues
                         .iter()
                         .map(|upvalue| {
-                            println!("Upvalue: {:?}", upvalue);
                             // It's still on the stack because depth 1 means that it's the function in which closure is declared
                             if upvalue.is_local {
                                 Constant::MemoryAddress(MemoryAddress::Local(upvalue.local_index))
                             } else {
-                                Constant::MemoryAddress(MemoryAddress::Upvalue(
-                                    upvalue.upvalue_index,
-                                ))
+                                Constant::MemoryAddress(MemoryAddress::Upvalue {
+                                    index: upvalue.upvalue_index,
+                                    is_ref: upvalue.is_ref,
+                                })
                             }
                         })
                         .collect();

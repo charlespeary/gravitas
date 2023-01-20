@@ -30,7 +30,27 @@ impl VM {
             MemoryAddress::Local(local_address) => {
                 self.operands[stack_start + local_address as usize] = value;
             }
-            _ => unimplemented!(),
+            MemoryAddress::Upvalue { index, is_ref } => {
+                let current_closure_ptr = self
+                    .call_stack
+                    .last()
+                    .map(|frame| frame.closure_ptr)
+                    .unwrap();
+
+                let closure = self.gc.deref(current_closure_ptr).as_closure();
+
+                let mut upvalue_ptr = closure.upvalues.get(index).cloned().unwrap();
+
+                if is_ref {
+                    while let RuntimeValue::HeapPointer(new_upvalue_ptr) =
+                        self.gc.deref(upvalue_ptr).as_value()
+                    {
+                        upvalue_ptr = *new_upvalue_ptr;
+                    }
+                }
+
+                *self.gc.deref_mut(upvalue_ptr) = value.into();
+            }
         }
         Ok(())
     }
@@ -62,8 +82,11 @@ impl VM {
         }
     }
 
-    pub(crate) fn get_upvalue(&mut self, upvalue_index: usize) -> MachineResult<RuntimeValue> {
-        println!("extracting upvalue...");
+    pub(crate) fn get_upvalue(
+        &mut self,
+        upvalue_index: usize,
+        is_ref: bool,
+    ) -> MachineResult<RuntimeValue> {
         let current_closure_ptr = self
             .call_stack
             .last()
@@ -71,24 +94,28 @@ impl VM {
             .unwrap();
 
         let closure = self.gc.deref(current_closure_ptr).as_closure();
-        let upvalue = closure.upvalues.get(upvalue_index).cloned().unwrap();
-        Ok(upvalue)
+
+        let upvalue_ptr = closure.upvalues.get(upvalue_index).cloned().unwrap();
+        let mut upvalue = self.gc.deref(upvalue_ptr).as_value();
+        if is_ref {
+            while let RuntimeValue::HeapPointer(upvalue_ptr) = upvalue {
+                upvalue = self.gc.deref(*upvalue_ptr).as_value();
+            }
+        }
+
+        Ok(upvalue.clone())
     }
 
     pub(crate) fn get_variable(&mut self, address: MemoryAddress) -> MachineResult<RuntimeValue> {
         match address {
             MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
-            MemoryAddress::Upvalue(upvalue_index) => self.get_upvalue(upvalue_index),
+            MemoryAddress::Upvalue { index, is_ref } => self.get_upvalue(index, is_ref),
         }
     }
 
     pub(crate) fn op_get(&mut self) -> OperationResult {
         let address = self.pop_address()?;
-        // TODO: move to util function
         let value = self.get_variable(address)?;
-        // if let RuntimeValue::HeapPointer(ptr) = value.clone() {
-        //     println!("heap: {:?}", self.gc.deref(ptr));
-        // }
         self.push_operand(value);
         Ok(())
     }

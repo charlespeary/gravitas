@@ -1,3 +1,5 @@
+use core::panic;
+
 use bytecode::stmt::GlobalPointer;
 
 use crate::runtime_value::RuntimeValue;
@@ -7,7 +9,7 @@ pub(crate) type HeapPointer = usize;
 #[derive(Debug)]
 pub(crate) struct Closure {
     pub(crate) function_ptr: GlobalPointer,
-    pub(crate) upvalues: Vec<RuntimeValue>,
+    pub(crate) upvalues: Vec<HeapPointer>,
 }
 
 impl Closure {
@@ -18,20 +20,29 @@ impl Closure {
         }
     }
 
-    pub fn close_upvalue(&mut self, value: RuntimeValue) {
-        self.upvalues.push(value);
+    pub fn close_upvalue(&mut self, upvalue_ptr: HeapPointer) {
+        self.upvalues.push(upvalue_ptr);
     }
 }
 
 #[derive(Debug)]
 pub(crate) enum HeapObject {
     Closure(Closure),
+    Value(RuntimeValue),
 }
 
 impl HeapObject {
     pub fn as_closure(&self) -> &Closure {
         match self {
             Self::Closure(closure) => closure,
+            _ => panic!("Expected closure"),
+        }
+    }
+
+    pub fn as_value(&self) -> &RuntimeValue {
+        match self {
+            Self::Value(value) => value,
+            _ => panic!("Expected value"),
         }
     }
 }
@@ -39,6 +50,12 @@ impl HeapObject {
 impl From<Closure> for HeapObject {
     fn from(closure: Closure) -> Self {
         Self::Closure(closure)
+    }
+}
+
+impl From<RuntimeValue> for HeapObject {
+    fn from(value: RuntimeValue) -> Self {
+        Self::Value(value)
     }
 }
 

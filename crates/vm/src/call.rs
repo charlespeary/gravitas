@@ -127,6 +127,7 @@ impl VM {
         if let RuntimeValue::HeapPointer(heap_ptr) = callee {
             match self.gc.deref(heap_ptr) {
                 HeapObject::Closure(_) => self.closure_call(heap_ptr),
+                _ => todo!(),
             }
         } else {
             return self.error(RuntimeErrorCause::NotCallable);

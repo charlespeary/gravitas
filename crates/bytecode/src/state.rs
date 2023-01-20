@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use common::{ProgramText, CLOSED_VARIABLE_PLACEHOLDER};
+use common::ProgramText;
 
 use crate::{callables::Class, MemoryAddress, Patch, Upvalue, Variable};
 
@@ -34,11 +34,13 @@ impl Scope {
         }
     }
 
-    pub fn make_enclosed_upvalue(&mut self, upvalue_index: usize) -> Upvalue {
+    pub fn make_enclosed_upvalue(&mut self, upvalue_index: usize, is_local: bool, name: ProgramText) -> Upvalue {
         let upvalue = Upvalue {
             upvalue_index,
-            is_local: false,
+            is_local,
+            is_ref: true,
             local_index: 0,
+            name
         };
 
         self.upvalues.push(upvalue.clone());
@@ -47,8 +49,7 @@ impl Scope {
     }
 
     pub fn close_variable(&mut self, index: usize) -> Upvalue {
-        let mut var = self.variables.get_mut(index).unwrap();
-        var.is_closed = true;
+        let var = self.variables.get_mut(index).unwrap();
 
         let upvalues_len = self.upvalues.len();
 
@@ -58,15 +59,14 @@ impl Scope {
             upvalues_len - 1
         };
 
-        var.upvalue_index = Some(upvalue_index);
-
         let upvalue = Upvalue {
             local_index: var.index,
             upvalue_index,
             is_local: true,
+            is_ref: false,
+            name: var.name.clone()
         };
 
-        self.upvalues.push(upvalue.clone());
         upvalue
     }
 }
@@ -177,56 +177,46 @@ impl GeneratorState {
             name: name.to_owned(),
             depth,
             index: stack_offset + scope.variables.len(),
-            is_closed: false,
             upvalue_index: None,
         })
     }
 
     // This can't fail because it's either an upvalue or it's not defined and analyzer prevents the latter.
     pub fn search_upvalue_var(&mut self, name: &str) -> Upvalue {
-        // let current_depth = self.depth();
-        // // Offset to calculate if the scopes above are blocks, so they don't reset stack counter.
-        // for scope in self.scopes.iter_mut().rev().skip(1) {
-        //     println!("{}: SCOPE: {:?}", name, scope.declared);
-        //     if let Some(var) = scope.declared.iter_mut().find(|var| var.name == name) {
-        //         // println!("VAR.depth: {}, current_depth: {}", var.depth, current_depth);
-        //         if var.depth != current_depth {
-        //             var.closed = true;
-        //             var.upvalue_index = Some(scope.upvalues_count);
-        //             scope.upvalues_count += 1;
-        //         }
-        //         return Some(var);
-        //     } else {
-        //         println!("{}: NOT FOUND", name);
-        //     }
-        // }
-        // None
+        if let Some(existing_upvalue) = self.scope_upvalues().iter().find(|upvalue| upvalue.name == name){
+            return (*existing_upvalue).clone();
+        }
 
         let scopes = self
             .scopes
             .iter_mut()
             .rev()
-            // .skip(1)
             .filter(|scope| scope.scope_type != ScopeType::Block);
 
         let mut scopes_to_close: Vec<&mut Scope> = vec![];
 
         let mut upvalue = None;
-        // mark it for closing
+
         for scope in scopes {
             if let Some((_, index)) = search_var(scope, name) {
                 upvalue = Some(scope.close_variable(index));
-                break;
             }
 
             scopes_to_close.push(scope);
+
+            if upvalue.is_some() {
+                break;
+            }
         }
 
         let mut upvalue = upvalue.unwrap();
 
+
         // we skip the scope in which we found upvalue
-        for scope in scopes_to_close.iter_mut().skip(1) {
-            upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index);
+        for (index, scope) in scopes_to_close.iter_mut().rev().enumerate() {
+            // The outermost upvalue should be local because it doesn't reference another value so we need to grab it from the stack
+            let is_local = index == 0;
+            upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index, is_local, name.to_owned());
         }
 
         return upvalue;
@@ -243,8 +233,16 @@ impl GeneratorState {
             return MemoryAddress::Local(local_variable.index);
         }
 
-        let upvalue_index = self.search_upvalue_var(name).upvalue_index;
-        MemoryAddress::Upvalue(upvalue_index)
+        let Upvalue {
+            upvalue_index,
+            is_ref,
+            ..
+        } = self.search_upvalue_var(name);
+
+        MemoryAddress::Upvalue {
+            index: upvalue_index,
+            is_ref,
+        }
 
         // let in_closure = self.is_in_closure();
         // let var = self
