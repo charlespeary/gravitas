@@ -84,7 +84,6 @@ impl BytecodeGenerator {
 
         // To allow recursion
         self.state.declare_var(name.clone());
-
         match *body.kind {
             ExprKind::Block { stmts, return_expr } => {
                 self.generate(stmts)?;
@@ -133,6 +132,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             StmtKind::FunctionDeclaration { name, params, body } => {
                 let new_fn = self.compile_function(name.clone(), params, body)?;
                 let fn_ptr = self.declare_global(new_fn.into());
+
                 let (upvalues_addresses, upvalues_count) = {
                     let upvalues = self.state.scope_upvalues();
                     let count = upvalues.len();

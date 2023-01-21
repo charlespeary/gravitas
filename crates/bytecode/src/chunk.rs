@@ -20,7 +20,7 @@ impl Display for Constant {
             Self::Number(num) => num.to_string(),
             Self::String(str) => str.clone(),
             Self::Bool(bool) => bool.to_string(),
-            Self::GlobalPointer(ptr) => ptr.to_string(),
+            Self::GlobalPointer(ptr) => format!("global_ptr::{}", ptr),
         };
 
         write!(f, "{}", str)?;

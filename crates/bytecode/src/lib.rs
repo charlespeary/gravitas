@@ -37,7 +37,7 @@ impl Display for MemoryAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Self::Local(address) => format!("local_address::{}", address),
-            Self::Upvalue { .. } => "upvalue".to_owned(),
+            Self::Upvalue { index, .. } => format!("upvalue::{}", index),
         };
         write!(f, "{}", str)?;
 
@@ -275,6 +275,7 @@ impl BytecodeGenerator {
             .get_mut(patch.index)
             .expect("Patch tried to access wrong opcode.");
         let patched_opcode = opcode.patch((current_index - patch.index) as isize);
+
         let _ = std::mem::replace(opcode, patched_opcode);
     }
 

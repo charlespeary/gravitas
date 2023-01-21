@@ -43,8 +43,8 @@ impl fmt::Display for RuntimeValue {
             ObjectInstance(obj) => write!(f, "obj:{}", obj.class.name),
             MemoryAddress(address) => write!(f, "{}", address.to_string()),
             Null => write!(f, "null"),
-            GlobalPointer(ptr) => write!(f, "global pointer"),
-            HeapPointer(ptr) => write!(f, "heap pointer"),
+            GlobalPointer(ptr) => write!(f, "global ptr: {}", ptr),
+            HeapPointer(ptr) => write!(f, "heap ptr: {}", ptr),
         }
     }
 }
@@ -57,7 +57,6 @@ impl From<Constant> for RuntimeValue {
             Constant::Bool(bl) => RuntimeValue::Bool(bl),
             Constant::MemoryAddress(address) => RuntimeValue::MemoryAddress(address),
             Constant::GlobalPointer(ptr) => RuntimeValue::GlobalPointer(ptr),
-            _ => unreachable!(),
         }
     }
 }

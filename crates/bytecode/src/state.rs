@@ -34,13 +34,13 @@ impl Scope {
         }
     }
 
-    pub fn make_enclosed_upvalue(&mut self, upvalue_index: usize, is_local: bool, name: ProgramText) -> Upvalue {
+    pub fn make_enclosed_upvalue(&mut self, upvalue_index: usize, name: ProgramText) -> Upvalue {
         let upvalue = Upvalue {
             upvalue_index,
-            is_local,
+            is_local: false,
             is_ref: true,
             local_index: 0,
-            name
+            name,
         };
 
         self.upvalues.push(upvalue.clone());
@@ -64,7 +64,7 @@ impl Scope {
             upvalue_index,
             is_local: true,
             is_ref: false,
-            name: var.name.clone()
+            name: var.name.clone(),
         };
 
         upvalue
@@ -106,23 +106,6 @@ impl GeneratorState {
         self.scopes
             .last()
             .expect("Tried to access scope above the global one.")
-    }
-
-    pub fn is_in_closure(&self) -> bool {
-        let mut scopes = self
-            .scopes
-            .iter()
-            .rev()
-            .filter(|scope| scope.scope_type != ScopeType::Block);
-
-        // If we are in a function that is inside in another function, then we are in a closure.
-        let current_scope = scopes.next().map(|s| s.scope_type);
-        let above_scope = scopes.next().map(|s| s.scope_type);
-
-        match (current_scope, above_scope) {
-            (Some(ScopeType::Function), Some(ScopeType::Function)) => true,
-            _ => false,
-        }
     }
 
     pub fn declared(&self) -> usize {
@@ -183,14 +166,13 @@ impl GeneratorState {
 
     // This can't fail because it's either an upvalue or it's not defined and analyzer prevents the latter.
     pub fn search_upvalue_var(&mut self, name: &str) -> Upvalue {
-        if let Some(existing_upvalue) = self.scope_upvalues().iter().find(|upvalue| upvalue.name == name){
-            return (*existing_upvalue).clone();
-        }
-
+        // We skip the first scope because it's the local scope
+        // that we already checked and didn't find the variable there so we assumed it's an upvalue
         let scopes = self
             .scopes
             .iter_mut()
             .rev()
+            .skip(1)
             .filter(|scope| scope.scope_type != ScopeType::Block);
 
         let mut scopes_to_close: Vec<&mut Scope> = vec![];
@@ -199,24 +181,24 @@ impl GeneratorState {
 
         for scope in scopes {
             if let Some((_, index)) = search_var(scope, name) {
-                upvalue = Some(scope.close_variable(index));
+                if let Some(existing_upvalue) = scope.upvalues.get(index) {
+                    upvalue = Some(existing_upvalue.clone());
+                } else {
+                    let new_upvalue = scope.close_variable(index);
+
+                    scope.upvalues.push(new_upvalue.clone());
+                    upvalue = Some(new_upvalue);
+                }
+                break;
             }
 
             scopes_to_close.push(scope);
-
-            if upvalue.is_some() {
-                break;
-            }
         }
 
         let mut upvalue = upvalue.unwrap();
 
-
-        // we skip the scope in which we found upvalue
-        for (index, scope) in scopes_to_close.iter_mut().rev().enumerate() {
-            // The outermost upvalue should be local because it doesn't reference another value so we need to grab it from the stack
-            let is_local = index == 0;
-            upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index, is_local, name.to_owned());
+        for scope in scopes_to_close.into_iter().rev() {
+            upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index, name.to_owned());
         }
 
         return upvalue;
@@ -243,30 +225,7 @@ impl GeneratorState {
             index: upvalue_index,
             is_ref,
         }
-
-        // let in_closure = self.is_in_closure();
-        // let var = self
-        //     .search_var(name)
-        //     .map(|var| {
-        //         if var.closed && in_closure {
-        //             MemoryAddress::Upvalue(var.upvalue_index.unwrap())
-        //         } else {
-        //             MemoryAddress::Local(var.index)
-        //         }
-        //     })
-        //     // TODO: Deal with STD lib
-        //     .unwrap();
-
-        // var
     }
-
-    // pub fn scope_closed_variables(&self) -> Vec<&Variable> {
-    //     self.current_scope()
-    //         .variables
-    //         .iter()
-    //         .filter(|v| v.is_closed)
-    //         .collect()
-    // }
 
     pub fn scope_upvalues(&self) -> Vec<&Upvalue> {
         self.current_scope().upvalues.iter().collect()

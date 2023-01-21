@@ -94,9 +94,9 @@ impl VM {
             .unwrap();
 
         let closure = self.gc.deref(current_closure_ptr).as_closure();
-
         let upvalue_ptr = closure.upvalues.get(upvalue_index).cloned().unwrap();
         let mut upvalue = self.gc.deref(upvalue_ptr).as_value();
+        
         if is_ref {
             while let RuntimeValue::HeapPointer(upvalue_ptr) = upvalue {
                 upvalue = self.gc.deref(*upvalue_ptr).as_value();

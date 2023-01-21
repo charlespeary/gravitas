@@ -1,34 +1,3 @@
-[GLOBAL][NAME=inner]
-+------------+----------------+----------------+
-| Name       | Arity          |                |
-+------------+----------------+----------------+
-| inner      | 0              |                |
-+------------+----------------+----------------+
-| OPCODE     | CONSTANT INDEX | CONSTANT VALUE |
-+------------+----------------+----------------+
-| CONSTANT_0 | 0              | upvalue        |
-+------------+----------------+----------------+
-| CONSTANT_1 | 1              | upvalue        |
-+------------+----------------+----------------+
-| GET        | 2              | 1              |
-+------------+----------------+----------------+
-| CONSTANT_2 | 3              | upvalue        |
-+------------+----------------+----------------+
-| ADD        | -              | -              |
-+------------+----------------+----------------+
-| ASG        | -              | -              |
-+------------+----------------+----------------+
-| CONSTANT_3 | -              | -              |
-+------------+----------------+----------------+
-| GET        | -              | -              |
-+------------+----------------+----------------+
-| RET        | -              | -              |
-+------------+----------------+----------------+
-| NULL       | -              | -              |
-+------------+----------------+----------------+
-| RET        | -              | -              |
-+------------+----------------+----------------+
-
 [GLOBAL][NAME=closure]
 +------------+----------------+------------------+
 | Name       | Arity          |                  |
@@ -37,49 +6,83 @@
 +------------+----------------+------------------+
 | OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
 +------------+----------------+------------------+
-| CONSTANT_0 | 0              | 0                |
+| CONSTANT_0 | 0              | upvalue::0       |
 +------------+----------------+------------------+
-| CONSTANT_1 | 1              | upvalue          |
+| GET        | 1              | 3                |
 +------------+----------------+------------------+
-| CLOSURE_1  | 2              | local_address::1 |
+| CONSTANT_1 | 2              | 5                |
 +------------+----------------+------------------+
-| CONSTANT_2 | -              | -                |
+| EQ         | 3              | upvalue::0       |
++------------+----------------+------------------+
+| JIF_5      | 4              | upvalue::0       |
++------------+----------------+------------------+
+| CONSTANT_2 | 5              | 1                |
++------------+----------------+------------------+
+| RET        | 6              | local_address::0 |
++------------+----------------+------------------+
+| NULL       | -              | -                |
++------------+----------------+------------------+
+| BLC_1      | -              | -                |
++------------+----------------+------------------+
+| JP_12      | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_3 | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_4 | -              | -                |
 +------------+----------------+------------------+
 | GET        | -              | -                |
 +------------+----------------+------------------+
+| CONSTANT_5 | -              | -                |
++------------+----------------+------------------+
+| ADD        | -              | -                |
++------------+----------------+------------------+
+| ASG        | -              | -                |
++------------+----------------+------------------+
+| CONSTANT_6 | -              | -                |
++------------+----------------+------------------+
+| GET        | -              | -                |
++------------+----------------+------------------+
+| CALL       | -              | -                |
++------------+----------------+------------------+
 | RET        | -              | -                |
++------------+----------------+------------------+
+| NULL       | -              | -                |
++------------+----------------+------------------+
+| BLC_1      | -              | -                |
 +------------+----------------+------------------+
 | NULL       | -              | -                |
 +------------+----------------+------------------+
 | RET        | -              | -                |
 +------------+----------------+------------------+
 
-[GLOBAL][NAME=makeClosure]
-+-------------+----------------+------------------+
-| Name        | Arity          |                  |
-+-------------+----------------+------------------+
-| makeClosure | 1              |                  |
-+-------------+----------------+------------------+
-| OPCODE      | CONSTANT INDEX | CONSTANT VALUE   |
-+-------------+----------------+------------------+
-| CONSTANT_0  | 0              | 1                |
-+-------------+----------------+------------------+
-| CONSTANT_1  | 1              | local_address::0 |
-+-------------+----------------+------------------+
-| CLOSURE_1   | 2              | local_address::2 |
-+-------------+----------------+------------------+
-| CONSTANT_2  | -              | -                |
-+-------------+----------------+------------------+
-| GET         | -              | -                |
-+-------------+----------------+------------------+
-| CALL        | -              | -                |
-+-------------+----------------+------------------+
-| RET         | -              | -                |
-+-------------+----------------+------------------+
-| NULL        | -              | -                |
-+-------------+----------------+------------------+
-| RET         | -              | -                |
-+-------------+----------------+------------------+
+[GLOBAL][NAME=createDoThreeTimes]
++--------------------+----------------+------------------+
+| Name               | Arity          |                  |
++--------------------+----------------+------------------+
+| createDoThreeTimes | 0              |                  |
++--------------------+----------------+------------------+
+| OPCODE             | CONSTANT INDEX | CONSTANT VALUE   |
++--------------------+----------------+------------------+
+| CONSTANT_0         | 0              | 0                |
++--------------------+----------------+------------------+
+| CONSTANT_1         | 1              | global_ptr::0    |
++--------------------+----------------+------------------+
+| CONSTANT_2         | 2              | local_address::1 |
++--------------------+----------------+------------------+
+| CONSTANT_3         | 3              | local_address::1 |
++--------------------+----------------+------------------+
+| CLOSURE_2          | 4              | local_address::2 |
++--------------------+----------------+------------------+
+| CONSTANT_4         | -              | -                |
++--------------------+----------------+------------------+
+| GET                | -              | -                |
++--------------------+----------------+------------------+
+| RET                | -              | -                |
++--------------------+----------------+------------------+
+| NULL               | -              | -                |
++--------------------+----------------+------------------+
+| RET                | -              | -                |
++--------------------+----------------+------------------+
 
 [GLOBAL][NAME=main]
 +------------+----------------+------------------+
@@ -89,37 +92,17 @@
 +------------+----------------+------------------+
 | OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
 +------------+----------------+------------------+
-| CONSTANT_0 | 0              | 2                |
+| CONSTANT_0 | 0              | global_ptr::1    |
 +------------+----------------+------------------+
-| CLOSURE_0  | 1              | 10               |
+| CLOSURE_0  | 1              | local_address::0 |
 +------------+----------------+------------------+
-| CONSTANT_1 | 2              | local_address::0 |
-+------------+----------------+------------------+
-| CONSTANT_2 | 3              | local_address::1 |
-+------------+----------------+------------------+
-| GET        | 4              | local_address::1 |
-+------------+----------------+------------------+
-| CALL       | 5              | local_address::1 |
-+------------+----------------+------------------+
-| CONSTANT_3 | 6              | local_address::1 |
+| CONSTANT_1 | 2              | local_address::1 |
 +------------+----------------+------------------+
 | GET        | -              | -                |
 +------------+----------------+------------------+
 | CALL       | -              | -                |
 +------------+----------------+------------------+
-| CONSTANT_4 | -              | -                |
-+------------+----------------+------------------+
-| GET        | -              | -                |
-+------------+----------------+------------------+
-| CALL       | -              | -                |
-+------------+----------------+------------------+
-| CONSTANT_5 | -              | -                |
-+------------+----------------+------------------+
-| GET        | -              | -                |
-+------------+----------------+------------------+
-| CALL       | -              | -                |
-+------------+----------------+------------------+
-| CONSTANT_6 | -              | -                |
+| CONSTANT_2 | -              | -                |
 +------------+----------------+------------------+
 | GET        | -              | -                |
 +------------+----------------+------------------+
@@ -129,7 +112,7 @@
 [CALL_STACK][NEW FRAME][NAME=main][RETURN_IP=0][STACK_START=0]
 [VM][START OF EXECUTION][NAME=main]
 [OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] global pointer
+[STACK][PUSH] global ptr: 1
 
 +-------+-------------+
 | INDEX | STACK VALUE |
@@ -138,13 +121,13 @@
 [VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CLOSURE_0
-[STACK][POP] Some(GlobalPointer(2))
+[STACK][POP] Some(GlobalPointer(1))
 
 +-------+-------------+
 | INDEX | STACK VALUE |
 +-------+-------------+
 
-[STACK][PUSH] heap pointer
+[STACK][PUSH] heap ptr: 1
 
 +-------+-------------+
 | INDEX | STACK VALUE |
@@ -153,1855 +136,1812 @@
 [VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] 10
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-
-[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
 [STACK][PUSH] local_address::0
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | 10           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
-[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(0)))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | 10           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=0][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=0][VALUE=heap ptr: 1]
+[STACK][PUSH] heap ptr: 1
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | 10           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CALL
 [STACK][POP] Some(HeapPointer(1))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | 10           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
-[VM][CALL][FUNCTION][NAME=makeClosure]
-[STACK][PUSH] global pointer
+[VM][CALL][FUNCTION][NAME=createDoThreeTimes]
+[STACK][PUSH] heap ptr: 1
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | 10           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
-[CALL_STACK][NEW FRAME][NAME=makeClosure][RETURN_IP=5][STACK_START=1]
+[CALL_STACK][NEW FRAME][NAME=createDoThreeTimes][RETURN_IP=4][STACK_START=1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] global pointer
+[STACK][PUSH] 0
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] local_address::0
+[STACK][PUSH] global ptr: 0
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CLOSURE_1
-[STACK][POP] Some(MemoryAddress(Local(0)))
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] local_address::1
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=10]
-[STACK][POP] Some(GlobalPointer(1))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[STACK][PUSH] heap pointer
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | heap ptr: 1   |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | 0             |
++-------+---------------+
+| 3     | global ptr: 0 |
++-------+---------------+
 
 [VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] local_address::2
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] local_address::1
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
++-------+------------------+
+| INDEX | STACK VALUE      |
++-------+------------------+
+| 0     | heap ptr: 1      |
++-------+------------------+
+| 1     | heap ptr: 1      |
++-------+------------------+
+| 2     | 0                |
++-------+------------------+
+| 3     | global ptr: 0    |
++-------+------------------+
+| 4     | local_address::1 |
++-------+------------------+
 
 [VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CLOSURE_2
+[STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+------------------+
+| INDEX | STACK VALUE      |
++-------+------------------+
+| 0     | heap ptr: 1      |
++-------+------------------+
+| 1     | heap ptr: 1      |
++-------+------------------+
+| 2     | 0                |
++-------+------------------+
+| 3     | global ptr: 0    |
++-------+------------------+
+| 4     | local_address::1 |
++-------+------------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=2][VALUE=0]
+[STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | heap ptr: 1   |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | 0             |
++-------+---------------+
+| 3     | global ptr: 0 |
++-------+---------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=2][VALUE=0]
+[STACK][POP] Some(GlobalPointer(0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_4
+[STACK][PUSH] local_address::2
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
 [STACK][POP] Some(MemoryAddress(Local(2)))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=3][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=3][VALUE=heap ptr: 4]
+[STACK][PUSH] heap ptr: 4
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(HeapPointer(4))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 1 |
++-------+-------------+
+| 2     | 0           |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=createDoThreeTimes][RETURN_IP=4][STACK_START=1]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(3))
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] local_address::1
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap ptr: 4]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CALL
+[STACK][POP] Some(HeapPointer(4))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
 
 [VM][CALL][FUNCTION][NAME=closure]
-[STACK][PUSH] global pointer
+[STACK][PUSH] heap ptr: 4
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
 
-[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=5][STACK_START=4]
+[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=7][STACK_START=2]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] global pointer
+[STACK][PUSH] upvalue::0
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] upvalue
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] 0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CLOSURE_1
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-
-[STACK][POP] Some(GlobalPointer(0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[STACK][PUSH] heap pointer
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] local_address::1
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | heap pointer   |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(1)))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | heap pointer   |
-+-------+----------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=5][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | heap pointer   |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(HeapPointer(5))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | heap pointer   |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=5][STACK_START=4]
-[STACK][PUSH] heap pointer
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(HeapPointer(5))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | 10             |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | heap pointer   |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=makeClosure][RETURN_IP=5][STACK_START=1]
-[STACK][PUSH] heap pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
-[STACK][PUSH] local_address::1
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(1)))
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(5))
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[VM][CALL][FUNCTION][NAME=inner]
-[STACK][PUSH] global pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[CALL_STACK][NEW FRAME][NAME=inner][RETURN_IP=8][STACK_START=2]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
-[VM] TICK
 [OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] upvalue
+[STACK][PUSH] 3
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 10
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | 0           |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] 1
+[OPCODE][NEXT]: EQ
+[STACK][POP] Some(Number(3.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-| 4     | 10             |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | 0           |
++-------+-------------+
+
+[STACK][POP] Some(Number(0.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] false
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: ADD
-[STACK][POP] Some(Number(1.0))
+[OPCODE][NEXT]: JIF_5
+[STACK][POP] Some(Bool(false))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-| 4     | 10             |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
-[STACK][POP] Some(Number(10.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 11
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: ASG
-[STACK][POP] Some(Number(11.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-| 3     | upvalue        |
-+-------+----------------+
-
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[STACK][ASSIGN][ADDRESS=upvalue][VALUE=11]
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[STACK][PUSH] 11
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(Number(11.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | global pointer |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=inner][RETURN_IP=8][STACK_START=2]
-[STACK][PUSH] 11
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-
-[VM][MOVE_POINTER][IP_NOW = 8][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_4
-[STACK][PUSH] local_address::1
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 5]
 [VM][MOVE_POINTER][IP_NOW = 9][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(1)))
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] upvalue::0
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 10][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(5))
+[OPCODE][NEXT]: CONSTANT_4
+[STACK][PUSH] upvalue::0
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-
-[VM][CALL][FUNCTION][NAME=inner]
-[STACK][PUSH] global pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-
-[CALL_STACK][NEW FRAME][NAME=inner][RETURN_IP=11][STACK_START=3]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 11
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] 1
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-| 5     | 11             |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: ADD
-[STACK][POP] Some(Number(1.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-| 5     | 11             |
-+-------+----------------+
-
-[STACK][POP] Some(Number(11.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 12
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: ASG
-[STACK][POP] Some(Number(12.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-| 4     | upvalue        |
-+-------+----------------+
-
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[STACK][ASSIGN][ADDRESS=upvalue][VALUE=12]
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[STACK][PUSH] 12
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(Number(12.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | global pointer |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=inner][RETURN_IP=11][STACK_START=3]
-[STACK][PUSH] 12
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 11][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_5
-[STACK][PUSH] local_address::1
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
+
+[STACK][PUSH] 0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 12][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(1)))
+[OPCODE][NEXT]: CONSTANT_5
+[STACK][PUSH] 1
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
+| 4     | 0           |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 13][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(5))
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-
-[VM][CALL][FUNCTION][NAME=inner]
-[STACK][PUSH] global pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-
-[CALL_STACK][NEW FRAME][NAME=inner][RETURN_IP=14][STACK_START=4]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 12
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] 1
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-| 6     | 12             |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
-[VM] TICK
 [OPCODE][NEXT]: ADD
 [STACK][POP] Some(Number(1.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-| 6     | 12             |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
+| 4     | 0           |
++-------+-------------+
 
-[STACK][POP] Some(Number(12.0))
+[STACK][POP] Some(Number(0.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
 
-[STACK][PUSH] 13
+[STACK][PUSH] 1
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: ASG
-[STACK][POP] Some(Number(13.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-| 5     | upvalue        |
-+-------+----------------+
-
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[STACK][ASSIGN][ADDRESS=upvalue][VALUE=13]
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
-[STACK][PUSH] upvalue
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[STACK][PUSH] 13
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(Number(13.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | global pointer |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=inner][RETURN_IP=14][STACK_START=4]
-[STACK][PUSH] 13
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 14][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_6
-[STACK][PUSH] local_address::1
+[OPCODE][NEXT]: ASG
+[STACK][POP] Some(Number(1.0))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | upvalue::0  |
++-------+-------------+
 
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][ASSIGN][ADDRESS=upvalue::0][VALUE=1]
 [VM][MOVE_POINTER][IP_NOW = 15][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Local(1)))
+[OPCODE][NEXT]: CONSTANT_6
+[STACK][PUSH] local_address::0
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
-
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap pointer]
-[STACK][PUSH] heap pointer
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 16][DISTANCE = 1]
 [VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=2][VALUE=heap ptr: 4]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 17][DISTANCE = 1]
+[VM] TICK
 [OPCODE][NEXT]: CALL
-[STACK][POP] Some(HeapPointer(5))
+[STACK][POP] Some(HeapPointer(4))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
-[VM][CALL][FUNCTION][NAME=inner]
-[STACK][PUSH] global pointer
+[VM][CALL][FUNCTION][NAME=closure]
+[STACK][PUSH] heap ptr: 4
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
 
-[CALL_STACK][NEW FRAME][NAME=inner][RETURN_IP=17][STACK_START=5]
+[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=18][STACK_START=3]
 [VM] TICK
 [OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] upvalue
+[STACK][PUSH] upvalue::0
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_1
-[STACK][PUSH] upvalue
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] 3
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
-
-[STACK][PUSH] 13
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | 1           |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_2
-[STACK][PUSH] 1
+[OPCODE][NEXT]: EQ
+[STACK][POP] Some(Number(3.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
-| 7     | 13             |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | 1           |
++-------+-------------+
+
+[STACK][POP] Some(Number(1.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] false
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: JIF_5
+[STACK][POP] Some(Bool(false))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 5]
+[VM][MOVE_POINTER][IP_NOW = 9][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 10][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_4
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 11][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
+
+[STACK][PUSH] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 12][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_5
+[STACK][PUSH] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
+| 5     | 1           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 13][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: ADD
 [STACK][POP] Some(Number(1.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
-| 7     | 13             |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
+| 5     | 1           |
++-------+-------------+
 
-[STACK][POP] Some(Number(13.0))
+[STACK][POP] Some(Number(1.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
 
-[STACK][PUSH] 14
+[STACK][PUSH] 2
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
 
-[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM][MOVE_POINTER][IP_NOW = 14][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: ASG
-[STACK][POP] Some(Number(14.0))
+[STACK][POP] Some(Number(2.0))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-| 6     | upvalue        |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | upvalue::0  |
++-------+-------------+
 
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
-[STACK][ASSIGN][ADDRESS=upvalue][VALUE=14]
-[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[STACK][ASSIGN][ADDRESS=upvalue::0][VALUE=2]
+[VM][MOVE_POINTER][IP_NOW = 15][DISTANCE = 1]
 [VM] TICK
-[OPCODE][NEXT]: CONSTANT_3
-[STACK][PUSH] upvalue
+[OPCODE][NEXT]: CONSTANT_6
+[STACK][PUSH] local_address::0
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
-[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
+[VM][MOVE_POINTER][IP_NOW = 16][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: GET
-[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: true }))
+[STACK][POP] Some(MemoryAddress(Local(0)))
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
-[STACK][PUSH] 14
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=3][VALUE=heap ptr: 4]
+[STACK][PUSH] heap ptr: 4
 
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-
-[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(Number(14.0))
-
-+-------+----------------+
-| INDEX | STACK VALUE    |
-+-------+----------------+
-| 0     | heap pointer   |
-+-------+----------------+
-| 1     | heap pointer   |
-+-------+----------------+
-| 2     | 11             |
-+-------+----------------+
-| 3     | 12             |
-+-------+----------------+
-| 4     | 13             |
-+-------+----------------+
-| 5     | global pointer |
-+-------+----------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=inner][RETURN_IP=17][STACK_START=5]
-[STACK][PUSH] 14
-
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
 
 [VM][MOVE_POINTER][IP_NOW = 17][DISTANCE = 1]
 [VM] TICK
+[OPCODE][NEXT]: CALL
+[STACK][POP] Some(HeapPointer(4))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][CALL][FUNCTION][NAME=closure]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=18][STACK_START=4]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_0
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] 2
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] 3
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | 2           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: EQ
+[STACK][POP] Some(Number(3.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | 2           |
++-------+-------------+
+
+[STACK][POP] Some(Number(2.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] false
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: JIF_5
+[STACK][POP] Some(Bool(false))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 5]
+[VM][MOVE_POINTER][IP_NOW = 9][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 10][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_4
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 11][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[STACK][PUSH] 2
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 12][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_5
+[STACK][PUSH] 1
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+| 6     | 2           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 13][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: ADD
+[STACK][POP] Some(Number(1.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+| 6     | 2           |
++-------+-------------+
+
+[STACK][POP] Some(Number(2.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[STACK][PUSH] 3
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 14][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: ASG
+[STACK][POP] Some(Number(3.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | upvalue::0  |
++-------+-------------+
+
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][ASSIGN][ADDRESS=upvalue::0][VALUE=3]
+[VM][MOVE_POINTER][IP_NOW = 15][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_6
+[STACK][PUSH] local_address::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 16][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=4][VALUE=heap ptr: 4]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 17][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CALL
+[STACK][POP] Some(HeapPointer(4))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][CALL][FUNCTION][NAME=closure]
+[STACK][PUSH] heap ptr: 4
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][NEW FRAME][NAME=closure][RETURN_IP=18][STACK_START=5]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_0
+[STACK][PUSH] upvalue::0
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Upvalue { index: 0, is_ref: false }))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] 3
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] 3
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+| 6     | 3           |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: EQ
+[STACK][POP] Some(Number(3.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+| 6     | 3           |
++-------+-------------+
+
+[STACK][POP] Some(Number(3.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[STACK][PUSH] true
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: JIF_5
+[STACK][POP] Some(Bool(true))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] 5
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+| 5     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=18][STACK_START=5]
+[STACK][PUSH] 5
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 18][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+| 4     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=18][STACK_START=4]
+[STACK][PUSH] 5
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 18][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+| 3     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=18][STACK_START=3]
+[STACK][PUSH] 5
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 18][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(Number(5.0))
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+| 2     | heap ptr: 4 |
++-------+-------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=closure][RETURN_IP=7][STACK_START=2]
+[STACK][PUSH] 5
+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
+
+[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
+[VM] TICK
 [VM][END OF EXECUTION]
-[STACK][POP] Some(Number(14.0))
+[STACK][POP] Some(Number(5.0))
 
-+-------+--------------+
-| INDEX | STACK VALUE  |
-+-------+--------------+
-| 0     | heap pointer |
-+-------+--------------+
-| 1     | heap pointer |
-+-------+--------------+
-| 2     | 11           |
-+-------+--------------+
-| 3     | 12           |
-+-------+--------------+
-| 4     | 13           |
-+-------+--------------+
++-------+-------------+
+| INDEX | STACK VALUE |
++-------+-------------+
+| 0     | heap ptr: 1 |
++-------+-------------+
+| 1     | heap ptr: 4 |
++-------+-------------+
 
-[VM][EXECUTION RESULT][VALUE=Ok(Number(14.0))]
+[VM][EXECUTION RESULT][VALUE=Ok(Number(5.0))]

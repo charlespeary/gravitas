@@ -1,20 +1,20 @@
-fn makeClosure(closedValue) {
+fn createDoThreeTimes() {
+    let n = 0;
+
     fn closure() {
-        fn inner() { 
-            closedValue = closedValue + 1;
-            return closedValue;
-        }
-        // "inner" makes closure here
-        // must capture pointer to closedValue
-        return inner;
+        if n == 3 {
+            return 5;
+        } else {
+            n = n + 1;  
+            return closure();
+        };
     }
-    // "closure" makes closure here 0
-    // must capture closedValue
-    return closure();
+
+
+    return closure;
 }
 
-let x = makeClosure(10);
-let y = x();
-let z = x();
-let a = x();
-let b = x();
+
+
+let doThreeTimes = createDoThreeTimes();
+doThreeTimes();

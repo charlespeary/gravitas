@@ -76,7 +76,7 @@ impl VM {
         };
         self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &name));
 
-        let recursion_handler = RuntimeValue::GlobalPointer(function_ptr);
+        let recursion_handler = RuntimeValue::HeapPointer(closure_ptr);
         self.push_operand(recursion_handler);
 
         let frame = CallFrame {

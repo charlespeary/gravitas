@@ -169,7 +169,7 @@ impl VM {
             Jp(distance) => {
                 self.move_pointer(distance)?;
                 // So we don't increment the IP after jumping
-                return Ok(TickOutcome::ContinueExecution);
+                Ok(())
             }
             Pop(amount) => self.op_pop(amount),
             Block(amount) => {
@@ -203,6 +203,7 @@ impl VM {
             }
             CreateClosure(upvalues_count) => {
                 let mut upvalues = vec![];
+
                 for _ in 0..upvalues_count {
                     let upvalue_address = self.pop_operand()?.as_address();
                     let upvalue = self.get_variable(upvalue_address.clone())?;
