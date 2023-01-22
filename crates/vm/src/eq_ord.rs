@@ -9,19 +9,6 @@ impl RuntimeValue {
             (RuntimeValue::Number(a), RuntimeValue::Number(b)) => a == b,
             (RuntimeValue::String(a), RuntimeValue::String(b)) => a == b,
             (RuntimeValue::Bool(a), RuntimeValue::Bool(b)) => a == b,
-            (RuntimeValue::ObjectInstance(a), RuntimeValue::ObjectInstance(b)) => {
-                for (a_name, a_value) in &a.properties {
-                    for (b_name, b_value) in &b.properties {
-                        let equal_name = a_name == b_name;
-                        let equal_value = a_value.eq(b_value, vm)?;
-
-                        if !equal_name && !equal_value {
-                            return Ok(false);
-                        }
-                    }
-                }
-                true
-            }
             _ => false,
         })
     }
@@ -64,7 +51,6 @@ impl RuntimeValue {
             RuntimeValue::Number(Number) => true,
             RuntimeValue::String(ProgramText) => true,
             RuntimeValue::Bool(bool) => bool,
-            RuntimeValue::ObjectInstance(ObjectInstance) => true,
             RuntimeValue::Null => false,
             _ => unreachable!(),
         })

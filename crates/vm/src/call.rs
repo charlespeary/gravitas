@@ -1,12 +1,9 @@
 use crate::{
-    gc::{Closure, HeapObject, HeapPointer},
-    gravitas_std::{functions, BuiltInFunction, FnArgs},
+    gc::{HeapObject, HeapPointer},
+    gravitas_std::{BuiltInFunction, FnArgs},
     MachineResult, RuntimeErrorCause, RuntimeValue, VM,
 };
-use bytecode::{
-    callables::Class,
-    stmt::{GlobalItem, GlobalPointer},
-};
+use bytecode::stmt::GlobalPointer;
 use common::ProgramText;
 use std::collections::HashMap;
 
@@ -20,8 +17,9 @@ pub(crate) struct CallFrame {
 
 #[derive(Debug, Clone)]
 pub struct ObjectInstance {
-    pub class: Class,
+    pub class_ptr: GlobalPointer,
     pub properties: HashMap<ProgramText, RuntimeValue>,
+    pub constructor_ptr: Option<GlobalPointer>,
 }
 
 pub(crate) enum CallType {
@@ -93,18 +91,56 @@ impl VM {
         Ok(CallType::EnterFnBody)
     }
 
-    // fn class_call(&mut self, class_ptr: ClassPointer) -> CallOperation {
-    // let class = self.deref_class(class_ptr);
-    // self.debug(format!("[VM][CALL][CLASS][NAME={}]", &class.name));
+    fn new_obj(&mut self, class_ptr: GlobalPointer) -> HeapPointer {
+        let constructor_ptr = self.globals.get(class_ptr).unwrap().as_class().constructor;
+        let instance = ObjectInstance {
+            class_ptr,
+            properties: HashMap::new(),
+            constructor_ptr,
+        };
 
-    // if let Some(constructor) = class.constructor {
-    //     self.function_call(constructor)?;
-    // } else {
-    //     // TODO: empty object
-    // }
+        let instance_ptr = self.gc.allocate(HeapObject::Object(instance));
+        instance_ptr
+    }
 
-    // Ok(CallType::EnterFnBody)
-    // }
+    fn class_call(&mut self, class_ptr: GlobalPointer) -> CallOperation {
+        println!("class call");
+        self.debug(format!("[VM][CALL][CLASS][PTR={}]", class_ptr));
+        let obj_ptr = self.new_obj(class_ptr);
+        let class = self.deref_global(class_ptr).as_class();
+
+        if let Some(constructor_ptr) = class.constructor {
+            let (arity, name) = {
+                let function = self.deref_global(constructor_ptr).as_function();
+
+                (function.arity, function.name.clone())
+            };
+
+            self.debug(format!("[VM][CALL][CONSTRUCTOR][NAME={}]", &name));
+
+            let recursion_handler = RuntimeValue::GlobalPointer(class_ptr);
+
+            self.push_operand(recursion_handler);
+
+            let frame = CallFrame {
+                // -1 because we also count function pushed onto the stack
+                // for recursion purposes
+                stack_start: self.operands.len() - arity - 1,
+                name,
+                closure_ptr: obj_ptr,
+                return_ip: self.ip,
+            };
+
+            self.add_call_frame(frame);
+
+            Ok(CallType::EnterFnBody)
+
+            // self.function_call(constructor)?;
+        } else {
+            self.push_operand(RuntimeValue::HeapPointer(obj_ptr));
+            Ok(CallType::InlineFn)
+        }
+    }
 
     fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> CallOperation {
         let BuiltInFunction {
@@ -124,13 +160,17 @@ impl VM {
     pub(crate) fn op_call(&mut self) -> CallOperation {
         let callee = self.pop_operand()?;
 
-        if let RuntimeValue::HeapPointer(heap_ptr) = callee {
-            match self.gc.deref(heap_ptr) {
-                HeapObject::Closure(_) => self.closure_call(heap_ptr),
-                _ => todo!(),
+        match callee {
+            RuntimeValue::GlobalPointer(global_ptr) => self.class_call(global_ptr),
+            RuntimeValue::HeapPointer(heap_ptr) => {
+                let result = match self.gc.deref(heap_ptr) {
+                    HeapObject::Closure(_) => self.closure_call(heap_ptr),
+                    _ => todo!(),
+                };
+
+                result
             }
-        } else {
-            return self.error(RuntimeErrorCause::NotCallable);
+            _ => self.error(RuntimeErrorCause::NotCallable),
         }
     }
 }

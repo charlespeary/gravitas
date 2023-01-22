@@ -121,11 +121,14 @@ impl VM {
     // TODO: This slows whole execution down, but it's fine for now
     pub(crate) fn current_code(&self) -> &Function {
         let current_frame = self.current_frame();
-        let closure = self.gc.deref(current_frame.closure_ptr).as_closure();
-        self.globals
-            .get(closure.function_ptr)
-            .unwrap()
-            .as_function()
+
+        let fn_ptr = match self.gc.deref(current_frame.closure_ptr) {
+            HeapObject::Object(obj) => obj.constructor_ptr.unwrap(),
+            HeapObject::Closure(closure) => closure.function_ptr,
+            _ => unreachable!(),
+        };
+
+        self.globals.get(fn_ptr).unwrap().as_function()
     }
 
     pub(crate) fn tick(&mut self) -> MachineResult<TickOutcome> {
@@ -249,13 +252,6 @@ impl VM {
         };
 
         self.gc.allocate(closure.into())
-    }
-
-    pub(crate) fn get_closure(&self, closure_ptr: HeapPointer) -> (&Closure, &Function) {
-        let closure = self.gc.deref(closure_ptr).as_closure();
-        let closure_fn = self.deref_global(closure.function_ptr).as_function();
-
-        (closure, closure_fn)
     }
 
     pub(crate) fn run(&mut self, program: ProgramBytecode) -> ProgramOutput {

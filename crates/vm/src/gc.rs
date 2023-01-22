@@ -2,7 +2,7 @@ use core::panic;
 
 use bytecode::stmt::GlobalPointer;
 
-use crate::runtime_value::RuntimeValue;
+use crate::{call::ObjectInstance, runtime_value::RuntimeValue};
 
 pub(crate) type HeapPointer = usize;
 
@@ -28,6 +28,7 @@ impl Closure {
 #[derive(Debug)]
 pub(crate) enum HeapObject {
     Closure(Closure),
+    Object(ObjectInstance),
     Value(RuntimeValue),
 }
 

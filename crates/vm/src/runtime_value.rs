@@ -1,7 +1,7 @@
 use bytecode::{chunk::Constant, stmt::GlobalPointer, MemoryAddress};
 use common::{Number, ProgramText};
 
-use crate::{call::ObjectInstance, gc::HeapPointer};
+use crate::gc::HeapPointer;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -9,7 +9,6 @@ pub enum RuntimeValue {
     Number(Number),
     String(ProgramText),
     Bool(bool),
-    ObjectInstance(ObjectInstance),
     MemoryAddress(MemoryAddress),
     GlobalPointer(GlobalPointer),
     HeapPointer(HeapPointer),
@@ -40,7 +39,6 @@ impl fmt::Display for RuntimeValue {
             Number(num) => write!(f, "{}", num),
             String(text) => write!(f, "{}", text),
             Bool(bool) => write!(f, "{}", bool),
-            ObjectInstance(obj) => write!(f, "obj:{}", obj.class.name),
             MemoryAddress(address) => write!(f, "{}", address.to_string()),
             Null => write!(f, "null"),
             GlobalPointer(ptr) => write!(f, "global ptr: {}", ptr),

@@ -1,20 +1,7 @@
-fn createDoThreeTimes() {
-    let n = 0;
-
-    fn closure() {
-        if n == 3 {
-            return 5;
-        } else {
-            n = n + 1;  
-            return closure();
-        };
+class Foo { 
+    fn constructor() {
+        
     }
-
-
-    return closure;
 }
 
-
-
-let doThreeTimes = createDoThreeTimes();
-doThreeTimes();
+let x = Foo();
