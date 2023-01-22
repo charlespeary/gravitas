@@ -6,7 +6,7 @@ use crate::{
     state::ScopeType,
     BytecodeFrom, BytecodeGenerationResult, BytecodeGenerator, MemoryAddress, Opcode,
 };
-use common::CONSTRUCTOR_NAME;
+use common::{ProgramText, CONSTRUCTOR_NAME};
 use parser::parse::{
     expr::ExprKind,
     stmt::{Stmt, StmtKind},
@@ -75,7 +75,13 @@ impl BytecodeGenerator {
         name: String,
         params: Params,
         body: FunctionBody,
+        predefined_variables: &[ProgramText],
     ) -> Result<Function, ()> {
+        println!(
+            "Compiling function with {:?} predefined variables",
+            predefined_variables
+        );
+
         self.new_function(name.clone(), params.kind.len());
 
         for param in params.kind {
@@ -84,24 +90,34 @@ impl BytecodeGenerator {
 
         // To allow recursion
         self.state.declare_var(name.clone());
-        match *body.kind {
-            ExprKind::Block { stmts, return_expr } => {
-                self.generate(stmts)?;
-                match return_expr {
-                    Some(return_expr) => {
-                        self.generate(return_expr)?;
-                    }
-                    None => {
-                        self.write_opcode(Opcode::Null);
-                    }
-                };
-                self.write_opcode(Opcode::Return);
-            }
-            _ => {
-                self.generate(body)?;
-                self.write_opcode(Opcode::Return);
-            }
-        };
+
+        // To allow access to `this` and `super` in methods
+        for var in predefined_variables {
+            self.state.declare_var(var.clone());
+        }
+
+        let is_constructor = !predefined_variables.is_empty() && name == CONSTRUCTOR_NAME;
+
+        if !is_constructor {
+            match *body.kind {
+                ExprKind::Block { stmts, return_expr } => {
+                    self.generate(stmts)?;
+                    match return_expr {
+                        Some(return_expr) => {
+                            self.generate(return_expr)?;
+                        }
+                        None => {
+                            self.write_opcode(Opcode::Null);
+                        }
+                    };
+                    self.write_opcode(Opcode::Return);
+                }
+                _ => {
+                    self.generate(body)?;
+                    self.write_opcode(Opcode::Return);
+                }
+            };
+        }
 
         let new_fn = self
             .functions
@@ -130,7 +146,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 self.state.declare_var(name);
             }
             StmtKind::FunctionDeclaration { name, params, body } => {
-                let new_fn = self.compile_function(name.clone(), params, body)?;
+                let new_fn = self.compile_function(name.clone(), params, body, &[])?;
                 let fn_ptr = self.declare_global(new_fn.into());
 
                 let (upvalues_addresses, upvalues_count) = {
@@ -169,8 +185,12 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
             } => {
                 self.enter_scope(ScopeType::Class);
 
-                // To allow methods calling class constructor
-                self.state.declare_var(name.clone());
+                let has_superclass = super_class.is_some();
+                let predefined_variables = if has_superclass {
+                    vec![ProgramText::from("this"), ProgramText::from("super")]
+                } else {
+                    vec![ProgramText::from("this")]
+                };
 
                 let mut compiled_methods = vec![];
                 let mut constructor: Option<GlobalPointer> = None;
@@ -178,7 +198,9 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 for method in methods {
                     if let StmtKind::FunctionDeclaration { name, params, body } = *method.kind {
                         let is_constructor = name == CONSTRUCTOR_NAME;
-                        let compiled_method = self.compile_function(name, params, body)?;
+
+                        let compiled_method =
+                            self.compile_function(name, params, body, &predefined_variables)?;
                         let method_ptr = self.declare_global(compiled_method.into());
 
                         if is_constructor {

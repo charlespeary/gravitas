@@ -99,10 +99,6 @@ pub enum ExprKind {
         params: Params,
         body: Expr,
     },
-    // super
-    Super,
-    // this
-    This,
 }
 
 impl fmt::Display for ExprKind {
@@ -255,14 +251,6 @@ impl<'t> Parser<'t> {
                 let rhs = self.parse_expression_bp(r_bp)?;
                 let range = combine(&op.span, &rhs.span);
                 Expr::boxed(ExprKind::Unary { op, rhs }, range)
-            }
-            Token::Super => {
-                let span = self.expect(Token::Super)?.span();
-                Expr::boxed(ExprKind::Super, span)
-            }
-            Token::This => {
-                let span = self.expect(Token::This)?.span();
-                Expr::boxed(ExprKind::This, span)
             }
             _ => self.parse_atom_expr()?,
         };

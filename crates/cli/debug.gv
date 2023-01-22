@@ -6,10 +6,6 @@
 +-------------+----------------+----------------+
 | OPCODE      | CONSTANT INDEX | CONSTANT VALUE |
 +-------------+----------------+----------------+
-| NULL        | -              | -              |
-+-------------+----------------+----------------+
-| RET         | -              | -              |
-+-------------+----------------+----------------+
 
 [GLOBAL][NAME=Foo]
 +------+-------------------+
@@ -98,43 +94,8 @@
 
 [CALL_STACK][NEW FRAME][NAME=constructor][RETURN_IP=3][STACK_START=1]
 [VM] TICK
-[OPCODE][NEXT]: NULL
-[STACK][PUSH] null
-
-+-------+---------------+
-| INDEX | STACK VALUE   |
-+-------+---------------+
-| 0     | global ptr: 1 |
-+-------+---------------+
-| 1     | global ptr: 1 |
-+-------+---------------+
-
-[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
-[VM] TICK
-[OPCODE][NEXT]: RET
-[STACK][POP] Some(Null)
-
-+-------+---------------+
-| INDEX | STACK VALUE   |
-+-------+---------------+
-| 0     | global ptr: 1 |
-+-------+---------------+
-| 1     | global ptr: 1 |
-+-------+---------------+
-
-[CALL_STACK][REMOVE FRAME][NAME=constructor][RETURN_IP=3][STACK_START=1]
-[STACK][PUSH] null
-
-+-------+---------------+
-| INDEX | STACK VALUE   |
-+-------+---------------+
-| 0     | global ptr: 1 |
-+-------+---------------+
-
-[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
-[VM] TICK
 [VM][END OF EXECUTION]
-[STACK][POP] Some(Null)
+[STACK][POP] Some(GlobalPointer(1))
 
 +-------+---------------+
 | INDEX | STACK VALUE   |
@@ -142,4 +103,4 @@
 | 0     | global ptr: 1 |
 +-------+---------------+
 
-[VM][EXECUTION RESULT][VALUE=Ok(Null)]
+[VM][EXECUTION RESULT][VALUE=Ok(GlobalPointer(1))]

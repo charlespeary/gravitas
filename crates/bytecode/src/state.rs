@@ -112,14 +112,6 @@ impl GeneratorState {
         self.current_scope().variables.len()
     }
 
-    pub fn set_returned(&mut self) {
-        self.current_scope_mut().returned = true;
-    }
-
-    pub fn did_return(&self) -> bool {
-        self.current_scope().returned
-    }
-
     pub fn enter_scope(&mut self, scope_type: ScopeType, starting_index: usize) {
         self.scopes.push(Scope::new(scope_type, starting_index))
     }

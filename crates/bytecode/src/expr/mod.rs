@@ -113,8 +113,6 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 self.write_opcode(Opcode::Asg);
             }
             ExprKind::Closure { params, body } => {}
-            ExprKind::Super => {}
-            ExprKind::This => {}
         };
         Ok(())
     }
