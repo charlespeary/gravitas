@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     callables::{Class, Function},
@@ -77,19 +77,11 @@ impl BytecodeGenerator {
         body: FunctionBody,
         predefined_variables: &[ProgramText],
     ) -> Result<Function, ()> {
-        println!(
-            "Compiling function with {:?} predefined variables",
-            predefined_variables
-        );
-
         self.new_function(name.clone(), params.kind.len());
 
         for param in params.kind {
             self.state.declare_var(param.kind);
         }
-
-        // To allow recursion
-        self.state.declare_var(name.clone());
 
         // To allow access to `this` and `super` in methods
         for var in predefined_variables {
@@ -98,10 +90,17 @@ impl BytecodeGenerator {
 
         let is_constructor = !predefined_variables.is_empty() && name == CONSTRUCTOR_NAME;
 
-        if !is_constructor {
-            match *body.kind {
-                ExprKind::Block { stmts, return_expr } => {
-                    self.generate(stmts)?;
+        match *body.kind {
+            ExprKind::Block { stmts, return_expr } => {
+                self.generate(stmts)?;
+
+                if is_constructor {
+                    // this is where the object pointer is
+                    self.write_constant(Constant::MemoryAddress(MemoryAddress::Local(0)));
+                    // To turn the local address into the heap pointer that will point to obj
+                    self.write_opcode(Opcode::Get);
+                    self.write_opcode(Opcode::Return);
+                } else {
                     match return_expr {
                         Some(return_expr) => {
                             self.generate(return_expr)?;
@@ -112,12 +111,15 @@ impl BytecodeGenerator {
                     };
                     self.write_opcode(Opcode::Return);
                 }
-                _ => {
-                    self.generate(body)?;
+            }
+            _ => {
+                self.generate(body)?;
+
+                if !is_constructor {
                     self.write_opcode(Opcode::Return);
                 }
-            };
-        }
+            }
+        };
 
         let new_fn = self
             .functions
@@ -146,7 +148,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 self.state.declare_var(name);
             }
             StmtKind::FunctionDeclaration { name, params, body } => {
-                let new_fn = self.compile_function(name.clone(), params, body, &[])?;
+                let new_fn = self.compile_function(name.clone(), params, body, &[name])?;
                 let fn_ptr = self.declare_global(new_fn.into());
 
                 let (upvalues_addresses, upvalues_count) = {
@@ -192,21 +194,25 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                     vec![ProgramText::from("this")]
                 };
 
-                let mut compiled_methods = vec![];
+                let mut compiled_methods = HashMap::new();
                 let mut constructor: Option<GlobalPointer> = None;
 
                 for method in methods {
                     if let StmtKind::FunctionDeclaration { name, params, body } = *method.kind {
                         let is_constructor = name == CONSTRUCTOR_NAME;
 
-                        let compiled_method =
-                            self.compile_function(name, params, body, &predefined_variables)?;
+                        let compiled_method = self.compile_function(
+                            name.clone(),
+                            params,
+                            body,
+                            &predefined_variables,
+                        )?;
                         let method_ptr = self.declare_global(compiled_method.into());
 
                         if is_constructor {
                             constructor = Some(method_ptr);
                         } else {
-                            compiled_methods.push(method_ptr);
+                            compiled_methods.insert(name, method_ptr);
                         }
                     } else {
                         panic!("Analyzer didn't prevent items that are not function declarations from getting there!");

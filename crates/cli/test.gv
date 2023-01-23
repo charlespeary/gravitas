@@ -1,7 +1,12 @@
 class Foo { 
-    fn constructor() {
-        this;
+    fn constructor() {  
+        this.foo = 5;
+    }
+
+    fn getFoo() {
+        return this.foo;
     }
 }
 
 let x = Foo();
+let foo = x.getFoo();

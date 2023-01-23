@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use common::ProgramText;
 use prettytable::Table;
@@ -18,7 +18,7 @@ pub struct Function {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Class {
     pub name: ProgramText,
-    pub methods: Vec<GlobalPointer>,
+    pub methods: HashMap<ProgramText, GlobalPointer>,
     pub super_class: Option<Box<GlobalPointer>>,
     pub constructor: Option<GlobalPointer>,
 }
@@ -48,8 +48,8 @@ impl Display for Class {
         table.add_row(row![self.name, self.methods.len()]);
         table.fmt(f)?;
 
-        for method in &self.methods {
-            write!(f, "{}", method)?;
+        for (name, method_ptr) in &self.methods {
+            write!(f, "{}", method_ptr)?;
         }
 
         Ok(())

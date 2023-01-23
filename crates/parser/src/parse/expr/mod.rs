@@ -84,9 +84,15 @@ pub enum ExprKind {
     // The target is an expression because we are not limited
     // only to identifiers. We can also call methods on literals
     // e.g "foo".toUppercase()
-    Property {
+    GetProperty {
         target: Expr,
         paths: Vec<PathSegment>,
+        is_method_call: bool,
+    },
+    SetProperty {
+        target: Expr,
+        paths: Vec<PathSegment>,
+        value: Expr,
     },
     // a = b
     Assignment {
@@ -194,12 +200,17 @@ impl fmt::Display for ExprKind {
                 }
                 write!(f, "]")?;
             }
-            Property { target, paths } => {
+            GetProperty { target, paths, .. } => {
                 write!(f, "{}", target.kind.to_string())?;
                 for path in paths {
                     write!(f, ".{}", path.kind)?;
                 }
             }
+            SetProperty {
+                target,
+                paths,
+                value,
+            } => {}
             Assignment { target, value } => {
                 write!(f, "{} = {}", target, value)?;
             }
@@ -328,7 +339,32 @@ impl<'t> Parser<'t> {
 
                 let span = combine(&lhs.span, last_segment_span);
 
-                lhs = Expr::boxed(ExprKind::Property { target: lhs, paths }, span);
+                let is_assignment = self.peek() == ASSIGN;
+
+                if is_assignment {
+                    self.expect(ASSIGN)?;
+                    let value = self.parse_expression()?;
+                    let span = combine(&lhs.span, &value.span);
+                    lhs = Expr::boxed(
+                        ExprKind::SetProperty {
+                            target: lhs,
+                            paths,
+                            value,
+                        },
+                        span,
+                    );
+                } else {
+                    let is_method_call = self.peek() == OPEN_PARENTHESIS;
+                    lhs = Expr::boxed(
+                        ExprKind::GetProperty {
+                            target: lhs,
+                            paths,
+                            is_method_call,
+                        },
+                        span,
+                    );
+                }
+
                 continue;
             }
 

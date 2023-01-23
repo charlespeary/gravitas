@@ -26,9 +26,16 @@ impl Closure {
 }
 
 #[derive(Debug)]
+pub(crate) struct BoundMethod {
+    pub(crate) receiver: HeapPointer,
+    pub(crate) method_ptr: GlobalPointer,
+}
+
+#[derive(Debug)]
 pub(crate) enum HeapObject {
     Closure(Closure),
     Object(ObjectInstance),
+    BoundMethod(BoundMethod),
     Value(RuntimeValue),
 }
 
@@ -46,6 +53,27 @@ impl HeapObject {
             _ => panic!("Expected value"),
         }
     }
+
+    pub fn as_bound_method(&self) -> &BoundMethod {
+        match self {
+            Self::BoundMethod(bound_method) => bound_method,
+            _ => panic!("Expected bound method"),
+        }
+    }
+
+    pub fn as_object(&self) -> &ObjectInstance {
+        match self {
+            Self::Object(object) => object,
+            _ => panic!("Expected object"),
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> &mut ObjectInstance {
+        match self {
+            Self::Object(object) => object,
+            _ => panic!("Expected object"),
+        }
+    }
 }
 
 impl From<Closure> for HeapObject {
@@ -57,6 +85,12 @@ impl From<Closure> for HeapObject {
 impl From<RuntimeValue> for HeapObject {
     fn from(value: RuntimeValue) -> Self {
         Self::Value(value)
+    }
+}
+
+impl From<BoundMethod> for HeapObject {
+    fn from(bound_method: BoundMethod) -> Self {
+        Self::BoundMethod(bound_method)
     }
 }
 

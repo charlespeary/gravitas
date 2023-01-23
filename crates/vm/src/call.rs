@@ -22,6 +22,16 @@ pub struct ObjectInstance {
     pub constructor_ptr: Option<GlobalPointer>,
 }
 
+impl ObjectInstance {
+    pub fn get(&self, name: &str) -> Option<RuntimeValue> {
+        self.properties.get(name).cloned()
+    }
+
+    pub fn set(&mut self, name: ProgramText, value: RuntimeValue) {
+        self.properties.insert(name, value);
+    }
+}
+
 pub(crate) enum CallType {
     EnterFnBody,
     InlineFn,
@@ -72,6 +82,7 @@ impl VM {
 
             (function.arity, function.name.clone())
         };
+
         self.debug(format!("[VM][CALL][FUNCTION][NAME={}]", &name));
 
         let recursion_handler = RuntimeValue::HeapPointer(closure_ptr);
@@ -83,6 +94,31 @@ impl VM {
             stack_start: self.operands.len() - arity - 1,
             name,
             closure_ptr,
+            return_ip: self.ip,
+        };
+
+        self.add_call_frame(frame);
+
+        Ok(CallType::EnterFnBody)
+    }
+
+    fn bound_method_call(&mut self, method_ptr: HeapPointer) -> CallOperation {
+        let bound_method = self.gc.deref(method_ptr).as_bound_method();
+
+        let (arity, name) = {
+            let function = self.deref_global(bound_method.method_ptr).as_function();
+
+            (function.arity, function.name.clone())
+        };
+
+        self.push_operand(RuntimeValue::HeapPointer(bound_method.receiver));
+
+        let frame = CallFrame {
+            // -1 because we also count function pushed onto the stack
+            // for recursion purposes
+            stack_start: self.operands.len() - arity - 1,
+            name,
+            closure_ptr: method_ptr,
             return_ip: self.ip,
         };
 
@@ -104,7 +140,6 @@ impl VM {
     }
 
     fn class_call(&mut self, class_ptr: GlobalPointer) -> CallOperation {
-        println!("class call");
         self.debug(format!("[VM][CALL][CLASS][PTR={}]", class_ptr));
         let obj_ptr = self.new_obj(class_ptr);
         let class = self.deref_global(class_ptr).as_class();
@@ -118,13 +153,10 @@ impl VM {
 
             self.debug(format!("[VM][CALL][CONSTRUCTOR][NAME={}]", &name));
 
-            let recursion_handler = RuntimeValue::GlobalPointer(class_ptr);
-
-            self.push_operand(recursion_handler);
+            self.push_operand(RuntimeValue::HeapPointer(obj_ptr));
 
             let frame = CallFrame {
-                // -1 because we also count function pushed onto the stack
-                // for recursion purposes
+                // -1 because we count reference to the object instance
                 stack_start: self.operands.len() - arity - 1,
                 name,
                 closure_ptr: obj_ptr,
@@ -134,8 +166,6 @@ impl VM {
             self.add_call_frame(frame);
 
             Ok(CallType::EnterFnBody)
-
-            // self.function_call(constructor)?;
         } else {
             self.push_operand(RuntimeValue::HeapPointer(obj_ptr));
             Ok(CallType::InlineFn)
@@ -165,7 +195,8 @@ impl VM {
             RuntimeValue::HeapPointer(heap_ptr) => {
                 let result = match self.gc.deref(heap_ptr) {
                     HeapObject::Closure(_) => self.closure_call(heap_ptr),
-                    _ => todo!(),
+                    HeapObject::BoundMethod(_) => self.bound_method_call(heap_ptr),
+                    _ => unreachable!(),
                 };
 
                 result

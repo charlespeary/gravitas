@@ -1,6 +1,6 @@
 use parser::parse::expr::{Expr, ExprKind};
 
-use crate::{state::ScopeType, BytecodeFrom, BytecodeGenerator, Opcode};
+use crate::{chunk::Constant, state::ScopeType, BytecodeFrom, BytecodeGenerator, Opcode};
 
 mod atom;
 mod binary;
@@ -105,7 +105,28 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             }
             ExprKind::Array { values } => {}
             ExprKind::Index { target, position } => {}
-            ExprKind::Property { target, paths } => {}
+            ExprKind::GetProperty {
+                target,
+                paths,
+                is_method_call,
+            } => {
+                self.generate(target)?;
+                self.write_constant(Constant::String(paths[0].kind.clone()));
+                self.write_opcode(Opcode::GetProperty {
+                    bind_method: is_method_call,
+                });
+            }
+            ExprKind::SetProperty {
+                target,
+                paths,
+                value,
+            } => {
+                self.generate(target)?;
+                self.write_constant(Constant::String(paths[0].kind.clone()));
+                self.generate(value)?;
+
+                self.write_opcode(Opcode::SetProperty(1));
+            }
             ExprKind::Assignment { target, value } => {
                 // TODO: If no additional logical will be added to it then it can just as well become a simple binary expression
                 self.generate(target)?;

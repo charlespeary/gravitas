@@ -29,8 +29,6 @@ pub enum MemoryAddress {
     // First value points to the stack index that starts at index
     // defined by callstack n (second value) jumps above.
     Upvalue { index: usize, is_ref: bool },
-    // Property of an object
-    // Property(PropertyAddress),
 }
 
 impl Display for MemoryAddress {
@@ -116,6 +114,10 @@ pub enum Opcode {
     Pop(usize),
     // Get (Address)
     Get,
+    // Get object property (n * String)
+    GetProperty { bind_method: bool },
+    // Set object property (Address, n * String, Value)
+    SetProperty(usize),
     // Assign (Address, Any)
     Asg,
     // Call function or method, (Callable)
@@ -163,6 +165,8 @@ impl Display for Opcode {
                     Block(amount) => format!("BLC_{}", amount),
                     Break(distance) => format!("BRK_{}", distance),
                     CreateClosure(amount) => format!("CLOSURE_{}", amount),
+                    GetProperty { bind_method } => format!("GET_PROPERTY_BIND_{}", bind_method),
+                    SetProperty(amount) => format!("SET_PROPERTY_{}", amount),
                     _ => unreachable!(),
                 };
                 write!(f, "{}", str)?;
@@ -195,6 +199,7 @@ pub struct ProgramBytecode {
 pub type GenerationResult = Result<ProgramBytecode, ()>;
 
 pub fn generate_bytecode(program: Program) -> GenerationResult {
+    dbg!(&program);
     let mut generator = BytecodeGenerator::new();
     generator.generate(program)?;
     Ok(generator.code())

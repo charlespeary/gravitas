@@ -17,9 +17,16 @@ pub enum RuntimeValue {
 }
 
 impl RuntimeValue {
-    pub fn as_pointer(self) -> GlobalPointer {
+    pub fn as_global_pointer(self) -> GlobalPointer {
         match self {
             RuntimeValue::GlobalPointer(ptr) => ptr,
+            x => panic!("Expected pointer, got {}", x),
+        }
+    }
+
+    pub fn as_heap_pointer(self) -> HeapPointer {
+        match self {
+            RuntimeValue::HeapPointer(ptr) => ptr,
             x => panic!("Expected pointer, got {}", x),
         }
     }
@@ -28,6 +35,13 @@ impl RuntimeValue {
         match self {
             RuntimeValue::MemoryAddress(address) => address,
             x => panic!("Expected address, got {}", x),
+        }
+    }
+
+    pub fn as_string(self) -> ProgramText {
+        match self {
+            RuntimeValue::String(text) => text,
+            x => panic!("Expected string, got {}", x),
         }
     }
 }

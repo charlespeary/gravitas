@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::Path;
 
 use crate::call::CallType;
-use crate::gc::HeapObject;
+use crate::gc::{BoundMethod, HeapObject};
 use bytecode::callables::Function;
 use bytecode::stmt::{GlobalItem, GlobalPointer};
 use bytecode::{Opcode, ProgramBytecode};
@@ -125,6 +125,7 @@ impl VM {
         let fn_ptr = match self.gc.deref(current_frame.closure_ptr) {
             HeapObject::Object(obj) => obj.constructor_ptr.unwrap(),
             HeapObject::Closure(closure) => closure.function_ptr,
+            HeapObject::BoundMethod(bound_method) => bound_method.method_ptr,
             _ => unreachable!(),
         };
 
@@ -133,13 +134,13 @@ impl VM {
 
     pub(crate) fn tick(&mut self) -> MachineResult<TickOutcome> {
         let has_next_opcode = self.ip < self.current_code().chunk.opcodes_len();
-
         // we finish the program if no next opcode and callstack is empty
         if !has_next_opcode {
             return Ok(TickOutcome::FinishProgram);
         }
 
         let next = self.current_code().chunk.read_opcode(self.ip);
+        println!("next: {:?}", next);
         use Opcode::*;
 
         self.debug(format!("[OPCODE][NEXT]: {}", &next));
@@ -214,7 +215,7 @@ impl VM {
                     upvalues.push(upvalue_ptr);
                 }
 
-                let fn_ptr = self.pop_operand()?.as_pointer();
+                let fn_ptr = self.pop_operand()?.as_global_pointer();
                 let closure_ptr = self.make_closure(fn_ptr);
 
                 let closure_mut = self.gc.deref_mut(closure_ptr);
@@ -231,8 +232,40 @@ impl VM {
                 self.push_operand(RuntimeValue::HeapPointer(closure_ptr));
                 Ok(())
             }
-            _ => {
-                todo!();
+            SetProperty(_) => {
+                println!("Setting property...");
+                let value = self.pop_operand()?;
+                let name = self.pop_operand()?.as_string().clone();
+                let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                let obj = self.gc.deref_mut(obj_ptr).as_object_mut();
+                obj.set(name, value);
+                Ok(())
+            }
+            GetProperty { bind_method } => {
+                let name = self.pop_operand()?.as_string().clone();
+                let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                let obj = self.gc.deref(obj_ptr).as_object();
+
+                let property = if bind_method {
+                    let method_ptr = *self
+                        .deref_global(obj.class_ptr)
+                        .as_class()
+                        .methods
+                        .get(&name)
+                        .expect("Method not found");
+
+                    let bound_method = BoundMethod {
+                        receiver: obj_ptr,
+                        method_ptr,
+                    };
+
+                    RuntimeValue::HeapPointer(self.gc.allocate(bound_method.into()))
+                } else {
+                    obj.get(&name).unwrap_or(RuntimeValue::Null)
+                };
+
+                self.push_operand(property);
+                Ok(())
             }
         }?;
 

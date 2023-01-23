@@ -1,40 +1,89 @@
 [GLOBAL][NAME=constructor]
-+-------------+----------------+----------------+
-| Name        | Arity          |                |
-+-------------+----------------+----------------+
-| constructor | 0              |                |
-+-------------+----------------+----------------+
-| OPCODE      | CONSTANT INDEX | CONSTANT VALUE |
-+-------------+----------------+----------------+
++----------------+----------------+------------------+
+| Name           | Arity          |                  |
++----------------+----------------+------------------+
+| constructor    | 0              |                  |
++----------------+----------------+------------------+
+| OPCODE         | CONSTANT INDEX | CONSTANT VALUE   |
++----------------+----------------+------------------+
+| CONSTANT_0     | 0              | local_address::0 |
++----------------+----------------+------------------+
+| GET            | 1              | foo              |
++----------------+----------------+------------------+
+| CONSTANT_1     | 2              | 5                |
++----------------+----------------+------------------+
+| CONSTANT_2     | 3              | local_address::0 |
++----------------+----------------+------------------+
+| SET_PROPERTY_1 | -              | -                |
++----------------+----------------+------------------+
+| CONSTANT_3     | -              | -                |
++----------------+----------------+------------------+
+| GET            | -              | -                |
++----------------+----------------+------------------+
+| RET            | -              | -                |
++----------------+----------------+------------------+
+
+[GLOBAL][NAME=getFoo]
++-------------------------+----------------+------------------+
+| Name                    | Arity          |                  |
++-------------------------+----------------+------------------+
+| getFoo                  | 0              |                  |
++-------------------------+----------------+------------------+
+| OPCODE                  | CONSTANT INDEX | CONSTANT VALUE   |
++-------------------------+----------------+------------------+
+| CONSTANT_0              | 0              | local_address::0 |
++-------------------------+----------------+------------------+
+| GET                     | 1              | foo              |
++-------------------------+----------------+------------------+
+| CONSTANT_1              | -              | -                |
++-------------------------+----------------+------------------+
+| GET_PROPERTY_BIND_false | -              | -                |
++-------------------------+----------------+------------------+
+| RET                     | -              | -                |
++-------------------------+----------------+------------------+
+| NULL                    | -              | -                |
++-------------------------+----------------+------------------+
+| RET                     | -              | -                |
++-------------------------+----------------+------------------+
 
 [GLOBAL][NAME=Foo]
 +------+-------------------+
 | Name | Number of methods |
 +------+-------------------+
-| Foo  | 0                 |
+| Foo  | 1                 |
 +------+-------------------+
-
+1
 [GLOBAL][NAME=main]
-+------------+----------------+------------------+
-| Name       | Arity          |                  |
-+------------+----------------+------------------+
-| main       | 0              |                  |
-+------------+----------------+------------------+
-| OPCODE     | CONSTANT INDEX | CONSTANT VALUE   |
-+------------+----------------+------------------+
-| CONSTANT_0 | 0              | global_ptr::1    |
-+------------+----------------+------------------+
-| CONSTANT_1 | 1              | local_address::0 |
-+------------+----------------+------------------+
-| GET        | -              | -                |
-+------------+----------------+------------------+
-| CALL       | -              | -                |
-+------------+----------------+------------------+
++------------------------+----------------+------------------+
+| Name                   | Arity          |                  |
++------------------------+----------------+------------------+
+| main                   | 0              |                  |
++------------------------+----------------+------------------+
+| OPCODE                 | CONSTANT INDEX | CONSTANT VALUE   |
++------------------------+----------------+------------------+
+| CONSTANT_0             | 0              | global_ptr::2    |
++------------------------+----------------+------------------+
+| CONSTANT_1             | 1              | local_address::0 |
++------------------------+----------------+------------------+
+| GET                    | 2              | local_address::1 |
++------------------------+----------------+------------------+
+| CALL                   | 3              | getFoo           |
++------------------------+----------------+------------------+
+| CONSTANT_2             | -              | -                |
++------------------------+----------------+------------------+
+| GET                    | -              | -                |
++------------------------+----------------+------------------+
+| CONSTANT_3             | -              | -                |
++------------------------+----------------+------------------+
+| GET_PROPERTY_BIND_true | -              | -                |
++------------------------+----------------+------------------+
+| CALL                   | -              | -                |
++------------------------+----------------+------------------+
 
 [CALL_STACK][NEW FRAME][NAME=main][RETURN_IP=0][STACK_START=0]
 [VM][START OF EXECUTION][NAME=main]
 [OPCODE][NEXT]: CONSTANT_0
-[STACK][PUSH] global ptr: 1
+[STACK][PUSH] global ptr: 2
 
 +-------+-------------+
 | INDEX | STACK VALUE |
@@ -48,7 +97,7 @@
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
 +-------+---------------+
 
 [VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
@@ -59,48 +108,454 @@
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
 +-------+---------------+
 
-[STACK][GET_LOCAL_VARIABLE][ADDRESS=0][VALUE=global ptr: 1]
-[STACK][PUSH] global ptr: 1
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=0][VALUE=global ptr: 2]
+[STACK][PUSH] global ptr: 2
 
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
 +-------+---------------+
 
 [VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
 [VM] TICK
 [OPCODE][NEXT]: CALL
-[STACK][POP] Some(GlobalPointer(1))
+[STACK][POP] Some(GlobalPointer(2))
 
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
 +-------+---------------+
 
-[VM][CALL][CLASS][PTR=1]
+[VM][CALL][CLASS][PTR=2]
 [VM][CALL][CONSTRUCTOR][NAME=constructor]
-[STACK][PUSH] global ptr: 1
+[STACK][PUSH] heap ptr: 1
 
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
 +-------+---------------+
 
 [CALL_STACK][NEW FRAME][NAME=constructor][RETURN_IP=3][STACK_START=1]
 [VM] TICK
-[VM][END OF EXECUTION]
-[STACK][POP] Some(GlobalPointer(1))
+[OPCODE][NEXT]: CONSTANT_0
+[STACK][PUSH] local_address::0
 
 +-------+---------------+
 | INDEX | STACK VALUE   |
 +-------+---------------+
-| 0     | global ptr: 1 |
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
 +-------+---------------+
 
-[VM][EXECUTION RESULT][VALUE=Ok(GlobalPointer(1))]
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap ptr: 1]
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] foo
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] 5
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+| 3     | foo           |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: SET_PROPERTY_1
+[STACK][POP] Some(Number(5.0))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+| 3     | foo           |
++-------+---------------+
+
+[STACK][POP] Some(String("foo"))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][POP] Some(HeapPointer(1))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] local_address::0
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap ptr: 1]
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(HeapPointer(1))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=constructor][RETURN_IP=3][STACK_START=1]
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_2
+[STACK][PUSH] local_address::1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 4][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(1)))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=1][VALUE=heap ptr: 1]
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 5][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_3
+[STACK][PUSH] getFoo
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 6][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET_PROPERTY_BIND_true
+[STACK][POP] Some(String("getFoo"))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][POP] Some(HeapPointer(1))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][PUSH] heap ptr: 2
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 7][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CALL
+[STACK][POP] Some(HeapPointer(2))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[CALL_STACK][NEW FRAME][NAME=getFoo][RETURN_IP=8][STACK_START=2]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_0
+[STACK][PUSH] local_address::0
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 0][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET
+[STACK][POP] Some(MemoryAddress(Local(0)))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][GET_LOCAL_VARIABLE][ADDRESS=2][VALUE=heap ptr: 1]
+[STACK][PUSH] heap ptr: 1
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 1][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: CONSTANT_1
+[STACK][PUSH] foo
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+| 3     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 2][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: GET_PROPERTY_BIND_false
+[STACK][POP] Some(String("foo"))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+| 3     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][POP] Some(HeapPointer(1))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[STACK][PUSH] 5
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 3][DISTANCE = 1]
+[VM] TICK
+[OPCODE][NEXT]: RET
+[STACK][POP] Some(Number(5.0))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+| 2     | heap ptr: 1   |
++-------+---------------+
+
+[CALL_STACK][REMOVE FRAME][NAME=getFoo][RETURN_IP=8][STACK_START=2]
+[STACK][PUSH] 5
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][MOVE_POINTER][IP_NOW = 8][DISTANCE = 1]
+[VM] TICK
+[VM][END OF EXECUTION]
+[STACK][POP] Some(Number(5.0))
+
++-------+---------------+
+| INDEX | STACK VALUE   |
++-------+---------------+
+| 0     | global ptr: 2 |
++-------+---------------+
+| 1     | heap ptr: 1   |
++-------+---------------+
+
+[VM][EXECUTION RESULT][VALUE=Ok(Number(5.0))]
