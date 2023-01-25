@@ -8,4 +8,5 @@ fn makeObject() {
 }
 
 let foo = makeObject();
-foo.x;
+foo.z = 30;
+foo.z;

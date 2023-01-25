@@ -2,6 +2,7 @@ use core::panic;
 use std::{collections::HashMap, hash::Hash};
 
 use bytecode::stmt::GlobalPointer;
+use common::ProgramText;
 
 use crate::runtime_value::RuntimeValue;
 
@@ -47,6 +48,10 @@ impl Object {
     pub fn get(&self, name: &str) -> &RuntimeValue {
         self.properties.get(name).unwrap_or(&RuntimeValue::Null)
     }
+
+    pub fn set(&mut self, name: ProgramText, value: RuntimeValue) {
+        self.properties.insert(name, value);
+    }
 }
 
 #[derive(Debug)]
@@ -80,6 +85,13 @@ impl HeapObject {
     }
 
     pub fn as_object(&self) -> &Object {
+        match self {
+            Self::Object(object) => object,
+            _ => panic!("Expected object"),
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> &mut Object {
         match self {
             Self::Object(object) => object,
             _ => panic!("Expected object"),

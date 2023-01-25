@@ -249,12 +249,11 @@ impl VM {
                 Ok(())
             }
             SetProperty(_) => {
-                // println!("Setting property...");
-                // let value = self.pop_operand()?;
-                // let name = self.pop_operand()?.as_string().clone();
-                // let obj_ptr = self.pop_operand()?.as_heap_pointer();
-                // let obj = self.gc.deref_mut(obj_ptr).as_object_mut();
-                // obj.set(name, value);
+                let value = self.pop_operand()?;
+                let name = self.pop_operand()?.as_string().clone();
+                let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                let obj = self.gc.deref_mut(obj_ptr).as_object_mut();
+                obj.set(name, value);
                 Ok(())
             }
             GetProperty { bind_method } => {
