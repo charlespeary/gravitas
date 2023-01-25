@@ -70,10 +70,19 @@ impl<'t> Parser<'t> {
         Ok(Expr::boxed(ExprKind::Atom(val), atom_span))
     }
 
-    pub(super) fn parse_obj_literal(&mut self) -> ExprResult {
+    pub(super) fn parse_obj_literal(&mut self, nested: bool) -> ExprResult {
         println!("Parsing object literal");
-        let new = self.expect(Token::New)?.span();
-        self.expect(Token::Operator(Operator::CurlyBracketOpen))?;
+        println!("Next: {}", self.peek());
+        let start = if !nested {
+            let new = self.expect(Token::New)?.span();
+            let bracket = self
+                .expect(Token::Operator(Operator::CurlyBracketOpen))?
+                .span();
+            combine(&new, &bracket)
+        } else {
+            self.expect(Token::Operator(Operator::CurlyBracketOpen))?
+                .span()
+        };
 
         let mut properties = Vec::new();
 
@@ -82,6 +91,8 @@ impl<'t> Parser<'t> {
                 let key = self.advance()?;
                 (key.slice.to_owned(), key.span())
             };
+            println!("KEY: {}", &key);
+            println!("NEXT: {}", self.peek());
 
             // Shorthand for { key } instead of { key: key }
             let value = if [Token::Comma, Token::Operator(Operator::CurlyBracketClose)]
@@ -96,7 +107,14 @@ impl<'t> Parser<'t> {
                 )
             } else {
                 self.expect(Token::Colon)?;
-                self.parse_expression()?
+                println!("Colon... {:?}", self.peek());
+                // Parser might confuse it as a block but it's in fact nested object literal and we want to avoid putting new keyword everywhere
+                if self.peek() == Token::Operator(Operator::CurlyBracketOpen) {
+                    self.parse_obj_literal(true)?
+                } else {
+                    println!("Parsing expression");
+                    self.parse_expression()?
+                }
             };
 
             properties.push((key, value));
@@ -112,7 +130,7 @@ impl<'t> Parser<'t> {
 
         Ok(Expr::boxed(
             ExprKind::ObjectLiteral { properties },
-            combine(&new, &close_bracket),
+            combine(&start, &close_bracket),
         ))
     }
 }

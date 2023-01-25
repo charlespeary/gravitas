@@ -256,7 +256,7 @@ impl<'t> Parser<'t> {
             Token::Break => self.parse_break_expr()?,
             Token::Continue => self.parse_continue_expr()?,
             Token::Return => self.parse_return_expr()?,
-            Token::New => self.parse_obj_literal()?,
+            Token::New => self.parse_obj_literal(false)?,
             Token::Bar => self.parse_closure_expression()?,
             Token::Operator(Operator::RoundBracketOpen) => {
                 let open_paren = self.expect(OPEN_PARENTHESIS)?.span();
