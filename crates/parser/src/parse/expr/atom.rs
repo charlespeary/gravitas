@@ -3,7 +3,8 @@ use crate::{
         expr::{Expr, ExprKind},
         ExprResult, Node, Parser,
     },
-    token::{constants::ASSIGN, Token},
+    token::{constants::ASSIGN, operator::Operator, Token},
+    utils::combine,
 };
 use common::{Number, ProgramText};
 use std::fmt;
@@ -67,6 +68,52 @@ impl<'t> Parser<'t> {
         };
 
         Ok(Expr::boxed(ExprKind::Atom(val), atom_span))
+    }
+
+    pub(super) fn parse_obj_literal(&mut self) -> ExprResult {
+        println!("Parsing object literal");
+        let new = self.expect(Token::New)?.span();
+        self.expect(Token::Operator(Operator::CurlyBracketOpen))?;
+
+        let mut properties = Vec::new();
+
+        while self.peek() != Token::Operator(Operator::CurlyBracketClose) {
+            let (key, key_span) = {
+                let key = self.advance()?;
+                (key.slice.to_owned(), key.span())
+            };
+
+            // Shorthand for { key } instead of { key: key }
+            let value = if [Token::Comma, Token::Operator(Operator::CurlyBracketClose)]
+                .contains(&self.peek())
+            {
+                Expr::boxed(
+                    ExprKind::Atom(AtomicValue::Identifier {
+                        name: key.clone(),
+                        is_assignment: false,
+                    }),
+                    key_span,
+                )
+            } else {
+                self.expect(Token::Colon)?;
+                self.parse_expression()?
+            };
+
+            properties.push((key, value));
+
+            if self.peek() == Token::Comma {
+                self.advance()?;
+            }
+        }
+
+        let close_bracket = &self
+            .expect(Token::Operator(Operator::CurlyBracketClose))?
+            .span();
+
+        Ok(Expr::boxed(
+            ExprKind::ObjectLiteral { properties },
+            combine(&new, &close_bracket),
+        ))
     }
 }
 

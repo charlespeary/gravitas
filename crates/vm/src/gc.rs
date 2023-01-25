@@ -1,8 +1,9 @@
 use core::panic;
+use std::{collections::HashMap, hash::Hash};
 
 use bytecode::stmt::GlobalPointer;
 
-use crate::{call::ObjectInstance, runtime_value::RuntimeValue};
+use crate::runtime_value::RuntimeValue;
 
 pub(crate) type HeapPointer = usize;
 
@@ -31,12 +32,25 @@ pub(crate) struct BoundMethod {
     pub(crate) method_ptr: GlobalPointer,
 }
 
+pub(crate) type Properties = HashMap<String, RuntimeValue>;
+
+#[derive(Debug)]
+pub(crate) struct Object {
+    pub(crate) properties: Properties,
+}
+
+impl Object {
+    pub fn new(properties: Properties) -> Self {
+        Self { properties }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum HeapObject {
     Closure(Closure),
-    Object(ObjectInstance),
     BoundMethod(BoundMethod),
     Value(RuntimeValue),
+    Object(Object),
 }
 
 impl HeapObject {
@@ -58,20 +72,6 @@ impl HeapObject {
         match self {
             Self::BoundMethod(bound_method) => bound_method,
             _ => panic!("Expected bound method"),
-        }
-    }
-
-    pub fn as_object(&self) -> &ObjectInstance {
-        match self {
-            Self::Object(object) => object,
-            _ => panic!("Expected object"),
-        }
-    }
-
-    pub fn as_object_mut(&mut self) -> &mut ObjectInstance {
-        match self {
-            Self::Object(object) => object,
-            _ => panic!("Expected object"),
         }
     }
 }

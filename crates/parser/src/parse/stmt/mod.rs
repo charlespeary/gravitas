@@ -10,7 +10,6 @@ use super::FunctionBody;
 
 pub type Stmt = Node<Box<StmtKind>>;
 
-pub(crate) mod class;
 pub(crate) mod fun;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,11 +25,6 @@ pub enum StmtKind {
         name: ProgramText,
         params: Params,
         body: FunctionBody,
-    },
-    ClassDeclaration {
-        name: ProgramText,
-        super_class: Option<ProgramText>,
-        methods: Vec<Stmt>,
     },
 }
 
@@ -58,17 +52,6 @@ impl fmt::Display for StmtKind {
                     body
                 )?;
             }
-            ClassDeclaration {
-                super_class,
-                methods,
-                name,
-            } => {
-                write!(f, "class {}", name)?;
-                if let Some(super_class) = super_class {
-                    write!(f, " : {}", super_class)?;
-                }
-                write!(f, "methods({}) ", methods.len())?;
-            }
         }
 
         Ok(())
@@ -80,7 +63,6 @@ impl<'t> Parser<'t> {
         match self.peek() {
             Token::Let => self.parse_variable_declaration(),
             Token::Function => self.parse_fun_declaration(),
-            Token::Class => self.parse_class_declaration(),
             _ => self.parse_expression_stmt(),
         }
     }

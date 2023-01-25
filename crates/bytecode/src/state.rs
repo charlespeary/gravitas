@@ -2,14 +2,13 @@ use std::collections::{HashMap, HashSet};
 
 use common::ProgramText;
 
-use crate::{callables::Class, MemoryAddress, Patch, Upvalue, Variable};
+use crate::{MemoryAddress, Patch, Upvalue, Variable};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScopeType {
     Function,
     Block,
     Global,
-    Class,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -75,7 +74,6 @@ impl Scope {
 #[derive(Debug, Default, Clone)]
 pub struct GeneratorState {
     pub scopes: Vec<Scope>,
-    pub classes: HashMap<String, Class>,
 }
 
 fn search_var(scope: &Scope, name: &str) -> Option<(Variable, usize)> {

@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::path::Path;
 
 use crate::call::CallType;
-use crate::gc::{BoundMethod, HeapObject};
+use crate::gc::{BoundMethod, HeapObject, Object, Properties};
 use bytecode::callables::Function;
 use bytecode::stmt::{GlobalItem, GlobalPointer};
 use bytecode::{Opcode, ProgramBytecode};
@@ -123,7 +124,6 @@ impl VM {
         let current_frame = self.current_frame();
 
         let fn_ptr = match self.gc.deref(current_frame.closure_ptr) {
-            HeapObject::Object(obj) => obj.constructor_ptr.unwrap(),
             HeapObject::Closure(closure) => closure.function_ptr,
             HeapObject::BoundMethod(bound_method) => bound_method.method_ptr,
             _ => unreachable!(),
@@ -232,39 +232,55 @@ impl VM {
                 self.push_operand(RuntimeValue::HeapPointer(closure_ptr));
                 Ok(())
             }
+            CreateObject(amount) => {
+                let mut properties: Properties = HashMap::new();
+
+                for _ in 0..amount {
+                    let name = self.pop_operand()?.as_string().clone();
+                    let value = self.pop_operand()?;
+                    properties.insert(name, value);
+                }
+
+                let obj_ptr = self
+                    .gc
+                    .allocate(HeapObject::Object(Object::new(properties)));
+
+                self.push_operand(RuntimeValue::HeapPointer(obj_ptr));
+                Ok(())
+            }
             SetProperty(_) => {
-                println!("Setting property...");
-                let value = self.pop_operand()?;
-                let name = self.pop_operand()?.as_string().clone();
-                let obj_ptr = self.pop_operand()?.as_heap_pointer();
-                let obj = self.gc.deref_mut(obj_ptr).as_object_mut();
-                obj.set(name, value);
+                // println!("Setting property...");
+                // let value = self.pop_operand()?;
+                // let name = self.pop_operand()?.as_string().clone();
+                // let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                // let obj = self.gc.deref_mut(obj_ptr).as_object_mut();
+                // obj.set(name, value);
                 Ok(())
             }
             GetProperty { bind_method } => {
-                let name = self.pop_operand()?.as_string().clone();
-                let obj_ptr = self.pop_operand()?.as_heap_pointer();
-                let obj = self.gc.deref(obj_ptr).as_object();
+                // let name = self.pop_operand()?.as_string().clone();
+                // let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                // let obj = self.gc.deref(obj_ptr).as_object();
 
-                let property = if bind_method {
-                    let method_ptr = *self
-                        .deref_global(obj.class_ptr)
-                        .as_class()
-                        .methods
-                        .get(&name)
-                        .expect("Method not found");
+                // let property = if bind_method {
+                //     let method_ptr = *self
+                //         .deref_global(obj.class_ptr)
+                //         .as_class()
+                //         .methods
+                //         .get(&name)
+                //         .expect("Method not found");
 
-                    let bound_method = BoundMethod {
-                        receiver: obj_ptr,
-                        method_ptr,
-                    };
+                //     let bound_method = BoundMethod {
+                //         receiver: obj_ptr,
+                //         method_ptr,
+                //     };
 
-                    RuntimeValue::HeapPointer(self.gc.allocate(bound_method.into()))
-                } else {
-                    obj.get(&name).unwrap_or(RuntimeValue::Null)
-                };
+                //     RuntimeValue::HeapPointer(self.gc.allocate(bound_method.into()))
+                // } else {
+                //     obj.get(&name).unwrap_or(RuntimeValue::Null)
+                // };
 
-                self.push_operand(property);
+                // self.push_operand(property);
                 Ok(())
             }
         }?;

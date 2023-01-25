@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use callables::{Class, Function};
+use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
 use common::{ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};
@@ -129,6 +129,8 @@ pub enum Opcode {
     Null,
     // number of upvalue addresses to pop
     CreateClosure(usize),
+    // number of object properties to evaluate
+    CreateObject(usize),
 }
 
 impl Display for Opcode {
@@ -167,6 +169,7 @@ impl Display for Opcode {
                     CreateClosure(amount) => format!("CLOSURE_{}", amount),
                     GetProperty { bind_method } => format!("GET_PROPERTY_BIND_{}", bind_method),
                     SetProperty(amount) => format!("SET_PROPERTY_{}", amount),
+                    CreateObject(amount) => format!("CREATE_OBJECT_{}", amount),
                     _ => unreachable!(),
                 };
                 write!(f, "{}", str)?;

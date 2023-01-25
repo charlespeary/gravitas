@@ -15,14 +15,6 @@ pub struct Function {
     pub name: ProgramText,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Class {
-    pub name: ProgramText,
-    pub methods: HashMap<ProgramText, GlobalPointer>,
-    pub super_class: Option<Box<GlobalPointer>>,
-    pub constructor: Option<GlobalPointer>,
-}
-
 impl Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut table = Table::new();
@@ -35,22 +27,6 @@ impl Display for Function {
         }
 
         table.fmt(f)?;
-
-        Ok(())
-    }
-}
-
-impl Display for Class {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut table = Table::new();
-
-        table.add_row(row!["Name", "Number of methods"]);
-        table.add_row(row![self.name, self.methods.len()]);
-        table.fmt(f)?;
-
-        for (name, method_ptr) in &self.methods {
-            write!(f, "{}", method_ptr)?;
-        }
 
         Ok(())
     }

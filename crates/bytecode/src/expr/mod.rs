@@ -107,22 +107,22 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
             ExprKind::Index { target, position } => {}
             ExprKind::GetProperty {
                 target,
-                paths,
+                identifier,
                 is_method_call,
             } => {
                 self.generate(target)?;
-                self.write_constant(Constant::String(paths[0].kind.clone()));
+                self.write_constant(Constant::String(identifier.kind.clone()));
                 self.write_opcode(Opcode::GetProperty {
                     bind_method: is_method_call,
                 });
             }
             ExprKind::SetProperty {
                 target,
-                paths,
+                identifier,
                 value,
             } => {
                 self.generate(target)?;
-                self.write_constant(Constant::String(paths[0].kind.clone()));
+                self.write_constant(Constant::String(identifier.kind.clone()));
                 self.generate(value)?;
 
                 self.write_opcode(Opcode::SetProperty(1));
@@ -134,6 +134,14 @@ impl BytecodeFrom<Expr> for BytecodeGenerator {
                 self.write_opcode(Opcode::Asg);
             }
             ExprKind::Closure { params, body } => {}
+            ExprKind::ObjectLiteral { properties } => {
+                let amount = properties.len();
+                for (key, value) in properties {
+                    self.generate(value)?;
+                    self.write_constant(Constant::String(key));
+                }
+                self.write_opcode(Opcode::CreateObject(amount));
+            }
         };
         Ok(())
     }

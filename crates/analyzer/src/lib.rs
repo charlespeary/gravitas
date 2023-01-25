@@ -179,53 +179,13 @@ impl Analyzer {
     fn visit_stmt(&mut self, stmt: &Stmt) -> AnalyzerResult<ParseError> {
         use StmtKind::*;
 
-        let span = stmt.span.clone();
-        let err = move |cause: ParseErrorCause| {
-            Err(ParseError {
-                // TODO: just making it work. It probably should differentiate between the start and end span.
-                span_start: span.clone(),
-                span_end: span.clone(),
-                cause,
-            })
-        };
-
         match &*stmt.kind {
             VariableDeclaration { name, expr } => {
                 self.declare_var(name, false);
                 self.visit_expr(expr)?;
                 self.declare_var(name, true);
             }
-            ClassDeclaration {
-                name,
-                super_class,
-                methods,
-            } => {
-                self.classes.insert(name.clone());
-                self.declare_var(name, true);
-                self.declare_var("this", true);
 
-                if super_class.is_some() {
-                    self.declare_var("super", true);
-                }
-
-                if let Some(supclass) = super_class {
-                    if supclass == name {
-                        return err(ParseErrorCause::CantInheritFromItself);
-                    }
-
-                    if !self.classes.contains(supclass) {
-                        return err(ParseErrorCause::SuperclassDoesntExist);
-                    }
-                }
-
-                self.enter_scope(ScopeType::Class);
-
-                for method in methods {
-                    self.visit_stmt(method)?;
-                }
-
-                self.leave_scope();
-            }
             FunctionDeclaration { body, name, .. } => {
                 self.declare_var(name, true);
                 self.enter_scope(ScopeType::Function);

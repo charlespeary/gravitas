@@ -1,12 +1,10 @@
-class Foo { 
-    fn constructor() {  
-        this.foo = 5;
-    }
+fn makeObject() {
+    let x = 10;
+    let y = 20;
 
-    fn getFoo() {
-        return this.foo;
-    }
+    return new {
+        x, y
+    };
 }
 
-let x = Foo();
-let foo = x.getFoo();
+let foo = makeObject();

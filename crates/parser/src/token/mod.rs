@@ -82,9 +82,12 @@ pub enum Token<'t> {
     #[token(",")]
     #[display(fmt = ",")]
     Comma,
+    #[token("new")]
+    #[display(fmt = "new")]
+    New,
     #[token(":")]
     #[display(fmt = ":")]
-    Inherit,
+    Colon,
     #[token("|")]
     #[display(fmt = "|")]
     Bar,
@@ -150,6 +153,7 @@ impl<'t> Token<'t> {
             | Token::If
             | Token::Return
             | Token::While
+            | Token::New
             | Token::Bar => true,
             _ => false,
         }

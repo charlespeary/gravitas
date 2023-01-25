@@ -16,9 +16,9 @@ use crate::{
         error::{Expect, Forbidden, ParseErrorCause},
     },
 };
-use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Formatter;
+use std::{convert::TryInto, fmt::write};
 
 pub mod atom;
 pub(crate) mod control_flow;
@@ -86,13 +86,16 @@ pub enum ExprKind {
     // e.g "foo".toUppercase()
     GetProperty {
         target: Expr,
-        paths: Vec<PathSegment>,
         is_method_call: bool,
+        identifier: Node<ProgramText>,
     },
     SetProperty {
         target: Expr,
-        paths: Vec<PathSegment>,
         value: Expr,
+        identifier: Node<ProgramText>,
+    },
+    ObjectLiteral {
+        properties: Vec<(ProgramText, Expr)>,
     },
     // a = b
     Assignment {
@@ -200,17 +203,24 @@ impl fmt::Display for ExprKind {
                 }
                 write!(f, "]")?;
             }
-            GetProperty { target, paths, .. } => {
-                write!(f, "{}", target.kind.to_string())?;
-                for path in paths {
-                    write!(f, ".{}", path.kind)?;
-                }
+            GetProperty {
+                target, identifier, ..
+            } => {
+                write!(f, "{}.{}", target.kind.to_string(), identifier)?;
             }
             SetProperty {
                 target,
-                paths,
                 value,
-            } => {}
+                identifier,
+            } => {
+                write!(
+                    f,
+                    "{}.{} = {}",
+                    target.kind.to_string(),
+                    identifier,
+                    value.kind.to_string()
+                )?;
+            }
             Assignment { target, value } => {
                 write!(f, "{} = {}", target, value)?;
             }
@@ -218,11 +228,12 @@ impl fmt::Display for ExprKind {
                 let params_count = params.kind.len();
                 write!(f, "|{}| => {}", params_count, body)?;
             }
-            Super => {
-                write!(f, "super")?;
-            }
-            This => {
-                write!(f, "this")?;
+            ObjectLiteral { properties } => {
+                write!(f, "obj ")?;
+                for (name, value) in properties {
+                    write!(f, "{}:{}", name, value.to_string())?;
+                }
+                write!(f, " obj")?;
             }
         }
         Ok(())
@@ -245,6 +256,7 @@ impl<'t> Parser<'t> {
             Token::Break => self.parse_break_expr()?,
             Token::Continue => self.parse_continue_expr()?,
             Token::Return => self.parse_return_expr()?,
+            Token::New => self.parse_obj_literal()?,
             Token::Bar => self.parse_closure_expression()?,
             Token::Operator(Operator::RoundBracketOpen) => {
                 let open_paren = self.expect(OPEN_PARENTHESIS)?.span();
@@ -320,51 +332,44 @@ impl<'t> Parser<'t> {
             }
 
             if operator == Operator::Dot {
-                let mut paths = Vec::new();
-
                 while self.peek() == DOT {
                     let dot = self.expect(DOT)?.span();
-                    let identifier = self.expect_identifier()?;
-                    let path = PathSegment::new(
-                        identifier.slice.to_owned(),
-                        combine(&dot, &identifier.span()),
-                    );
-                    paths.push(path);
+                    let identifier_lexeme = self.expect_identifier()?;
+                    let identifier_span = identifier_lexeme.span();
+
+                    let identifier = Node {
+                        span: combine(&dot, &identifier_lexeme.span()),
+                        kind: identifier_lexeme.slice.to_owned(),
+                    };
+
+                    let is_assignment = self.peek() == ASSIGN;
+
+                    if is_assignment {
+                        self.expect(ASSIGN)?;
+                        let value = self.parse_expression()?;
+                        let span = combine(&lhs.span, &value.span);
+                        lhs = Expr::boxed(
+                            ExprKind::SetProperty {
+                                target: lhs,
+                                value,
+                                identifier,
+                            },
+                            span,
+                        );
+                    } else {
+                        let is_method_call = self.peek() == OPEN_PARENTHESIS;
+                        let span = combine(&lhs.span, &identifier_span);
+
+                        lhs = Expr::boxed(
+                            ExprKind::GetProperty {
+                                target: lhs,
+                                is_method_call,
+                                identifier,
+                            },
+                            span,
+                        );
+                    }
                 }
-
-                let last_segment_span = paths
-                    .last()
-                    .map(|p| &p.span)
-                    .ok_or(ParseErrorCause::Expected(Expect::Identifier))?;
-
-                let span = combine(&lhs.span, last_segment_span);
-
-                let is_assignment = self.peek() == ASSIGN;
-
-                if is_assignment {
-                    self.expect(ASSIGN)?;
-                    let value = self.parse_expression()?;
-                    let span = combine(&lhs.span, &value.span);
-                    lhs = Expr::boxed(
-                        ExprKind::SetProperty {
-                            target: lhs,
-                            paths,
-                            value,
-                        },
-                        span,
-                    );
-                } else {
-                    let is_method_call = self.peek() == OPEN_PARENTHESIS;
-                    lhs = Expr::boxed(
-                        ExprKind::GetProperty {
-                            target: lhs,
-                            paths,
-                            is_method_call,
-                        },
-                        span,
-                    );
-                }
-
                 continue;
             }
 
