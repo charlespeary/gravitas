@@ -258,9 +258,10 @@ impl VM {
                 Ok(())
             }
             GetProperty { bind_method } => {
-                // let name = self.pop_operand()?.as_string().clone();
-                // let obj_ptr = self.pop_operand()?.as_heap_pointer();
-                // let obj = self.gc.deref(obj_ptr).as_object();
+                let name = self.pop_operand()?.as_string().clone();
+                let obj_ptr = self.pop_operand()?.as_heap_pointer();
+                let obj = self.gc.deref(obj_ptr).as_object();
+                self.push_operand(obj.get(&name).clone());
 
                 // let property = if bind_method {
                 //     let method_ptr = *self

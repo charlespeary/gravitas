@@ -3,8 +3,9 @@ fn makeObject() {
     let y = 20;
 
     return new {
-        x, y
+        x, y, z: 10
     };
 }
 
 let foo = makeObject();
+foo.x;

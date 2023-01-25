@@ -43,6 +43,10 @@ impl Object {
     pub fn new(properties: Properties) -> Self {
         Self { properties }
     }
+
+    pub fn get(&self, name: &str) -> &RuntimeValue {
+        self.properties.get(name).unwrap_or(&RuntimeValue::Null)
+    }
 }
 
 #[derive(Debug)]
@@ -72,6 +76,13 @@ impl HeapObject {
         match self {
             Self::BoundMethod(bound_method) => bound_method,
             _ => panic!("Expected bound method"),
+        }
+    }
+
+    pub fn as_object(&self) -> &Object {
+        match self {
+            Self::Object(object) => object,
+            _ => panic!("Expected object"),
         }
     }
 }
