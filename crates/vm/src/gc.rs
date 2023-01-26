@@ -30,23 +30,23 @@ impl Closure {
 #[derive(Debug)]
 pub(crate) struct BoundMethod {
     pub(crate) receiver: HeapPointer,
-    pub(crate) method_ptr: GlobalPointer,
+    pub(crate) method_ptr: HeapPointer,
 }
 
 pub(crate) type Properties = HashMap<String, RuntimeValue>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct Object {
     pub(crate) properties: Properties,
 }
 
 impl Object {
-    pub fn new(properties: Properties) -> Self {
-        Self { properties }
+    pub fn get(&self, name: &str) -> Option<&RuntimeValue> {
+        self.properties.get(name)
     }
 
-    pub fn get(&self, name: &str) -> &RuntimeValue {
-        self.properties.get(name).unwrap_or(&RuntimeValue::Null)
+    pub fn get_method(&self, name: &str) -> Option<&RuntimeValue> {
+        self.properties.get(name)
     }
 
     pub fn set(&mut self, name: ProgramText, value: RuntimeValue) {

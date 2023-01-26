@@ -71,8 +71,6 @@ impl<'t> Parser<'t> {
     }
 
     pub(super) fn parse_obj_literal(&mut self, nested: bool) -> ExprResult {
-        println!("Parsing object literal");
-        println!("Next: {}", self.peek());
         let start = if !nested {
             let new = self.expect(Token::New)?.span();
             let bracket = self
@@ -91,9 +89,6 @@ impl<'t> Parser<'t> {
                 let key = self.advance()?;
                 (key.slice.to_owned(), key.span())
             };
-            println!("KEY: {}", &key);
-            println!("NEXT: {}", self.peek());
-
             // Shorthand for { key } instead of { key: key }
             let value = if [Token::Comma, Token::Operator(Operator::CurlyBracketClose)]
                 .contains(&self.peek())
@@ -107,12 +102,10 @@ impl<'t> Parser<'t> {
                 )
             } else {
                 self.expect(Token::Colon)?;
-                println!("Colon... {:?}", self.peek());
                 // Parser might confuse it as a block but it's in fact nested object literal and we want to avoid putting new keyword everywhere
                 if self.peek() == Token::Operator(Operator::CurlyBracketOpen) {
                     self.parse_obj_literal(true)?
                 } else {
-                    println!("Parsing expression");
                     self.parse_expression()?
                 }
             };

@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 use crate::{
-    callables::Function, chunk::Constant, state::ScopeType, BytecodeFrom, BytecodeGenerationResult,
+    callables::Function, chunk::Constant, BytecodeFrom, BytecodeGenerationResult,
     BytecodeGenerator, MemoryAddress, Opcode,
 };
-use common::{ProgramText, CONSTRUCTOR_NAME};
+use common::ProgramText;
 use parser::parse::{
     expr::ExprKind,
     stmt::{Stmt, StmtKind},
@@ -56,7 +56,6 @@ impl BytecodeGenerator {
         name: String,
         params: Params,
         body: FunctionBody,
-        predefined_variables: &[ProgramText],
     ) -> Result<Function, ()> {
         self.new_function(name.clone(), params.kind.len());
 
@@ -64,41 +63,26 @@ impl BytecodeGenerator {
             self.state.declare_var(param.kind);
         }
 
-        // To allow access to `this` and `super` in methods
-        for var in predefined_variables {
-            self.state.declare_var(var.clone());
-        }
-
-        let is_constructor = !predefined_variables.is_empty() && name == CONSTRUCTOR_NAME;
+        self.state.declare_var(name.clone());
+        self.state.declare_var("this".to_owned());
 
         match *body.kind {
             ExprKind::Block { stmts, return_expr } => {
                 self.generate(stmts)?;
 
-                if is_constructor {
-                    // this is where the object pointer is
-                    self.write_constant(Constant::MemoryAddress(MemoryAddress::Local(0)));
-                    // To turn the local address into the heap pointer that will point to obj
-                    self.write_opcode(Opcode::Get);
-                    self.write_opcode(Opcode::Return);
-                } else {
-                    match return_expr {
-                        Some(return_expr) => {
-                            self.generate(return_expr)?;
-                        }
-                        None => {
-                            self.write_opcode(Opcode::Null);
-                        }
-                    };
-                    self.write_opcode(Opcode::Return);
-                }
+                match return_expr {
+                    Some(return_expr) => {
+                        self.generate(return_expr)?;
+                    }
+                    None => {
+                        self.write_opcode(Opcode::Null);
+                    }
+                };
+                self.write_opcode(Opcode::Return);
             }
             _ => {
                 self.generate(body)?;
-
-                if !is_constructor {
-                    self.write_opcode(Opcode::Return);
-                }
+                self.write_opcode(Opcode::Return);
             }
         };
 
@@ -129,7 +113,7 @@ impl BytecodeFrom<Stmt> for BytecodeGenerator {
                 self.state.declare_var(name);
             }
             StmtKind::FunctionDeclaration { name, params, body } => {
-                let new_fn = self.compile_function(name.clone(), params, body, &[name])?;
+                let new_fn = self.compile_function(name.clone(), params, body)?;
                 let fn_ptr = self.declare_global(new_fn.into());
 
                 let (upvalues_addresses, upvalues_count) = {

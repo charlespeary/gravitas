@@ -125,7 +125,10 @@ impl VM {
 
         let fn_ptr = match self.gc.deref(current_frame.closure_ptr) {
             HeapObject::Closure(closure) => closure.function_ptr,
-            HeapObject::BoundMethod(bound_method) => bound_method.method_ptr,
+            HeapObject::BoundMethod(bound_method) => {
+                let closure_ptr = bound_method.method_ptr;
+                self.gc.deref(closure_ptr).as_closure().function_ptr
+            }
             _ => unreachable!(),
         };
 
@@ -140,7 +143,6 @@ impl VM {
         }
 
         let next = self.current_code().chunk.read_opcode(self.ip);
-        println!("next: {:?}", next);
         use Opcode::*;
 
         self.debug(format!("[OPCODE][NEXT]: {}", &next));
@@ -217,7 +219,6 @@ impl VM {
 
                 let fn_ptr = self.pop_operand()?.as_global_pointer();
                 let closure_ptr = self.make_closure(fn_ptr);
-
                 let closure_mut = self.gc.deref_mut(closure_ptr);
                 for upvalue in upvalues {
                     match closure_mut {
@@ -235,15 +236,29 @@ impl VM {
             CreateObject(amount) => {
                 let mut properties: Properties = HashMap::new();
 
+                let obj_ptr = self.gc.allocate(HeapObject::Object(Object::default()));
+
                 for _ in 0..amount {
                     let name = self.pop_operand()?.as_string().clone();
-                    let value = self.pop_operand()?;
+                    let mut value = self.pop_operand()?;
+
+                    if let RuntimeValue::HeapPointer(method_ptr) = value {
+                        if let HeapObject::Closure(closure) = self.gc.deref(method_ptr) {
+                            let bound_method_ptr =
+                                self.gc.allocate(HeapObject::BoundMethod(BoundMethod {
+                                    receiver: obj_ptr,
+                                    method_ptr,
+                                }));
+                            value = RuntimeValue::HeapPointer(bound_method_ptr);
+                        }
+                    }
+
                     properties.insert(name, value);
                 }
 
-                let obj_ptr = self
-                    .gc
-                    .allocate(HeapObject::Object(Object::new(properties)));
+                let obj_mut = self.gc.deref_mut(obj_ptr).as_object_mut();
+
+                obj_mut.properties = properties;
 
                 self.push_operand(RuntimeValue::HeapPointer(obj_ptr));
                 Ok(())
@@ -256,31 +271,13 @@ impl VM {
                 obj.set(name, value);
                 Ok(())
             }
-            GetProperty { bind_method } => {
+            GetProperty { .. } => {
                 let name = self.pop_operand()?.as_string().clone();
                 let obj_ptr = self.pop_operand()?.as_heap_pointer();
                 let obj = self.gc.deref(obj_ptr).as_object();
-                self.push_operand(obj.get(&name).clone());
+                let property = obj.get(&name).cloned().unwrap_or(RuntimeValue::Null);
+                self.push_operand(property);
 
-                // let property = if bind_method {
-                //     let method_ptr = *self
-                //         .deref_global(obj.class_ptr)
-                //         .as_class()
-                //         .methods
-                //         .get(&name)
-                //         .expect("Method not found");
-
-                //     let bound_method = BoundMethod {
-                //         receiver: obj_ptr,
-                //         method_ptr,
-                //     };
-
-                //     RuntimeValue::HeapPointer(self.gc.allocate(bound_method.into()))
-                // } else {
-                //     obj.get(&name).unwrap_or(RuntimeValue::Null)
-                // };
-
-                // self.push_operand(property);
                 Ok(())
             }
         }?;

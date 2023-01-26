@@ -68,11 +68,13 @@ impl VM {
 
         let recursion_handler = RuntimeValue::HeapPointer(closure_ptr);
         self.push_operand(recursion_handler);
+        // it's not a bound method so "this" is null
+        self.push_operand(RuntimeValue::Null);
 
         let frame = CallFrame {
-            // -1 because we also count function pushed onto the stack
-            // for recursion purposes
-            stack_start: self.operands.len() - arity - 1,
+            // -2 because we also count function pushed onto the stack
+            // for recursion purposes and "this" handler
+            stack_start: self.operands.len() - arity - 2,
             name,
             closure_ptr,
             return_ip: self.ip,
@@ -85,19 +87,20 @@ impl VM {
 
     fn bound_method_call(&mut self, method_ptr: HeapPointer) -> CallOperation {
         let bound_method = self.gc.deref(method_ptr).as_bound_method();
-
+        let recursion_handler = RuntimeValue::HeapPointer(bound_method.method_ptr);
+        let this_handler = RuntimeValue::HeapPointer(bound_method.receiver);
         let (arity, name) = {
             let function = self.deref_global(bound_method.method_ptr).as_function();
-
             (function.arity, function.name.clone())
         };
 
-        self.push_operand(RuntimeValue::HeapPointer(bound_method.receiver));
+        self.push_operand(recursion_handler);
+        self.push_operand(this_handler);
 
         let frame = CallFrame {
-            // -1 because we also count function pushed onto the stack
-            // for recursion purposes
-            stack_start: self.operands.len() - arity - 1,
+            // -2 because we also count function pushed onto the stack
+            // for recursion purposes and "this" handler
+            stack_start: self.operands.len() - arity - 2,
             name,
             closure_ptr: method_ptr,
             return_ip: self.ip,
@@ -137,14 +140,16 @@ impl VM {
 
     pub(crate) fn op_call(&mut self) -> CallOperation {
         let callee = self.pop_operand()?;
-
         match callee {
             // RuntimeValue::GlobalPointer(global_ptr) => self.class_call(global_ptr),
             RuntimeValue::HeapPointer(heap_ptr) => {
                 let result = match self.gc.deref(heap_ptr) {
                     HeapObject::Closure(_) => self.closure_call(heap_ptr),
                     HeapObject::BoundMethod(_) => self.bound_method_call(heap_ptr),
-                    _ => unreachable!(),
+                    d => {
+                        dbg!(d);
+                        unreachable!()
+                    }
                 };
 
                 result

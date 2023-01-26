@@ -202,7 +202,6 @@ pub struct ProgramBytecode {
 pub type GenerationResult = Result<ProgramBytecode, ()>;
 
 pub fn generate_bytecode(program: Program) -> GenerationResult {
-    dbg!(&program);
     let mut generator = BytecodeGenerator::new();
     generator.generate(program)?;
     Ok(generator.code())
