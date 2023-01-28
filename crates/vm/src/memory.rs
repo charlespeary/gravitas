@@ -1,8 +1,8 @@
 use bytecode::MemoryAddress;
 
 use crate::{
-    runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue, MachineResult, OperationResult,
-    VM,
+    gravitas_std::NATIVE_FUNCTIONS, runtime_error::RuntimeErrorCause, runtime_value::RuntimeValue,
+    MachineResult, OperationResult, VM,
 };
 
 impl VM {
@@ -51,6 +51,7 @@ impl VM {
 
                 *self.gc.deref_mut(upvalue_ptr) = value.into();
             }
+            _ => unreachable!(),
         }
         Ok(())
     }
@@ -96,7 +97,7 @@ impl VM {
         let closure = self.gc.deref(current_closure_ptr).as_closure();
         let upvalue_ptr = closure.upvalues.get(upvalue_index).cloned().unwrap();
         let mut upvalue = self.gc.deref(upvalue_ptr).as_value();
-        
+
         if is_ref {
             while let RuntimeValue::HeapPointer(upvalue_ptr) = upvalue {
                 upvalue = self.gc.deref(*upvalue_ptr).as_value();
@@ -110,6 +111,9 @@ impl VM {
         match address {
             MemoryAddress::Local(stack_address) => self.get_local_variable(stack_address),
             MemoryAddress::Upvalue { index, is_ref } => self.get_upvalue(index, is_ref),
+            MemoryAddress::BuiltInFunction(built_in_function) => {
+                Ok(RuntimeValue::NativeFunction(built_in_function))
+            }
         }
     }
 

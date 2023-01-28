@@ -1,17 +1,1 @@
-fn makeObject() {
-    let x = 10;
-    let y = 20;
-    
-    fn closureMethod() {
-        return this.x + 5;
-    }
-
-    return new {
-        x, y, closureMethod, z: {
-            nested: 20
-        }
-    };
-}
-
-let foo = makeObject();
-foo.closureMethod();
+print(5);

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use callables::Function;
 use chunk::{Chunk, Constant, ConstantIndex};
-use common::{ProgramText, MAIN_FUNCTION_NAME};
+use common::{BuiltInFunction, ProgramText, MAIN_FUNCTION_NAME};
 use parser::parse::{Ast, Program};
 use state::{GeneratorState, ScopeType};
 use stmt::{GlobalItem, GlobalPointer};
@@ -29,6 +29,7 @@ pub enum MemoryAddress {
     // First value points to the stack index that starts at index
     // defined by callstack n (second value) jumps above.
     Upvalue { index: usize, is_ref: bool },
+    BuiltInFunction(BuiltInFunction),
 }
 
 impl Display for MemoryAddress {
@@ -36,6 +37,7 @@ impl Display for MemoryAddress {
         let str = match self {
             Self::Local(address) => format!("local_address::{}", address),
             Self::Upvalue { index, .. } => format!("upvalue::{}", index),
+            Self::BuiltInFunction(function) => format!("built::in::function"),
         };
         write!(f, "{}", str)?;
 

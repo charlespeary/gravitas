@@ -37,7 +37,6 @@ pub(crate) fn compile(code: &str) -> Program {
 
 pub(crate) fn compile_and_run(code: &str, debug: bool) -> RuntimeValue {
     let ast = compile(code);
-
     analyze(&ast)
         .map_err(|errors| log_errors(errors, &code))
         .expect("Static analysis failed. Investigate above errors to find the cause.");

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use common::ProgramText;
+use common::{find_std_function, ProgramText};
 
 use crate::{MemoryAddress, Patch, Upvalue, Variable};
 
@@ -155,7 +155,7 @@ impl GeneratorState {
     }
 
     // This can't fail because it's either an upvalue or it's not defined and analyzer prevents the latter.
-    pub fn search_upvalue_var(&mut self, name: &str) -> Upvalue {
+    pub fn search_upvalue_var(&mut self, name: &str) -> Option<Upvalue> {
         // We skip the first scope because it's the local scope
         // that we already checked and didn't find the variable there so we assumed it's an upvalue
         let scopes = self
@@ -185,13 +185,14 @@ impl GeneratorState {
             scopes_to_close.push(scope);
         }
 
-        let mut upvalue = upvalue.unwrap();
-
-        for scope in scopes_to_close.into_iter().rev() {
-            upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index, name.to_owned());
+        if let Some(mut upvalue) = upvalue {
+            for scope in scopes_to_close.into_iter().rev() {
+                upvalue = scope.make_enclosed_upvalue(upvalue.upvalue_index, name.to_owned());
+            }
+            return Some(upvalue);
+        } else {
+            return None;
         }
-
-        return upvalue;
     }
 
     pub fn search_local_var(&self, name: &str) -> Option<Variable> {
@@ -200,21 +201,29 @@ impl GeneratorState {
         search_var(current_scope, name).map(|(var, _)| var)
     }
 
-    pub fn find_var_address(&mut self, name: &str) -> MemoryAddress {
+    pub fn find_var_address(&mut self, name: &str) -> Option<MemoryAddress> {
         if let Some(local_variable) = self.search_local_var(name) {
-            return MemoryAddress::Local(local_variable.index);
+            return Some(MemoryAddress::Local(local_variable.index));
         }
 
-        let Upvalue {
-            upvalue_index,
-            is_ref,
-            ..
-        } = self.search_upvalue_var(name);
-
-        MemoryAddress::Upvalue {
-            index: upvalue_index,
-            is_ref,
+        if let Some(built_in_function) = find_std_function(name) {
+            return Some(MemoryAddress::BuiltInFunction(built_in_function));
         }
+
+        if let Some(upvalue) = self.search_upvalue_var(name) {
+            let Upvalue {
+                upvalue_index,
+                is_ref,
+                ..
+            } = upvalue;
+
+            return Some(MemoryAddress::Upvalue {
+                index: upvalue_index,
+                is_ref,
+            });
+        }
+
+        return None;
     }
 
     pub fn scope_upvalues(&self) -> Vec<&Upvalue> {

@@ -1,6 +1,6 @@
 use crate::{
     gc::{HeapObject, HeapPointer},
-    gravitas_std::{BuiltInFunction, FnArgs},
+    gravitas_std::{FnArgs, NativeFunction, NATIVE_FUNCTIONS},
     MachineResult, RuntimeErrorCause, RuntimeValue, VM,
 };
 use common::ProgramText;
@@ -123,16 +123,16 @@ impl VM {
     //     instance_ptr
     // }
 
-    fn built_in_function_call(&mut self, built_in_function: BuiltInFunction) -> CallOperation {
-        let BuiltInFunction {
+    fn native_function_call(&mut self, native_function: &NativeFunction) -> CallOperation {
+        let NativeFunction {
             arity,
             fn_body,
             name,
-        } = built_in_function;
+        } = native_function;
 
-        self.debug(format!("[VM][CALL][BUILT IN][NAME={}]", &name));
+        self.debug(format!("[VM][CALL][BUILT IN]"));
 
-        let args = self.get_args(arity)?;
+        let args = self.get_args(*arity)?;
         let result = fn_body(args, self);
         self.push_operand(result);
         Ok(CallType::InlineFn)
@@ -153,6 +153,12 @@ impl VM {
                 };
 
                 result
+            }
+            RuntimeValue::NativeFunction(built_in_function) => {
+                let fun = NATIVE_FUNCTIONS
+                    .get(&built_in_function)
+                    .expect("We ensured during compilation that this exists.");
+                self.native_function_call(fun)
             }
             _ => self.error(RuntimeErrorCause::NotCallable),
         }

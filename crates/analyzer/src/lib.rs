@@ -7,14 +7,13 @@ use parser::{
     },
     utils::error::{ParseError, ParseErrorCause},
 };
-use std::collections::{HashMap, HashSet};
-use vm::gravitas_std::STD_FUNCTIONS;
+use std::collections::HashMap;
+use vm::gravitas_std::NATIVE_FUNCTIONS;
 
 pub type AnalyzerResult<E> = Result<(), E>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ScopeType {
-    Class,
     Function,
     Loop,
     Global,
@@ -59,15 +58,14 @@ impl Scope {
 #[derive(Default)]
 pub struct Analyzer {
     scopes: Vec<Scope>,
-    classes: HashSet<ProgramText>,
 }
 
 impl Analyzer {
     pub fn new() -> Self {
-        let variables: HashMap<ProgramText, bool> = STD_FUNCTIONS
+        let variables: HashMap<ProgramText, bool> = NATIVE_FUNCTIONS
             .keys()
             .cloned()
-            .map(|name| (name.to_owned(), true))
+            .map(|fun| (fun.into(), true))
             .collect();
 
         let scopes = vec![Scope::global(variables)];
@@ -170,6 +168,67 @@ impl Analyzer {
                 if !self.current_scope().is_function() {
                     return err(ParseErrorCause::ReturnUsedOutsideFunction);
                 }
+                if let Some(value) = value {
+                    self.visit_expr(value)?;
+                }
+            }
+            Call { callee, args } => {
+                self.visit_expr(callee)?;
+                for arg in args {
+                    self.visit_expr(arg)?;
+                }
+            }
+            Unary { op, rhs } => {
+                self.visit_expr(rhs)?;
+            }
+            If {
+                condition,
+                body,
+                else_expr,
+            } => {
+                self.visit_expr(condition)?;
+                self.visit_expr(body)?;
+                if let Some(else_expr) = else_expr {
+                    self.visit_expr(else_expr)?;
+                }
+            }
+            Array { values } => {
+                for value in values {
+                    self.visit_expr(value)?;
+                }
+            }
+            Index { target, position } => {
+                self.visit_expr(target)?;
+                self.visit_expr(position)?;
+            }
+            GetProperty {
+                target,
+                is_method_call,
+                identifier,
+            } => {
+                self.visit_expr(target)?;
+            }
+            SetProperty {
+                target,
+                value,
+                identifier,
+            } => {
+                self.visit_expr(target)?;
+                self.visit_expr(value)?;
+            }
+            ObjectLiteral { properties } => {
+                for (name, value) in properties {
+                    self.visit_expr(value)?;
+                }
+            }
+            Assignment { target, value } => {
+                self.visit_expr(target)?;
+                self.visit_expr(value)?;
+            }
+            Closure { params, body } => {
+                self.enter_scope(ScopeType::Function);
+                self.visit_expr(body)?;
+                self.leave_scope();
             }
             _ => {}
         }

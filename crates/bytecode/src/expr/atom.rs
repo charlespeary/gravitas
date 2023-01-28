@@ -18,8 +18,11 @@ impl BytecodeFrom<AtomicValue> for BytecodeGenerator {
                 name,
                 is_assignment,
             } => {
-                // TODO: make it for work object's properties
-                let var_address = self.state.find_var_address(&name);
+                let var_address = self
+                    .state
+                    .find_var_address(&name)
+                    .expect("Analyzer takes care of undefined variables");
+
                 self.write_constant(var_address.into());
 
                 if !is_assignment {

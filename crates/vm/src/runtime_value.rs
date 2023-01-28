@@ -1,5 +1,5 @@
 use bytecode::{chunk::Constant, stmt::GlobalPointer, MemoryAddress};
-use common::{Number, ProgramText};
+use common::{BuiltInFunction, Number, ProgramText};
 
 use crate::gc::HeapPointer;
 use std::fmt;
@@ -12,6 +12,7 @@ pub enum RuntimeValue {
     MemoryAddress(MemoryAddress),
     GlobalPointer(GlobalPointer),
     HeapPointer(HeapPointer),
+    NativeFunction(BuiltInFunction),
     // This will be an object instance of an Option in the future
     Null,
 }
@@ -57,6 +58,7 @@ impl fmt::Display for RuntimeValue {
             Null => write!(f, "null"),
             GlobalPointer(ptr) => write!(f, "global ptr: {}", ptr),
             HeapPointer(ptr) => write!(f, "heap ptr: {}", ptr),
+            NativeFunction(_) => write!(f, "native function"),
         }
     }
 }
